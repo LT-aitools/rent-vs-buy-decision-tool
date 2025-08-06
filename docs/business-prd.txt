@@ -1,0 +1,621 @@
+RENT VS. BUY REAL ESTATE DECISION TOOL
+DETAILED BUSINESS PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+================================================================
+
+EXECUTIVE SUMMARY
+================================================================
+
+Tool Purpose: A comprehensive financial analysis platform to evaluate rent versus purchase decisions for warehouse and logistics facilities across global subsidiaries.
+
+Business Value: Standardize real estate decision-making, reduce analysis time by 60%, improve capital allocation efficiency by 15%, and provide defensible recommendations for executive approval.
+
+Implementation: Streamlit-based web application with zero hosting costs and 4-week development timeline.
+
+Key Benefits:
+• Zero ongoing hosting costs ($0/month)
+• 4-week development timeline for full functionality
+• Professional-grade analysis suitable for executive presentations
+• Standardized methodology across all global subsidiaries
+• Complete audit trail with transparent calculations
+
+
+================================================================
+1. INPUT SCREEN SPECIFICATION
+================================================================
+
+1.1 PROJECT INFORMATION SECTION
+Layout: Header section at top of application
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Project Name           | Text Input    | Max 100 characters   | "Property Analysis [Date]" | Yes      | Identifier for scenario tracking
+Location/Address       | Text Input    | Max 200 characters   | None                      | Yes      | Property address or general location
+Analysis Date          | Date Picker   | Valid date           | Today's date              | Yes      | Date analysis was performed
+Analyst Name           | Text Input    | Max 50 characters    | None                      | Yes      | Person performing analysis
+Currency               | Dropdown      | USD, EUR, GBP, CAD, AUD, ILS, LEI, PLN| USD                    | Yes      | All monetary values currency
+
+1.2 PROPERTY & MARKET INFORMATION
+Layout: Left sidebar section
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Property Type          | Dropdown      | Warehouse, Distribution Center, Manufacturing, Office, Mixed Use | Warehouse | Yes | Type of facility being analyzed
+Total Property Size    | Number Input  | Min: 1,000 sq meter     | None                      | Yes      | Total square meter of property
+Current Space Needed   | Number Input  | Min: 500, Max: Property Size | None            | Yes      | Current operational space requirement
+Market Appreciation Rate| Slider       | 0% to 15% annually   | 3%                        | Yes      | Expected annual property value appreciation
+
+
+
+1.3 FINANCIAL PARAMETERS - PURCHASE SCENARIO
+Layout: Left sidebar section
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Purchase Price         | Number Input  | Min: $50,000         | None                      | Yes      | Total acquisition cost of property
+Transaction Costs      | Number Input  | Min: 0, Default: 5% of purchase price | 5% of purchase | No | Legal, inspection, broker fees
+Down Payment %         | Slider        | 0% to 100%          | 30%                       | Yes      | Percentage of purchase price as equity
+Interest Rate          | Number Input  | 0% to 20%          | 5.0%                      | Yes      | Annual interest rate for financing
+Loan Term              | Number Input      | 0 to 30 years | 20 years              | Yes      | Loan amortization period
+Property Tax Rate      | Number Input  | 0% to 10% annually    | 1.2%                      | Yes      | Annual property tax as % of value
+Insurance Cost         | Number Input  | Min: 0               | $5,000                    | Yes      | Annual property insurance premium
+Annual Maintenance     | Number Input  | Min: 0, Default: 2% of purchase price | 2% of purchase | Yes | Annual maintenance and repairs
+Property Management    | Number Input  | Min: 0               | 0                         | No       | Annual property management fees
+Land Value %           | Slider        | 10% to 50%          | 25%                       | No       | Land value as percentage of purchase price
+Space Improvement Cost | Number Input  | Min: $0              | $50                       | No       | Cost per sq meter to improve unutilized space
+Property Tax Escalation Rate | Slider  | 0% to 10% annually  | 2.0%                      | Yes      | Annual property tax assessment increase rate
+Inflation Rate          | Number Input  | 0% to 20%          | 3.0%                      | Yes      | Annual inflation rate
+
+1.4 FINANCIAL PARAMETERS - RENTAL SCENARIO
+Layout: Right sidebar section
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Current Annual Rent    | Number Input  | Min: $1,000          | None                      | Yes      | Current total annual rental cost
+Rent per Sq Meter         | Display Only  | Calculated           | Auto-calculated           | No       | Current rent ÷ current space
+Rent Increase Rate     | Slider        | 0% to 15% annually   | 3%                        | Yes      | Expected annual rent escalation
+Security Deposit       | Number Input  | Min: 0               | 2 months rent             | No       | Upfront rental security deposit
+Rental Commission      | Number Input  | Min: 0               | 1 month rent              | No       | Broker commission for new lease
+Lease Break Penalty    | Number Input  | Min: 0               | 6 months rent             | No       | Penalty for early lease termination
+Moving Costs           | Number Input  | Min: 0               | $0                        | No       | Cost to relocate operations
+
+
+1.5 OPERATIONAL PARAMETERS
+Layout: Bottom section, two columns
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Analysis Period        | Number Input  | 0 to 100 years       | 25 years                  | Yes      | Time horizon for analysis
+Growth Rate            | Slider        | -5% to 25% annually  | 5%                        | Yes      | Expected business growth rate
+Future Expansion Year  | Dropdown      | Year 1-25, Never     | Year 10                   | No       | When additional space will be needed
+Additional Space Needed| Number Input  | Min: 0               | 0                         | No       | Extra sq meter required for growth
+Subletting Potential   | Yes/No Toggle | Boolean              | No                        | Yes      | Can excess space be sublet?
+Subletting Rate        | Number Input  | Min: 0, only if subletting = yes | $0           | No       | Annual income per sq meter sublet
+Subletting Occupancy   | Slider        | 0% to 100%          | 85%                       | No       | Expected occupancy rate for sublets
+Cost of Capital        | Number Input  | 0% to 20%            | 8%                        | Yes      | Company's cost of capital/discount rate
+Long-term CapEx Reserve | Number Input  | 0% to 10% annually   | 1.5%                      | Yes      | Annual reserve for major property improvements
+Property Upgrade Cycle  | Number Input  | 5 to 50 years        | 15 years                  | No       | Years between major renovations
+Obsolescence Risk Factor| Number Input  | 0% to 5% annually    | 0.5%                      | No       | Annual risk of property becoming less suitable
+
+1.6 TAX & ACCOUNTING PARAMETERS
+Layout: Expandable advanced section
+
+Field Name             | Input Type    | Validation           | Default                    | Required | Description
+Corporate Tax Rate     | Number Input  | 0% to 50%            | 25%                       | No      | Applicable corporate tax rate
+Depreciation Period    | Number Input      | 0 to 50 years | 39 years              | No      | Depreciation schedule for tax
+Interest Deductible    | Yes/No Toggle | Boolean              | Yes                       | No      | Is mortgage interest tax deductible?
+Property Tax Deductible| Yes/No Toggle | Boolean              | Yes                       | No      | Are property taxes tax deductible?
+Rent Deductible        | Yes/No Toggle | Boolean              | Yes                       | No      | Is rent expense tax deductible?
+
+
+================================================================
+2. CALCULATION METHODOLOGIES
+================================================================
+
+2.1 PRIMARY ANALYSIS: TOTAL COST OF OWNERSHIP COMPARISON
+
+Objective: Compare the total economic cost of renting versus owning over the analysis period.
+
+2.1.1 PURCHASE SCENARIO ANNUAL CASH FLOWS
+
+Year 1 Initial Costs:
+Loan Amount = Purchase Price × (1 - Down Payment %)
+Initial Investment = (Purchase Price × Down Payment %) + Transaction Costs + Moving Costs
+
+Mortgage Payment Calculation:
+If Down Payment % = 100%:
+  Annual Mortgage Payment = 0
+Else If Interest Rate = 0%:
+  Monthly Payment = Loan Amount / (Loan Term × 12)
+  Annual Mortgage Payment = Loan Amount / Loan Term
+Else:
+  Monthly Payment = PMT(Interest Rate/12, Loan Term × 12, -Loan Amount)
+  Annual Mortgage Payment = Monthly Payment × 12
+
+Annual Operating Costs (Years 1-N):
+Note: Year-1 indexing means Year 1 uses base costs, escalation begins Year 2
+
+Property Tax Base = Purchase Price (assessed value for tax purposes)
+Property Taxes = Property Tax Base × Property Tax Rate × (1 + Property Tax Escalation Rate)^(Year-1)
+Insurance = Insurance Cost × (1 + Inflation Rate)^(Year-1)
+Maintenance = Annual Maintenance × (1 + Inflation Rate)^(Year-1)
+Property Management = Property Management Fee × (1 + Inflation Rate)^(Year-1)
+CapEx Reserve = Purchase Price × Long-term CapEx Reserve × (1 + Inflation Rate)^(Year-1)
+Obsolescence Risk Cost = Purchase Price × Obsolescence Risk Factor × (1 + Inflation Rate)^(Year-1)
+Property Upgrade Cost = 0 (except in Property Upgrade Cycle years)
+
+Total Annual Cost (Ownership) = Annual Mortgage Payment + Property Taxes + Insurance + Maintenance + Property Management + CapEx Reserve + Obsolescence Risk Cost + Property Upgrade Cost
+
+Amortization Schedule Calculation:
+If Down Payment % = 100%:
+  Remaining Loan Balance = 0 for all years
+  Interest Portion = 0 for all years
+Else:
+  For Year N:
+    Beginning Balance = Remaining loan balance from previous year (Year 0 = Loan Amount)
+    Interest Portion = Beginning Balance × Interest Rate
+    Principal Portion = Annual Mortgage Payment - Interest Portion
+    Remaining Loan Balance = Beginning Balance - Principal Portion
+
+Tax Benefits (if applicable):
+Land Value = Purchase Price × Land Value %
+Building Value = Purchase Price - Land Value
+Depreciation Deduction = Building Value ÷ Depreciation Period
+Property Tax Deduction = Property Taxes (if Property Tax Deductible = Yes)
+Annual Tax Savings = (Interest Portion + Depreciation + Property Tax Deduction) × Corporate Tax Rate
+
+Subletting Income Calculation:
+Excess Space = MAX(0, Total Property Size - Current Space Needed)
+Subletting Income = Excess Space × Subletting Rate × Subletting Occupancy (if Subletting Potential = Yes, else 0)
+
+Property Upgrade Costs (Applied in Property Upgrade Cycle Years):
+Original Building Value = Purchase Price - (Purchase Price × Land Value %)
+If Year MOD Property Upgrade Cycle = 0:
+  Property Upgrade Cost = Original Building Value × 2% (major renovation estimate)
+Else:
+  Property Upgrade Cost = 0
+
+Net Annual Cost (Ownership) = Total Annual Cost - Annual Tax Savings - Subletting Income
+
+2.1.2 RENTAL SCENARIO ANNUAL CASH FLOWS
+
+Year 1 Initial Costs:
+Initial Investment = Security Deposit + Rental Commission + Moving Costs
+
+Rent Calculation Methodology:
+Note: Year-1 indexing means Year 1 uses current rent, increases begin Year 2
+
+Rent per Sq Meter (Year 1) = Current Annual Rent ÷ Current Space Needed
+For Year N:
+  Rent per Sq Meter = (Current Annual Rent ÷ Current Space Needed) × (1 + Rent Increase Rate)^(Year-1)
+  Annual Rent = Current Space Needed × Rent per Sq Meter
+
+Tax Benefits (if applicable):
+Annual Tax Savings = Annual Rent × Corporate Tax Rate (if Rent Deductible = Yes)
+
+Net Annual Cost (Rental) = Annual Rent - Annual Tax Savings
+
+2.1.3 SPACE EXPANSION CALCULATIONS
+
+When expansion is needed:
+When expansion is needed in Future Expansion Year:
+
+PURCHASE SCENARIO:
+Available Space = Total Property Size - Current Space Needed
+If Additional Space ≤ Available Space:
+  Additional Space Cost = Additional Space × Space Improvement Cost
+Else:
+  Expansion requires new property acquisition or major renovation (outside scope)
+
+RENTAL SCENARIO:
+Additional Space Annual Cost = Additional Space × Rent per Sq Meter
+Potential Relocation Cost = Moving Costs + Lease Break Penalty (if relocating to larger space)
+Total Expansion Cost = Additional Space Annual Cost × Remaining Years in Analysis
+
+Where Rent per Sq Meter = Current Annual Rent ÷ Current Space Needed
+
+2.1.4 TERMINAL VALUE CALCULATIONS
+
+At end of analysis period (hold-forever ownership assumption):
+
+OWNERSHIP SCENARIO (Hold-Forever Wealth Accumulation):
+Land Value = Purchase Price × Land Value %
+Building Value = Purchase Price - Land Value
+
+Land Value at End = Land Value × (1 + Market Appreciation Rate)^Analysis Period
+Accumulated Depreciation = MIN(Building Value, Building Value × Analysis Period / Depreciation Period)
+Depreciated Building Value = Building Value - Accumulated Depreciation
+Building Value at End = Depreciated Building Value × (1 + Market Appreciation Rate)^Analysis Period
+Terminal Property Value = Land Value at End + Building Value at End
+Remaining Loan Balance = Outstanding mortgage balance at end of analysis period (from amortization schedule)
+Net Property Equity = Terminal Property Value - Remaining Loan Balance
+
+RENTAL SCENARIO:
+Terminal Asset Value = 0 (no property ownership, no wealth accumulation)
+Security Deposit Recovery = Security Deposit × (1 + Inflation Rate)^Analysis Period
+
+For Hold-Forever Wealth Analysis:
+Ownership Terminal Value = Net Property Equity (represents accumulated wealth from property ownership)
+Rental Terminal Value = Security Deposit Recovery only (no property wealth accumulated)
+
+Note: This analysis shows wealth accumulation difference - ownership builds equity through appreciation and debt paydown, while rental builds no property wealth.
+
+2.2 NET PRESENT VALUE (NPV) ANALYSIS
+
+Formula:
+NPV Difference = NPV(Rental Cash Flows) - NPV(Ownership Cash Flows)
+
+Where:
+NPV = Σ[Cash Flow Year N ÷ (1 + Cost of Capital)^N] + Terminal Value ÷ (1 + Cost of Capital)^N
+
+Positive NPV Difference = Ownership is financially better
+Negative NPV Difference = Rental is financially better
+
+2.3 BREAK-EVEN ANALYSIS (OPERATIONAL FOCUS)
+
+Methodology:
+• Calculate annual cash flow difference each year (ownership vs rental operating costs)
+• Identify the year when annual ownership costs become lower than annual rental costs  
+• Calculate cumulative cost difference to determine total economic advantage
+• Focus on operational break-even rather than including fictional sale proceeds
+
+2.4 SENSITIVITY ANALYSIS CALCULATIONS
+
+Interest Rate Sensitivity:
+• Test scenarios: Current Rate ±1%, ±2%, ±3%
+• Recalculate NPV difference for each scenario
+• Display impact on recommendation
+
+Rent Increase Sensitivity:
+• Test scenarios: Current Rate ±1%, ±2%, ±3%
+• Recalculate NPV difference for each scenario
+• Display impact on recommendation
+
+Combined Sensitivity Matrix:
+• 5×5 matrix testing combinations of interest rate and rent increase variations
+• Show NPV difference for each combination
+• Highlight scenarios where recommendation changes
+
+2.5 KEY PERFORMANCE INDICATORS (KPIs)
+
+Primary Metrics:
+1. NPV Difference: Total financial advantage of ownership vs rental over analysis period
+2. Operational Break-Even Year: When annual ownership costs become lower than rental costs
+3. Annual Cash Flow Impact: Year 1 cash flow difference
+4. Total Cost Difference: Sum of all costs over analysis period
+
+Secondary Metrics:
+1. Cost per Square Meter: Annual cost divided by space utilized
+2. Flexibility Premium: Cost of maintaining rental flexibility vs ownership control
+3. Long-term Cost Stability: Predictability of ownership costs vs rental escalation
+4. Capital Opportunity Cost: Returns foregone by investing in real estate vs other investments
+
+
+================================================================
+3. OUTPUT DASHBOARD & REPORTING STRUCTURE
+================================================================
+
+3.1 EXECUTIVE SUMMARY DASHBOARD (Top Section)
+
+Layout: 4-column metric cards with visual indicators
+
+Metric Card          | Display Format              | Calculation           | Color Logic
+Recommendation       | "BUY" or "RENT" + Confidence| Based on NPV difference | Green (Strong), Yellow (Weak), Red (Marginal)
+NPV Advantage        | "$XXX,XXX over XX years"    | Absolute NPV difference | Green (Positive), Red (Negative)
+Operational Break-Even| "X.X years" or "Never"      | When annual costs favor ownership | Green (<10 years), Yellow (10-15), Red (>15)
+Year 1 Cash Impact   | "±$XXX,XXX difference"      | First year cash flow delta | Red (High cash need), Green (Cash positive)
+
+Decision Logic for Recommendation (Hold-Forever Strategy):
+Strong Buy: NPV > $1,000,000 AND Operational break-even < 10 years AND Total cost advantage > 15%
+Weak Buy: NPV > $500,000 OR Operational break-even < 15 years OR Total cost advantage > 10%
+Marginal: NPV between -$500,000 and $500,000 AND Total cost difference within ±10%
+Weak Rent: NPV < -$500,000 OR Total cost advantage to rental > 10% over analysis period
+Strong Rent: NPV < -$1,000,000 AND Total cost advantage to rental > 20% AND High flexibility value
+
+3.2 FINANCIAL COMPARISON CHART (Center Section)
+
+Primary Visualization: Line chart showing cumulative costs over time
+• X-axis: Years 0 to Analysis Period
+• Y-axis: Cumulative Cost ($)
+• Two lines: "Rental Total Cost" vs "Ownership Total Cost"
+• Annotations: Break-even point, major expansion years
+• Secondary Y-axis: Annual cash flow difference by year
+
+Interactive Features:
+• Hover tooltips showing exact values
+• Toggle between cumulative and annual view
+• Ability to zoom into specific time periods
+
+3.3 DETAILED ANALYSIS TABLES
+
+3.3.1 Year-by-Year Cash Flow Table
+Columns:
+1. Year: 0, 1, 2, ... N
+2. Rental Cost: Annual rent + taxes saved
+3. Ownership Cost: Mortgage + taxes + maintenance + insurance - tax benefits
+4. Annual Difference: Ownership - Rental
+5. Cumulative Difference: Running total of annual differences
+6. Property Value: Estimated market value (ownership scenario)
+
+Formatting:
+• Currency formatting with thousands separators
+• Positive differences in red (ownership costs more)
+• Negative differences in green (ownership costs less)
+• Bold formatting for total row
+
+3.3.2 Cost Breakdown Table
+
+Ownership Scenario:
+• Initial Investment (down payment, closing costs)
+• Annual mortgage payments (principal + interest)
+• Annual property taxes
+• Annual insurance
+• Annual maintenance
+• Property management fees
+• Tax benefits (interest deduction, depreciation)
+• Net annual cost
+
+Rental Scenario:
+• Security deposit
+• Annual rent payments
+• Rent escalations
+• Tax benefits (rent deduction)
+• Net annual cost
+
+3.4 SENSITIVITY ANALYSIS SECTION
+
+3.4.1 Interest Rate Sensitivity Chart
+Format: Horizontal bar chart
+• Scenarios: Current rate ±1%, ±2%, ±3%
+• Metric: NPV difference for each scenario
+• Color coding: Green (favors buy), Red (favors rent)
+• Breakpoint indicator: Where recommendation changes
+
+3.4.2 Rent Increase Sensitivity Chart
+Format: Horizontal bar chart (same format as interest rate)
+• Scenarios: Current rate ±1%, ±2%, ±3%
+
+3.4.3 Combined Sensitivity Matrix
+Format: Heat map table
+• Rows: Interest rate scenarios (5 rows)
+• Columns: Rent increase scenarios (5 columns)
+• Cell values: NPV difference
+• Color scale: Deep red (strong rent) to deep green (strong buy)
+• Cell annotations: Recommendation change indicators
+
+3.5 ASSUMPTIONS & INPUTS SUMMARY
+
+Expandable Section showing all user inputs in organized format:
+
+3.5.1 Property Information
+• Project name, location, analyst, date
+• Property type, size, current space needs
+• Market assumptions (appreciation, liquidity)
+
+3.5.2 Financial Assumptions  
+• Purchase price, financing terms, costs
+• Rental costs and escalation rates
+• Tax rates and deductibility assumptions
+
+3.5.3 Operational Assumptions
+• Analysis period, growth rate, expansion timing
+• Subletting assumptions
+• Cost of capital
+
+
+3.7 EXPORT & SHARING CAPABILITIES
+
+3.7.1 Excel Export Structure
+
+Worksheet 1: Executive Summary
+• All key metrics and recommendation
+• Summary charts and tables
+
+Worksheet 2: Input Parameters
+• Complete list of all user inputs
+• Assumptions and calculation parameters
+
+Worksheet 3: Detailed Calculations
+• Year-by-year cash flow analysis
+• All intermediate calculations with formulas
+
+Worksheet 4: Sensitivity Analysis
+• All sensitivity scenarios and results
+• Matrix format for easy analysis
+
+Worksheet 5: Charts & Visuals
+• Embedded charts and graphs from the analysis
+
+3.7.2 PDF Report Generation
+Executive Summary Report (2-3 pages):
+• Key recommendation and supporting metrics
+• Primary visualizations
+• Critical assumptions
+• Risk assessment summary
+
+3.7.3 URL Sharing
+Shareable Link Generation:
+• Encode all input parameters in URL
+• Allow colleagues to view analysis without re-entering data
+• Optional: Save scenarios with unique IDs
+
+
+================================================================
+4. BUSINESS APPROVAL REQUIREMENTS
+================================================================
+
+4.1 SUCCESS CRITERIA & VALIDATION
+
+4.1.1 Calculation Accuracy Requirements
+• Financial Formula Validation: All calculations must be verified against Excel-based models by Finance team
+• Rounding Standards: All currency values rounded to nearest dollar, percentages to 0.1%
+• Edge Case Handling: Tool must handle extreme scenarios (0% interest rates, 100% down payment, etc.)
+• Tax Calculation Accuracy: Tax benefits calculations must align with corporate tax policies
+
+4.1.2 User Acceptance Criteria
+• Input Validation: All required fields enforced, logical range checking implemented
+• Error Messaging: Clear, actionable error messages for invalid inputs
+• Performance Standards: Calculations must complete within 2 seconds of input changes
+
+
+4.2 COMPLIANCE & GOVERNANCE
+
+4.2.1 Data Privacy & Security
+• No Data Storage: All analysis data remains in user's browser session only
+• No User Tracking: No analytics or user behavior tracking implemented
+• Secure Hosting: Streamlit Community Cloud with HTTPS encryption
+• Access Control: Public URL access (no authentication required for MVP)
+
+4.2.2 Financial Compliance
+• Calculation Transparency: All formulas must be visible and auditable
+• Assumption Documentation: Every default value must be documented with business rationale  
+• Version Control: Clear version numbering for calculation methodology changes
+• Audit Trail: Excel export must include all assumptions and intermediate calculations
+• Hold-Forever Validation: Calculations must clearly reflect perpetual ownership assumption
+• Risk Assessment: Long-term property risks must be quantified and disclosed
+
+4.3 BUSINESS PROCESS INTEGRATION
+
+4.3.1 Decision Workflow Integration
+• Approval Thresholds: Tool must clearly identify when executive approval is required
+• Documentation Standards: Generated reports must meet corporate real estate documentation requirements
+• Stakeholder Communication: Export formats suitable for board presentations and financial reviews
+
+4.3.2 Training & Change Management
+• User Documentation: Comprehensive user guide with example scenarios
+• Training Materials: Video tutorials for key user groups
+• Support Process: Clear escalation path for calculation questions or technical issues
+
+4.4 TECHNICAL SPECIFICATIONS & CONSTRAINTS
+
+4.4.1 Technology Stack Approval
+• Platform: Streamlit Community Cloud (approved for non-sensitive business tools)
+• Development Language: Python 3.9+ with pandas, numpy, plotly libraries
+• Browser Support: Chrome, Firefox, Safari, Edge (current versions)
+• Offline Capability: Not required for MVP
+
+4.4.2 Performance & Scalability
+• Concurrent Users: Support minimum 5 simultaneous users
+• Response Time: Sub-2 second calculation updates
+• Uptime Requirement: 99% availability during business hours
+• Backup Strategy: Code repository backup only (no user data to backup)
+
+4.5 DEVELOPMENT & DEPLOYMENT PLAN
+
+4.5.1 Development Phases
+
+Phase 1: MVP Development (Weeks 1-2)
+• Core input forms and validation
+• Primary calculation engine (NPV analysis)
+• Basic output dashboard
+• Excel export functionality
+
+Phase 2: Enhanced Analysis (Week 3)
+• Sensitivity analysis implementation
+• Advanced visualization components
+• Risk assessment indicators
+• PDF report generation
+
+Phase 3: User Experience & Polish (Week 4)
+• Mobile responsiveness optimization
+• Error handling and edge case management
+• Performance optimization
+• User acceptance testing
+
+Phase 4: Deployment & Training (Week 5)
+• Production deployment on Streamlit Cloud
+• User documentation creation
+• Training session delivery
+• Feedback collection and iteration
+
+4.5.2 Quality Assurance Process
+• Unit Testing: All calculation functions tested with known scenarios
+• Integration Testing: End-to-end workflow testing with real data
+• User Acceptance Testing: Finance team validation with actual property decisions
+• Performance Testing: Load testing with multiple concurrent users
+
+4.6 POST-LAUNCH SUPPORT & MAINTENANCE
+
+4.6.1 Ongoing Maintenance
+• Monthly Reviews: Calculation accuracy validation with actual outcomes
+• Quarterly Updates: Market assumption updates and formula refinements
+• Annual Assessment: Major feature enhancements and technology updates
+
+4.6.2 Success Measurement
+• Usage Metrics: Number of analyses completed monthly
+• Decision Tracking: Percentage of real estate decisions using tool
+• Outcome Validation: Accuracy of predictions vs actual results (6-month review)
+• User Satisfaction: Quarterly surveys with key stakeholders
+
+4.7 BUDGET & RESOURCE REQUIREMENTS
+
+4.7.1 Development Costs
+• Development Time: 1 developer × 4 weeks = $0 (internal resource)
+• Hosting Costs: $0/month (Streamlit Community Cloud)
+• Domain & SSL: $15/year (optional custom domain)
+• Testing & Validation: Finance team time for calculation review
+
+4.7.2 Ongoing Costs
+• Maintenance: 2-4 hours/month for updates and bug fixes
+• Support: Ad-hoc basis for user questions
+• Enhancement Requests: Quarterly review and prioritization process
+
+
+================================================================
+5. FINAL APPROVAL CHECKLIST
+================================================================
+
+5.1 BUSINESS APPROVAL REQUIREMENTS
+☐ Finance team validates all calculation methodologies
+☐ Corporate Real Estate approves input parameters and assumptions  
+☐ IT Security approves technology stack and data handling approach
+☐ Executive team approves success metrics and ROI expectations
+☐ Legal team confirms compliance with data privacy requirements
+
+5.2 TECHNICAL READINESS
+☐ Development environment configured and tested
+☐ All required Python libraries identified and compatible
+☐ Streamlit Community Cloud account created and configured
+☐ Code repository established with proper version control
+☐ Testing framework and scenarios defined
+
+5.3 LAUNCH PREREQUISITES  
+☐ User documentation completed and reviewed
+☐ Training schedule established for key user groups
+☐ Support process defined and communicated
+☐ Success metrics baseline established
+☐ Feedback collection process implemented
+
+Business Approval Required By: [Date to be filled]
+
+Expected Launch Date: [Date to be filled - 4 weeks after approval]
+
+Primary Business Contacts:
+• Finance: [Name/Title]
+• Corporate Real Estate: [Name/Title] 
+• IT/Security: [Name/Title]
+
+
+================================================================
+FINAL SUMMARY
+================================================================
+
+This comprehensive PRD provides the business with:
+
+1. COMPLETE INPUT SPECIFICATION: 25+ input fields organized into 6 logical sections with validation rules, defaults, and business context
+
+2. DETAILED CALCULATION METHODOLOGIES: Step-by-step formulas for NPV analysis, cash flow comparisons, sensitivity testing, and break-even calculations
+
+3. PROFESSIONAL OUTPUT DESIGN: Executive dashboard, detailed tables, interactive charts, and comprehensive reporting with Excel/PDF export
+
+4. BUSINESS-READY FRAMEWORK: Compliance requirements, success metrics, approval process, and post-launch support plan
+
+KEY BUSINESS BENEFITS:
+• Zero ongoing costs with Streamlit Community Cloud
+• 4-week development timeline for full functionality  
+• Professional-grade analysis suitable for executive presentations
+• Standardized methodology across all global subsidiaries
+• Complete audit trail with transparent calculations
+
+The tool will provide immediate ROI through faster decision-making, improved analysis consistency, and better capital allocation across your global real estate portfolio.
+
+READY FOR BUSINESS APPROVAL AND TECHNICAL IMPLEMENTATION.
+
+================================================================
+END OF DOCUMENT
+================================================================

@@ -1,0 +1,23 @@
+# Real Estate Rent vs. Buy Decision Tool Dependencies
+# Updated for 2025 framework compatibility
+
+# Core Framework
+streamlit>=1.45.0
+
+# Data Processing & Analysis
+pandas>=2.3.1
+numpy>=2.3.0
+
+# Visualization
+plotly>=5.24.1
+
+# Excel Export
+openpyxl>=3.1.5
+
+# Optional Performance Enhancement
+orjson>=3.9.0  # For faster Plotly rendering
+
+# Development & Testing (uncomment for dev)
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0

@@ -1,0 +1,32 @@
+[general]
+dataFrameSerialization = "legacy"
+
+[logger]
+level = "info"
+
+[client]
+toolbarMode = "viewer"
+showErrorDetails = true
+
+[theme]
+# Professional theme for executive presentations
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
+# Enhanced theming (Streamlit 1.45+)
+headingFontSizes = ["1.25rem", "1.125rem", "1rem", "0.875rem"]
+headingFontWeights = [600, 500, 500, 400]
+chartCategoricalColors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FECA57", "#FF9FF3"]
+chartSequentialColors = ["#FF6B6B", "#FF8E8E", "#FFB1B1"]
+dataframeHeaderBackgroundColor = "#F0F2F6"
+linkUnderline = true
+
+[server]
+maxUploadSize = 200
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
