@@ -161,8 +161,11 @@ def calculate_remaining_balance(
         >>> round(balance, 2)
         196534.67
     """
-    if loan_amount <= 0 or year <= 0:
+    if loan_amount <= 0:
         return 0.0
+    
+    if year <= 0:
+        return loan_amount  # Year 0 = original loan amount
     
     remaining_balance = loan_amount
     
@@ -430,12 +433,12 @@ def _test_amortization_calculations():
         {
             'name': 'Standard mortgage',
             'loan_amount': 350000,
-            'annual_payment': 27738,
+            'annual_payment': 27718.14,
             'interest_rate': 5.0,
             'loan_term': 20,
             'test_year': 1,
             'expected_interest_year_1': 17500.0,
-            'expected_principal_year_1': 10238.0
+            'expected_principal_year_1': 10218.14
         },
         {
             'name': '0% interest rate',

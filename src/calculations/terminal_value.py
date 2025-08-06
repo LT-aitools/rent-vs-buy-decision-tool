@@ -372,8 +372,8 @@ def _test_terminal_value_calculations():
             'depreciation_period': 39,
             'analysis_period': 25,
             'remaining_loan_balance': 150000,
-            'expected_land_value_end': 262217.48,  # 125000 * (1.03)^25
-            'expected_net_equity_range': (550000, 600000)  # Approximate range
+            'expected_land_value_end': 261722.24,  # 125000 * (1.03)^25
+            'expected_net_equity_range': (390000, 400000)  # Approximate range
         },
         {
             'name': 'No appreciation case',
@@ -384,7 +384,7 @@ def _test_terminal_value_calculations():
             'analysis_period': 25,
             'remaining_loan_balance': 0,
             'expected_land_value_end': 125000,  # No appreciation
-            'expected_building_value_end': 143589.74  # 375000 - (375000*25/39)
+            'expected_building_value_end': 134615.38  # 375000 - (375000*25/39)
         }
     ]
     

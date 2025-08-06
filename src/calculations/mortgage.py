@@ -133,7 +133,7 @@ def calculate_mortgage_payment(
         Standard mortgage:
         >>> result = calculate_mortgage_payment(500000, 30, 5.0, 20)
         >>> round(result['annual_payment'], 2)
-        27738.24
+        27718.14
         
         Edge case - 100% down payment:
         >>> result = calculate_mortgage_payment(500000, 100, 5.0, 20)
@@ -291,7 +291,7 @@ def _test_mortgage_calculations():
             'down_payment_pct': 30,
             'interest_rate': 5.0,
             'loan_term': 20,
-            'expected_annual': 27738.24
+            'expected_annual': 27718.14
         },
         # 100% down payment
         {

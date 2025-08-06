@@ -33,7 +33,7 @@ class TestMortgageCalculations:
         )
         
         # Expected values calculated using financial calculator
-        assert abs(result['annual_payment'] - 27738.24) < 1.0
+        assert abs(result['annual_payment'] - 27718.14) < 1.0
         assert abs(result['loan_amount'] - 350000) < 1.0
         assert abs(result['down_payment_amount'] - 150000) < 1.0
         
@@ -112,12 +112,12 @@ class TestMortgageCalculations:
         breakdown = calculate_payment_breakdown(
             loan_amount=350000,
             interest_rate=5.0,
-            annual_payment=27738,
+            annual_payment=27718.14,
             year=1
         )
         
         expected_interest = 350000 * 0.05  # 17,500
-        expected_principal = 27738 - expected_interest  # 10,238
+        expected_principal = 27718.14 - expected_interest  # 10,218.14
         
         assert abs(breakdown['interest_portion'] - expected_interest) < 1.0
         assert abs(breakdown['principal_portion'] - expected_principal) < 1.0
@@ -126,7 +126,7 @@ class TestMortgageCalculations:
         """Test effective interest rate calculation"""
         effective_rate = calculate_effective_interest_rate(
             loan_amount=350000,
-            annual_payment=27738,
+            annual_payment=27718.14,
             loan_term=20,
             fees=5000
         )
