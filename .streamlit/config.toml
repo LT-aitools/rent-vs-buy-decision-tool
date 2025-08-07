@@ -1,12 +1,10 @@
-[general]
-dataFrameSerialization = "legacy"
-
 [logger]
 level = "info"
 
 [client]
 toolbarMode = "viewer"
 showErrorDetails = true
+showSidebarNavigation = true
 
 [theme]
 # Professional theme for executive presentations
@@ -25,8 +23,8 @@ linkUnderline = true
 
 [server]
 maxUploadSize = 200
-enableCORS = false
-enableXsrfProtection = true
+enableCORS = true
+enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false

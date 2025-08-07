@@ -35,12 +35,24 @@ def render_dashboard_tab():
     st.markdown("## 📊 Input Dashboard")
     st.markdown("*Complete all input sections below to enable financial analysis*")
     
-    # Render all input forms in the sidebar
+    # Instructions for sidebar access
+    st.info("👈 **Use the sidebar on the left** to input your property and financial data.")
+    
+    # Render input forms in sidebar
     with st.sidebar:
-        inputs_valid = render_all_input_forms()
+        try:
+            inputs_valid = render_all_input_forms()
+        except Exception as e:
+            st.error("⚠️ **Loading Error** - Please refresh the page")
+            inputs_valid = False
     
     # Main dashboard area
-    session_manager = get_session_manager()
+    try:
+        session_manager = get_session_manager()
+    except Exception as e:
+        st.error(f"⚠️ **Session Error**: {str(e)}")
+        st.info("🔄 Please refresh the page to continue")
+        return
     
     if inputs_valid:
         st.success("✅ **All inputs are valid and ready for analysis!**")
@@ -71,8 +83,11 @@ def render_dashboard_tab():
         st.info("🚧 **Analysis Engine Coming Soon** - Calculations and visualizations will be implemented next")
         
         # Show completion status
-        completion = session_manager.get_completion_percentage()
-        st.progress(completion / 100, text=f"Setup Complete: {completion:.0f}%")
+        try:
+            completion = session_manager.get_completion_percentage()
+            st.progress(completion / 100, text=f"Setup Complete: {completion:.0f}%")
+        except Exception:
+            st.progress(0.0, text="Setup Complete: 0%")
         
     else:
         # Show what's needed
@@ -85,8 +100,11 @@ def render_dashboard_tab():
         )
         
         # Show completion progress
-        completion = session_manager.get_completion_percentage()
-        st.progress(completion / 100, text=f"Input Progress: {completion:.0f}%")
+        try:
+            completion = session_manager.get_completion_percentage()
+            st.progress(completion / 100, text=f"Input Progress: {completion:.0f}%")
+        except Exception:
+            st.progress(0.0, text="Input Progress: 0%")
         
         # Development status
         st.markdown("### 🛠 Development Status")
@@ -225,9 +243,35 @@ def render_help_tab():
 def main():
     """Main application entry point with professional UI"""
     
-    # Initialize professional layout and session
-    initialize_professional_layout()
+    # Initialize page config FIRST (must be first Streamlit command)
+    st.set_page_config(
+        page_title="Real Estate Decision Tool",
+        page_icon="🏢", 
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Then initialize other components
     initialize_session()
+    
+    # Apply basic styling
+    st.markdown("""
+    <style>
+    .main .block-container {
+        padding-top: 2rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Header
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%); 
+                padding: 1.5rem 2rem; border-radius: 0.5rem; margin-bottom: 2rem; 
+                color: white; text-align: center;">
+        <h1 style="color: white; margin: 0;">🏢 Real Estate Decision Tool</h1>
+        <p style="color: white; margin: 0; font-style: italic;">Professional Hold-Forever Investment Strategy Analysis</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Tab navigation
     tab1, tab2, tab3 = st.tabs(["📊 Analysis Dashboard", "📤 Export & Share", "❓ Help & Documentation"])

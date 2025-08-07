@@ -203,5 +203,14 @@ def get_field_description(field_name: str) -> str:
 
 def get_expansion_year_options(analysis_period: int) -> list:
     """Get dropdown options for future expansion year"""
-    options = ["Never"] + [f"Year {i}" for i in range(1, analysis_period + 1)]
-    return options
+    try:
+        # Ensure analysis_period is a valid positive integer
+        if not isinstance(analysis_period, (int, float)) or analysis_period <= 0:
+            analysis_period = 25
+        
+        analysis_period = int(analysis_period)
+        options = ["Never"] + [f"Year {i}" for i in range(1, analysis_period + 1)]
+        return options
+    except (TypeError, ValueError, OverflowError):
+        # Fallback to safe default options
+        return ["Never", "Year 5", "Year 10", "Year 15", "Year 20", "Year 25"]

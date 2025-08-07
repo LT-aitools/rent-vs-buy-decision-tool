@@ -50,6 +50,18 @@ def apply_custom_css():
         padding-top: 3rem;
     }
     
+    /* Make sidebar toggle more visible */
+    .css-17eq0hr {
+        background-color: #1f77b4 !important;
+        color: white !important;
+    }
+    
+    /* Ensure sidebar is always accessible */
+    .css-1lcbmhc {
+        min-width: 21rem !important;
+    }
+    }
+    
     /* Input form styling */
     .stNumberInput > div > div > input {
         background-color: #f8fafc;
@@ -224,7 +236,7 @@ def initialize_professional_layout():
     setup_page_config()
     apply_custom_css()
     render_header()
-    render_sidebar_navigation()
+    # render_sidebar_navigation()  # Commented out - conflicts with input forms
 
 # CSS for mobile responsiveness
 RESPONSIVE_CSS = """

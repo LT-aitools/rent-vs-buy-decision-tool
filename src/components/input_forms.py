@@ -68,12 +68,16 @@ def render_project_information_section():
         )
     
     # Currency selection (full width)
+    def format_currency_option(currency_code):
+        symbol = CURRENCY_SYMBOLS.get(currency_code, currency_code)
+        return f"{currency_code} ({symbol})"
+    
     st.selectbox(
         "Currency*",
         options=CURRENCY_OPTIONS,
         key="currency",
         help=get_field_description("currency"),
-        format_func=lambda x: f"{x} ({CURRENCY_SYMBOLS.get(x, x)})"
+        format_func=format_currency_option
     )
 
 def render_property_market_section():
@@ -334,141 +338,160 @@ def render_rental_parameters_section():
 
 def render_operational_parameters_section():
     """Render Operational Parameters section"""
-    st.markdown("### ⚙️ Operational Parameters") 
-    st.markdown("*Business growth and operational assumptions*")
-    
-    currency = st.session_state.get("currency", "USD")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.number_input(
-            "Analysis Period (years)*",
-            key="analysis_period",
-            min_value=1,
-            max_value=100,
-            step=1,
-            help=get_field_description("analysis_period")
-        )
+    try:
+        st.markdown("### ⚙️ Operational Parameters") 
+        st.markdown("*Business growth and operational assumptions*")
         
-        st.slider(
-            "Growth Rate (%)*",
-            key="growth_rate",
-            min_value=-5.0,
-            max_value=25.0,
-            step=0.1,
-            format="%.1f%%",
-            help=get_field_description("growth_rate")
-        )
+        currency = st.session_state.get("currency", "USD")
         
-        st.number_input(
-            "Cost of Capital (%)*", 
-            key="cost_of_capital",
-            min_value=0.0,
-            max_value=20.0,
-            step=0.1,
-            format="%.1f",
-            help=get_field_description("cost_of_capital")
-        )
-    
-    with col2:
-        analysis_period = st.session_state.get("analysis_period", 25)
-        expansion_options = get_expansion_year_options(analysis_period)
+        col1, col2 = st.columns(2)
         
-        current_selection = st.session_state.get("future_expansion_year", "Year 10")
-        if current_selection not in expansion_options:
-            current_selection = "Never"
-        
-        st.selectbox(
-            "Future Expansion Year",
-            options=expansion_options,
-            key="future_expansion_year",
-            index=expansion_options.index(current_selection) if current_selection in expansion_options else 0,
-            help=get_field_description("future_expansion_year")
-        )
-        
-        st.number_input(
-            "Additional Space Needed (m²)",
-            key="additional_space_needed",
-            min_value=0,
-            max_value=100000,
-            step=100,
-            help=get_field_description("additional_space_needed")
-        )
-        
-        st.number_input(
-            "Inflation Rate (%)*",
-            key="inflation_rate",
-            min_value=0.0,
-            max_value=20.0,
-            step=0.1,
-            format="%.1f",
-            help=get_field_description("inflation_rate")
-        )
-    
-    # Subletting parameters
-    with st.expander("🏗️ Subletting & Advanced Parameters", expanded=False):
-        col3, col4 = st.columns(2)
-        
-        with col3:
-            st.checkbox(
-                "Subletting Potential*",
-                key="subletting_potential",
-                help=get_field_description("subletting_potential")
-            )
-            
-            subletting_enabled = st.session_state.get("subletting_potential", False)
-            
+        with col1:
             st.number_input(
-                f"Subletting Rate ({currency}/m²)",
-                key="subletting_rate",
-                min_value=0,
-                max_value=1000,
+                "Analysis Period (years)*",
+                key="analysis_period",
+                min_value=1,
+                max_value=100,
                 step=1,
-                disabled=not subletting_enabled,
-                help=get_field_description("subletting_rate")
+                help=get_field_description("analysis_period")
             )
             
             st.slider(
-                "Subletting Occupancy (%)",
-                key="subletting_occupancy",
+                "Growth Rate (%)*",
+                key="growth_rate",
+                min_value=-5.0,
+                max_value=25.0,
+                step=0.1,
+                format="%.1f%%",
+                help=get_field_description("growth_rate")
+            )
+            
+            st.number_input(
+                "Cost of Capital (%)*", 
+                key="cost_of_capital",
                 min_value=0.0,
-                max_value=100.0,
-                step=1.0,
-                format="%.0f%%",
-                disabled=not subletting_enabled,
-                help=get_field_description("subletting_occupancy")
+                max_value=20.0,
+                step=0.1,
+                format="%.1f",
+                help=get_field_description("cost_of_capital")
             )
         
-        with col4:
-            st.number_input(
-                "Long-term CapEx Reserve (%)*",
-                key="longterm_capex_reserve",
-                min_value=0.0,
-                max_value=10.0,
-                step=0.1,
-                format="%.1f",
-                help=get_field_description("longterm_capex_reserve")
+        with col2:
+            # Ensure analysis_period is a valid integer
+            analysis_period = st.session_state.get("analysis_period", 25)
+            if not isinstance(analysis_period, int) or analysis_period <= 0:
+                analysis_period = 25
+            
+            # Generate expansion options safely
+            try:
+                expansion_options = get_expansion_year_options(analysis_period)
+            except (TypeError, ValueError):
+                expansion_options = ["Never", "Year 10", "Year 15", "Year 20"]
+            
+            current_selection = st.session_state.get("future_expansion_year", "Never")
+            if current_selection not in expansion_options:
+                current_selection = "Never"
+            
+            # Get safe index
+            try:
+                default_index = expansion_options.index(current_selection)
+            except (ValueError, TypeError):
+                default_index = 0
+            
+            st.selectbox(
+                "Future Expansion Year",
+                options=expansion_options,
+                key="future_expansion_year",
+                index=default_index,
+                help=get_field_description("future_expansion_year")
             )
             
             st.number_input(
-                "Property Upgrade Cycle (years)",
-                key="property_upgrade_cycle",
-                min_value=5,
-                max_value=50,
-                step=1,
-                help=get_field_description("property_upgrade_cycle")
+                "Additional Space Needed (m²)",
+                key="additional_space_needed",
+                min_value=0,
+                max_value=100000,
+                step=100,
+                help=get_field_description("additional_space_needed")
             )
             
             st.number_input(
-                "Obsolescence Risk Factor (%)",
-                key="obsolescence_risk_factor",
+                "Inflation Rate (%)*",
+                key="inflation_rate",
                 min_value=0.0,
-                max_value=5.0,
+                max_value=20.0,
                 step=0.1,
                 format="%.1f",
-                help=get_field_description("obsolescence_risk_factor")
+                help=get_field_description("inflation_rate")
             )
+        
+        # Subletting parameters
+        with st.expander("🏗️ Subletting & Advanced Parameters", expanded=False):
+            col3, col4 = st.columns(2)
+            
+            with col3:
+                st.checkbox(
+                    "Subletting Potential*",
+                    key="subletting_potential",
+                    help=get_field_description("subletting_potential")
+                )
+                
+                subletting_enabled = st.session_state.get("subletting_potential", False)
+                
+                st.number_input(
+                    f"Subletting Rate ({currency}/m²)",
+                    key="subletting_rate",
+                    min_value=0,
+                    max_value=1000,
+                    step=1,
+                    disabled=not subletting_enabled,
+                    help=get_field_description("subletting_rate")
+                )
+                
+                st.slider(
+                    "Subletting Occupancy (%)",
+                    key="subletting_occupancy",
+                    min_value=0.0,
+                    max_value=100.0,
+                    step=1.0,
+                    format="%.0f%%",
+                    disabled=not subletting_enabled,
+                    help=get_field_description("subletting_occupancy")
+                )
+            
+            with col4:
+                st.number_input(
+                    "Long-term CapEx Reserve (%)*",
+                    key="longterm_capex_reserve",
+                    min_value=0.0,
+                    max_value=10.0,
+                    step=0.1,
+                    format="%.1f",
+                    help=get_field_description("longterm_capex_reserve")
+                )
+                
+                st.number_input(
+                    "Property Upgrade Cycle (years)",
+                    key="property_upgrade_cycle",
+                    min_value=5,
+                    max_value=50,
+                    step=1,
+                    help=get_field_description("property_upgrade_cycle")
+                )
+                
+                st.number_input(
+                    "Obsolescence Risk Factor (%)",
+                    key="obsolescence_risk_factor",
+                    min_value=0.0,
+                    max_value=5.0,
+                    step=0.1,
+                    format="%.1f",
+                    help=get_field_description("obsolescence_risk_factor")
+                )
+    except Exception as e:
+        st.error(f"Error in operational parameters: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
 
 def render_tax_accounting_section():
     """Render Tax & Accounting Parameters section"""
@@ -560,36 +583,74 @@ def render_input_summary():
         )
 
 def render_all_input_forms():
-    """Render all input form sections"""
+    """Render all input form sections with error handling"""
     
-    # Initialize session state
-    session_manager = get_session_manager()
-    session_manager.update_calculated_fields()
-    session_manager.check_section_completion()
-    
-    # Render input summary at the top
-    render_input_summary()
-    
-    st.markdown("---")
-    
-    # Render all input sections
-    with st.expander("📋 Project Information", expanded=True):
-        render_project_information_section()
-    
-    with st.expander("🏢 Property & Market Information", expanded=True):
-        render_property_market_section()
-    
-    with st.expander("💰 Purchase Parameters", expanded=False):
-        render_purchase_parameters_section()
-    
-    with st.expander("🏠 Rental Parameters", expanded=False):
-        render_rental_parameters_section()
-    
-    with st.expander("⚙️ Operational Parameters", expanded=False):
-        render_operational_parameters_section()
-    
-    with st.expander("📊 Tax & Accounting Parameters", expanded=False):
-        render_tax_accounting_section()
+    try:
+        # Initialize session state
+        session_manager = get_session_manager()
+        session_manager.update_calculated_fields()
+        session_manager.check_section_completion()
+        
+        # Render input summary at the top
+        render_input_summary()
+        
+        st.markdown("---")
+        
+        # Render all input sections with individual error handling
+        try:
+            with st.expander("📋 Project Information", expanded=True):
+                render_project_information_section()
+        except Exception as e:
+            st.error(f"Error in Project Information: {str(e)}")
+        
+        try:
+            with st.expander("🏢 Property & Market Information", expanded=True):
+                render_property_market_section()
+        except Exception as e:
+            st.error(f"Error in Property & Market: {str(e)}")
+        
+        try:
+            with st.expander("💰 Purchase Parameters", expanded=False):
+                render_purchase_parameters_section()
+        except Exception as e:
+            st.error(f"Error in Purchase Parameters: {str(e)}")
+        
+        try:
+            with st.expander("🏠 Rental Parameters", expanded=False):
+                render_rental_parameters_section()
+        except Exception as e:
+            st.error(f"Error in Rental Parameters: {str(e)}")
+        
+        try:
+            with st.expander("⚙️ Operational Parameters", expanded=False):
+                render_operational_parameters_section()
+        except Exception as e:
+            import traceback
+            st.error(f"Error in Operational Parameters: {str(e)}")
+            st.code(traceback.format_exc())
+        
+        try:
+            with st.expander("📊 Tax & Accounting Parameters", expanded=False):
+                render_tax_accounting_section()
+        except Exception as e:
+            st.error(f"Error in Tax & Accounting: {str(e)}")
+            
+    except Exception as e:
+        st.error(f"⚠️ **Initialization Error**: {str(e)}")
+        st.info("🔄 **Please refresh the page to continue**")
+        st.markdown("---")
+        st.markdown("### 🚀 Getting Started")
+        st.markdown("""
+        This tool helps you analyze whether to rent or buy commercial real estate.
+        
+        **To get started:**
+        1. Fill out the required input fields in the sidebar
+        2. Review validation messages and fix any issues  
+        3. Run the financial analysis once all inputs are complete
+        
+        **Note**: The interface is loading. Please refresh if you continue to see errors.
+        """)
+        return False
     
     # Validation section
     st.markdown("---")
