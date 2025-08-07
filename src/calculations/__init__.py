@@ -45,7 +45,10 @@ from .amortization import (
 from .npv_analysis import (
     calculate_npv_comparison,
     calculate_cash_flow_analysis,
-    calculate_break_even_analysis
+    calculate_break_even_analysis,
+    calculate_ownership_cash_flows,
+    calculate_rental_cash_flows,
+    calculate_sensitivity_analysis
 )
 
 __version__ = "1.0.0"
@@ -73,5 +76,8 @@ __all__ = [
     # NPV and cash flow analysis
     'calculate_npv_comparison',
     'calculate_cash_flow_analysis',
-    'calculate_break_even_analysis'
+    'calculate_break_even_analysis',
+    'calculate_ownership_cash_flows',
+    'calculate_rental_cash_flows',
+    'calculate_sensitivity_analysis'
 ]
