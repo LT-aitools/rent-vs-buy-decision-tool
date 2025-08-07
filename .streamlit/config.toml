@@ -4,6 +4,7 @@ level = "info"
 [client]
 toolbarMode = "viewer"
 showErrorDetails = true
+showSidebarNavigation = true
 
 [theme]
 # Professional theme for executive presentations
@@ -22,6 +23,7 @@ linkUnderline = true
 
 [server]
 maxUploadSize = 200
+enableCORS = true
 enableXsrfProtection = false
 
 [browser]
