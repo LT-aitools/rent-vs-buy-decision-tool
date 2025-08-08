@@ -350,8 +350,12 @@ def render_core_charts_section(
     
     # NPV Comparison Chart
     if analysis_results:
-        npv_chart = create_npv_comparison_chart(analysis_results, show_confidence=True)
-        st.plotly_chart(npv_chart, use_container_width=True)
+        try:
+            npv_chart = create_npv_comparison_chart(analysis_results, show_confidence=True)
+            st.plotly_chart(npv_chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating NPV comparison chart: {str(e)}")
+            st.info("Please check your analysis data and try again.")
     
     # Cash Flow Timeline
     if ownership_flows and rental_flows:
@@ -359,13 +363,19 @@ def render_core_charts_section(
         
         with col1:
             st.markdown("#### 📈 Cash Flow Timeline")
-            cash_flow_chart = create_cash_flow_timeline_chart(ownership_flows, rental_flows)
-            st.plotly_chart(cash_flow_chart, use_container_width=True)
+            try:
+                cash_flow_chart = create_cash_flow_timeline_chart(ownership_flows, rental_flows)
+                st.plotly_chart(cash_flow_chart, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating cash flow chart: {str(e)}")
         
         with col2:
             st.markdown("#### 🥧 Cost Breakdown")
-            cost_breakdown_chart = create_cost_breakdown_chart(ownership_flows, "year1")
-            st.plotly_chart(cost_breakdown_chart, use_container_width=True)
+            try:
+                cost_breakdown_chart = create_cost_breakdown_chart(ownership_flows, "year1")
+                st.plotly_chart(cost_breakdown_chart, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating cost breakdown chart: {str(e)}")
 
 
 def render_advanced_charts_section(
@@ -378,13 +388,20 @@ def render_advanced_charts_section(
     
     # Terminal Value Progression
     if analysis_results and ownership_flows:
-        terminal_chart = create_terminal_value_chart(analysis_results, ownership_flows)
-        st.plotly_chart(terminal_chart, use_container_width=True)
+        try:
+            terminal_chart = create_terminal_value_chart(analysis_results, ownership_flows)
+            st.plotly_chart(terminal_chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating terminal value chart: {str(e)}")
     
     # ROI Progression
     if analysis_results and ownership_flows:
-        roi_chart = create_roi_progression_chart(analysis_results, ownership_flows)
-        st.plotly_chart(roi_chart, use_container_width=True)
+        try:
+            roi_chart = create_roi_progression_chart(analysis_results, ownership_flows)
+            st.plotly_chart(roi_chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating ROI progression chart: {str(e)}")
+            st.info("ROI chart requires valid ownership cash flows and analysis results.")
 
 
 def render_comparison_charts_section(
@@ -397,8 +414,11 @@ def render_comparison_charts_section(
     
     # Annual Costs Comparison
     if ownership_flows and rental_flows:
-        annual_costs_chart = create_annual_costs_comparison_chart(ownership_flows, rental_flows)
-        st.plotly_chart(annual_costs_chart, use_container_width=True)
+        try:
+            annual_costs_chart = create_annual_costs_comparison_chart(ownership_flows, rental_flows)
+            st.plotly_chart(annual_costs_chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating annual costs comparison chart: {str(e)}")
     
     # Break-even Analysis (if data available)
     st.info("🚧 Break-even analysis and sensitivity charts will be displayed when calculation data is available")

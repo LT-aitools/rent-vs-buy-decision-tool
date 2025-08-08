@@ -44,16 +44,20 @@ def get_professional_color_scheme() -> Dict[str, str]:
     }
 
 
-def get_chart_layout_config() -> Dict:
+def get_chart_layout_config(exclude_params: List[str] = None) -> Dict:
     """
     Get standard chart layout configuration for consistency
+    
+    Args:
+        exclude_params: List of parameter names to exclude from the base config
     
     Returns:
         Plotly layout configuration dictionary
     """
     colors = get_professional_color_scheme()
+    exclude_params = exclude_params or []
     
-    return {
+    config = {
         'font': {
             'family': 'Arial, sans-serif',
             'size': 12,
@@ -78,6 +82,12 @@ def get_chart_layout_config() -> Dict:
             'font': {'size': 11}
         }
     }
+    
+    # Remove excluded parameters
+    for param in exclude_params:
+        config.pop(param, None)
+    
+    return config
 
 
 def format_currency(amount: float, include_k_notation: bool = True) -> str:
@@ -119,8 +129,13 @@ def create_npv_comparison_chart(
     Returns:
         Plotly figure object
     """
-    colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    try:
+        # Validate input data
+        if not analysis_results or not isinstance(analysis_results, dict):
+            raise ValueError("analysis_results must be a valid dictionary")
+        
+        colors = get_professional_color_scheme()
+        layout = get_chart_layout_config()
     
     # Extract data
     ownership_npv = analysis_results.get('ownership_npv', 0)
@@ -180,6 +195,25 @@ def create_npv_comparison_chart(
     )
     
     return fig
+    
+    except Exception as e:
+        # Return an error chart if something goes wrong
+        fig = go.Figure()
+        fig.add_annotation(
+            x=0.5, y=0.5,
+            text=f"Chart Error: {str(e)}",
+            showarrow=False,
+            font={'size': 16, 'color': 'red'},
+            xanchor='center',
+            yanchor='middle'
+        )
+        fig.update_layout(
+            title="NPV Comparison Chart - Error",
+            xaxis={'visible': False},
+            yaxis={'visible': False},
+            height=450
+        )
+        return fig
 
 
 def create_cash_flow_timeline_chart(
@@ -196,8 +230,15 @@ def create_cash_flow_timeline_chart(
     Returns:
         Plotly figure object
     """
-    colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    try:
+        # Validate input data
+        if not ownership_flows or not rental_flows:
+            raise ValueError("Both ownership_flows and rental_flows must be provided")
+        if not isinstance(ownership_flows, list) or not isinstance(rental_flows, list):
+            raise ValueError("Flow data must be lists")
+        
+        colors = get_professional_color_scheme()
+        layout = get_chart_layout_config(exclude_params=['hovermode'])
     
     # Extract years and cash flows with proper cost/return distinction
     years = [flow['year'] for flow in ownership_flows]
@@ -274,6 +315,25 @@ def create_cash_flow_timeline_chart(
     fig.add_hline(y=0, line_dash="dot", line_color="gray", opacity=0.5)
     
     return fig
+    
+    except Exception as e:
+        # Return an error chart if something goes wrong
+        fig = go.Figure()
+        fig.add_annotation(
+            x=0.5, y=0.5,
+            text=f"Chart Error: {str(e)}",
+            showarrow=False,
+            font={'size': 16, 'color': 'red'},
+            xanchor='center',
+            yanchor='middle'
+        )
+        fig.update_layout(
+            title="Cash Flow Timeline Chart - Error",
+            xaxis={'visible': False},
+            yaxis={'visible': False},
+            height=450
+        )
+        return fig
 
 
 def create_cost_breakdown_chart(
@@ -373,7 +433,7 @@ def create_terminal_value_chart(
         Plotly figure object
     """
     colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    layout = get_chart_layout_config(exclude_params=['hovermode'])
     
     # Extract terminal values
     ownership_terminal = analysis_results.get('ownership_terminal_value', 0)
@@ -517,7 +577,7 @@ def create_annual_costs_comparison_chart(
         Plotly figure object
     """
     colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    layout = get_chart_layout_config(exclude_params=['hovermode'])
     
     years = [flow['year'] for flow in ownership_flows]
     

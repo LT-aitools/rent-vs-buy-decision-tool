@@ -112,6 +112,12 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             'property_tax_deductible': session_data.get('property_tax_deductible', session_data.get('inputs', {}).get('property_tax_deductible', True))
         }
         
+        # Validate critical parameters before analysis
+        critical_params = ['purchase_price', 'current_annual_rent']
+        for param in critical_params:
+            if not analysis_params.get(param):
+                raise ValueError(f"Critical parameter '{param}' is missing or zero. Please complete all required inputs.")
+        
         # Run NPV analysis
         analysis_results = calculate_npv_comparison(**analysis_params)
         
@@ -150,6 +156,9 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
         
     except Exception as e:
         st.error(f"Error running financial analysis: {str(e)}")
+        # Add debugging information
+        st.error(f"Session data keys: {list(session_data.keys()) if session_data else 'No session data'}")
+        st.error(f"Analysis params: {analysis_params}")
         return None, None, None
 
 
@@ -212,6 +221,9 @@ def render_dashboard_tab():
                         st.session_state['analysis_results'] = analysis_results
                         st.session_state['ownership_flows'] = ownership_flows
                         st.session_state['rental_flows'] = rental_flows
+                        # Clear demo data flag to ensure we're showing real data
+                        if 'using_demo_data' in st.session_state:
+                            del st.session_state['using_demo_data']
                         st.success("✅ Analysis completed successfully!")
                         st.rerun()
         
@@ -263,13 +275,23 @@ def render_dashboard_tab():
 
 def render_analysis_tab():
     """Render comprehensive analysis results with visualizations"""
+    session_manager = get_session_manager()
+    
+    # Check if we have real analysis results
     if 'analysis_results' not in st.session_state:
         st.warning("⚠️ **No analysis results available.** Please complete the input sections in the Dashboard tab and run the analysis.")
         
-        # Provide demo data option for visualization testing
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("🧪 **Load Demo Data for Testing**", type="secondary", use_container_width=True):
+        # Check if inputs are ready for analysis
+        if session_manager.is_ready_for_analysis():
+            st.info("✅ **All inputs are complete!** Go to the Dashboard tab and click 'Run Financial Analysis' to generate real results.")
+        else:
+            completion = session_manager.get_completion_percentage()
+            st.info(f"📝 **Input Progress: {completion:.0f}%** - Complete all required sections to enable analysis.")
+        
+        # Provide demo data option for visualization testing (less prominent)
+        with st.expander("🧪 **Demo Data for Testing** (Click to expand)"):
+            st.markdown("*This loads sample data for testing the visualization system only.*")
+            if st.button("Load Demo Visualization Data", type="secondary", use_container_width=True):
                 # Create demo analysis results
                 demo_results = {
                     'ownership_npv': 450000,
@@ -317,13 +339,31 @@ def render_analysis_tab():
                 st.session_state['analysis_results'] = demo_results
                 st.session_state['ownership_flows'] = demo_ownership_flows
                 st.session_state['rental_flows'] = demo_rental_flows
+                st.session_state['using_demo_data'] = True
                 
                 st.success("✅ Demo data loaded! View the analysis below.")
                 st.rerun()
         return
     
+    # Check if we're using demo data and warn the user
+    if st.session_state.get('using_demo_data', False):
+        st.warning("⚠️ **Currently displaying demo data for testing.** To see real analysis results, complete your inputs in the Dashboard tab and run the analysis.")
+        if st.button("🔄 Clear Demo Data and Use Real Analysis", type="primary"):
+            # Clear demo data flags
+            if 'using_demo_data' in st.session_state:
+                del st.session_state['using_demo_data']
+            if 'analysis_results' in st.session_state:
+                del st.session_state['analysis_results']
+            if 'ownership_flows' in st.session_state:
+                del st.session_state['ownership_flows']
+            if 'rental_flows' in st.session_state:
+                del st.session_state['rental_flows']
+            st.rerun()
+    else:
+        # Display marker for real data
+        st.success("✅ **Displaying Real Analysis Results** based on your input data.")
+    
     # Render full analysis results dashboard
-    session_manager = get_session_manager()
     render_analysis_results_tab(
         st.session_state['analysis_results'],
         st.session_state['ownership_flows'],

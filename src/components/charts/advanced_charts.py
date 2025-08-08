@@ -429,7 +429,7 @@ def create_break_even_chart(
         Plotly figure object
     """
     colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    layout = get_chart_layout_config(exclude_params=['hovermode'])
     
     years = [flow['year'] for flow in ownership_flows]
     
@@ -658,7 +658,7 @@ def create_roi_progression_chart(
         return fig
     
     colors = get_professional_color_scheme()
-    layout = get_chart_layout_config()
+    layout = get_chart_layout_config(exclude_params=['hovermode'])
     
     # Calculate ROI progression
     initial_investment = analysis_results.get('ownership_initial_investment', 100000)
