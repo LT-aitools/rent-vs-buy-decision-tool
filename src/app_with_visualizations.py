@@ -81,7 +81,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             'down_payment_pct': session_data.get('down_payment_percent', session_data.get('inputs', {}).get('down_payment_percent', 30.0)),
             'interest_rate': session_data.get('interest_rate', session_data.get('inputs', {}).get('interest_rate', 5.0)),
             'loan_term': session_data.get('loan_term', session_data.get('inputs', {}).get('loan_term', 20)),
-            'transaction_costs_pct': session_data.get('transaction_costs_percent', session_data.get('inputs', {}).get('transaction_costs_percent', 5.0)),
+            'transaction_costs': session_data.get('transaction_costs_percent', session_data.get('inputs', {}).get('transaction_costs_percent', 5.0)) * session_data.get('purchase_price', session_data.get('inputs', {}).get('purchase_price', 0)) / 100,
             
             # Rental scenario parameters  
             'current_annual_rent': session_data.get('current_annual_rent', session_data.get('inputs', {}).get('current_annual_rent')),
@@ -95,7 +95,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             'property_tax_rate': session_data.get('property_tax_rate', session_data.get('inputs', {}).get('property_tax_rate', 1.2)),
             'property_tax_escalation': session_data.get('property_tax_escalation_rate', session_data.get('inputs', {}).get('property_tax_escalation_rate', 2.0)),
             'insurance_cost': session_data.get('insurance_cost', session_data.get('inputs', {}).get('insurance_cost', 5000)),
-            'annual_maintenance_pct': session_data.get('annual_maintenance_percent', session_data.get('inputs', {}).get('annual_maintenance_percent', 2.0)),
+            'annual_maintenance': session_data.get('annual_maintenance_percent', session_data.get('inputs', {}).get('annual_maintenance_percent', 2.0)) * session_data.get('purchase_price', session_data.get('inputs', {}).get('purchase_price', 0)) / 100,
             'property_management': session_data.get('property_management', session_data.get('inputs', {}).get('property_management', 0)),
             
             # Advanced parameters
@@ -125,7 +125,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             property_tax_rate=analysis_params['property_tax_rate'],
             property_tax_escalation=analysis_params['property_tax_escalation'],
             insurance_cost=analysis_params['insurance_cost'],
-            annual_maintenance=analysis_params['purchase_price'] * (analysis_params['annual_maintenance_pct'] / 100),
+            annual_maintenance=analysis_params['annual_maintenance'],
             property_management=analysis_params['property_management'],
             capex_reserve_rate=analysis_params['capex_reserve_rate'],
             obsolescence_risk_rate=analysis_params['obsolescence_risk_rate'],
@@ -136,7 +136,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             corporate_tax_rate=analysis_params['corporate_tax_rate'],
             interest_deductible=analysis_params['interest_deductible'],
             property_tax_deductible=analysis_params['property_tax_deductible'],
-            transaction_costs=analysis_params['purchase_price'] * (analysis_params['transaction_costs_pct'] / 100)
+            transaction_costs=analysis_params['transaction_costs']
         )
         
         rental_flows = calculate_rental_cash_flows(
