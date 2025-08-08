@@ -137,64 +137,64 @@ def create_npv_comparison_chart(
         colors = get_professional_color_scheme()
         layout = get_chart_layout_config()
     
-    # Extract data
-    ownership_npv = analysis_results.get('ownership_npv', 0)
-    rental_npv = analysis_results.get('rental_npv', 0)
-    recommendation = analysis_results.get('recommendation', 'UNKNOWN')
-    confidence = analysis_results.get('confidence', 'Low')
-    
-    # Prepare data for chart
-    scenarios = ['Ownership (Buy)', 'Rental (Rent)']
-    npv_values = [ownership_npv, rental_npv]
-    colors_list = [colors['ownership'], colors['rental']]
-    
-    # Create bar chart
-    fig = go.Figure(data=[
-        go.Bar(
-            x=scenarios,
-            y=npv_values,
-            marker_color=colors_list,
-            text=[format_currency(val) for val in npv_values],
-            textposition='auto',
-            textfont={'size': 14, 'color': 'white', 'family': 'Arial Black'},
-            hovertemplate='<b>%{x}</b><br>NPV: %{text}<extra></extra>',
-            showlegend=False
+        # Extract data
+        ownership_npv = analysis_results.get('ownership_npv', 0)
+        rental_npv = analysis_results.get('rental_npv', 0)
+        recommendation = analysis_results.get('recommendation', 'UNKNOWN')
+        confidence = analysis_results.get('confidence', 'Low')
+        
+        # Prepare data for chart
+        scenarios = ['Ownership (Buy)', 'Rental (Rent)']
+        npv_values = [ownership_npv, rental_npv]
+        colors_list = [colors['ownership'], colors['rental']]
+        
+        # Create bar chart
+        fig = go.Figure(data=[
+            go.Bar(
+                x=scenarios,
+                y=npv_values,
+                marker_color=colors_list,
+                text=[format_currency(val) for val in npv_values],
+                textposition='auto',
+                textfont={'size': 14, 'color': 'white', 'family': 'Arial Black'},
+                hovertemplate='<b>%{x}</b><br>NPV: %{text}<extra></extra>',
+                showlegend=False
+            )
+        ])
+        
+        # Update layout
+        fig.update_layout(
+            **layout,
+            title={
+                'text': f'<b>NPV Comparison Analysis</b><br><span style="font-size:14px;">Recommendation: {recommendation}' + 
+                       (f' ({confidence} Confidence)' if show_confidence else '') + '</span>',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': {'size': 18}
+            },
+            xaxis_title='Scenario',
+            yaxis_title='Net Present Value ($)',
+            yaxis={'tickformat': ',.0f'},
+            height=450
         )
-    ])
-    
-    # Update layout
-    fig.update_layout(
-        **layout,
-        title={
-            'text': f'<b>NPV Comparison Analysis</b><br><span style="font-size:14px;">Recommendation: {recommendation}' + 
-                   (f' ({confidence} Confidence)' if show_confidence else '') + '</span>',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 18}
-        },
-        xaxis_title='Scenario',
-        yaxis_title='Net Present Value ($)',
-        yaxis={'tickformat': ',.0f'},
-        height=450
-    )
-    
-    # Add difference annotation
-    npv_diff = ownership_npv - rental_npv
-    better_scenario = "Ownership" if npv_diff > 0 else "Rental"
-    
-    fig.add_annotation(
-        x=0.5,
-        y=max(npv_values) * 0.8,
-        text=f'<b>{better_scenario} Advantage:</b><br>{format_currency(abs(npv_diff))}',
-        showarrow=False,
-        font={'size': 14, 'color': colors['text']},
-        bgcolor=colors['grid'],
-        bordercolor=colors['primary'],
-        borderwidth=2,
-        xanchor='center'
-    )
-    
-    return fig
+        
+        # Add difference annotation
+        npv_diff = ownership_npv - rental_npv
+        better_scenario = "Ownership" if npv_diff > 0 else "Rental"
+        
+        fig.add_annotation(
+            x=0.5,
+            y=max(npv_values) * 0.8,
+            text=f'<b>{better_scenario} Advantage:</b><br>{format_currency(abs(npv_diff))}',
+            showarrow=False,
+            font={'size': 14, 'color': colors['text']},
+            bgcolor=colors['grid'],
+            bordercolor=colors['primary'],
+            borderwidth=2,
+            xanchor='center'
+        )
+        
+        return fig
     
     except Exception as e:
         # Return an error chart if something goes wrong
@@ -240,81 +240,81 @@ def create_cash_flow_timeline_chart(
         colors = get_professional_color_scheme()
         layout = get_chart_layout_config(exclude_params=['hovermode'])
     
-    # Extract years and cash flows with proper cost/return distinction
-    years = [flow['year'] for flow in ownership_flows]
-    
-    # For ownership: distinguish between operational costs and investment returns/terminal value
-    ownership_cash_flows = []
-    for i, flow in enumerate(ownership_flows):
-        cash_flow = flow['net_cash_flow']
-        # If this is the final year and there's significant positive cash flow, it likely includes terminal value
-        if i == len(ownership_flows) - 1 and cash_flow > 0:
-            # Final year with positive return (terminal value realization)
-            ownership_cash_flows.append(cash_flow)
-        else:
-            # Regular operational costs (show as negative for costs)
-            ownership_cash_flows.append(cash_flow if cash_flow < 0 else -cash_flow)
-    
-    # For rental: these are typically all costs, so show as negative
-    rental_cash_flows = []
-    for flow in rental_flows:
-        cash_flow = flow['net_cash_flow']
-        rental_cash_flows.append(cash_flow if cash_flow < 0 else -cash_flow)
-    
-    # Create figure
-    fig = go.Figure()
-    
-    # Add ownership line with dynamic labeling for costs vs returns
-    ownership_text_labels = []
-    for i, val in enumerate(ownership_cash_flows):
-        if val > 0:
-            ownership_text_labels.append(f'Terminal Return: {format_currency(val)}')
-        else:
-            ownership_text_labels.append(f'Cost: {format_currency(abs(val))}')
-    
-    fig.add_trace(go.Scatter(
-        x=years,
-        y=ownership_cash_flows,
-        mode='lines+markers',
-        name='Ownership Cash Flow',
-        line=dict(color=colors['ownership'], width=3),
-        marker=dict(size=6),
-        hovertemplate='<b>Year %{x}</b><br>%{text}<extra></extra>',
-        text=ownership_text_labels
-    ))
-    
-    # Add rental line  
-    fig.add_trace(go.Scatter(
-        x=years,
-        y=rental_cash_flows,
-        mode='lines+markers',
-        name='Rental Costs',
-        line=dict(color=colors['rental'], width=3),
-        marker=dict(size=6),
-        hovertemplate='<b>Year %{x}</b><br>Rental Cost: %{text}<extra></extra>',
-        text=[format_currency(abs(val)) for val in rental_cash_flows]
-    ))
-    
-    # Update layout
-    fig.update_layout(
-        **layout,
-        title={
-            'text': '<b>Annual Cash Flow Timeline</b><br><span style="font-size:14px;">Year-by-Year Cost Comparison</span>',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 18}
-        },
-        xaxis_title='Year',
-        yaxis_title='Annual Cash Flow ($)',
-        yaxis={'tickformat': ',.0f'},
-        height=450,
-        hovermode='x unified'
-    )
-    
-    # Add zero line
-    fig.add_hline(y=0, line_dash="dot", line_color="gray", opacity=0.5)
-    
-    return fig
+        # Extract years and cash flows with proper cost/return distinction
+        years = [flow['year'] for flow in ownership_flows]
+        
+        # For ownership: distinguish between operational costs and investment returns/terminal value
+        ownership_cash_flows = []
+        for i, flow in enumerate(ownership_flows):
+            cash_flow = flow['net_cash_flow']
+            # If this is the final year and there's significant positive cash flow, it likely includes terminal value
+            if i == len(ownership_flows) - 1 and cash_flow > 0:
+                # Final year with positive return (terminal value realization)
+                ownership_cash_flows.append(cash_flow)
+            else:
+                # Regular operational costs (show as negative for costs)
+                ownership_cash_flows.append(cash_flow if cash_flow < 0 else -cash_flow)
+        
+        # For rental: these are typically all costs, so show as negative
+        rental_cash_flows = []
+        for flow in rental_flows:
+            cash_flow = flow['net_cash_flow']
+            rental_cash_flows.append(cash_flow if cash_flow < 0 else -cash_flow)
+        
+        # Create figure
+        fig = go.Figure()
+        
+        # Add ownership line with dynamic labeling for costs vs returns
+        ownership_text_labels = []
+        for i, val in enumerate(ownership_cash_flows):
+            if val > 0:
+                ownership_text_labels.append(f'Terminal Return: {format_currency(val)}')
+            else:
+                ownership_text_labels.append(f'Cost: {format_currency(abs(val))}')
+        
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=ownership_cash_flows,
+            mode='lines+markers',
+            name='Ownership Cash Flow',
+            line=dict(color=colors['ownership'], width=3),
+            marker=dict(size=6),
+            hovertemplate='<b>Year %{x}</b><br>%{text}<extra></extra>',
+            text=ownership_text_labels
+        ))
+        
+        # Add rental line  
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=rental_cash_flows,
+            mode='lines+markers',
+            name='Rental Costs',
+            line=dict(color=colors['rental'], width=3),
+            marker=dict(size=6),
+            hovertemplate='<b>Year %{x}</b><br>Rental Cost: %{text}<extra></extra>',
+            text=[format_currency(abs(val)) for val in rental_cash_flows]
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            **layout,
+            title={
+                'text': '<b>Annual Cash Flow Timeline</b><br><span style="font-size:14px;">Year-by-Year Cost Comparison</span>',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': {'size': 18}
+            },
+            xaxis_title='Year',
+            yaxis_title='Annual Cash Flow ($)',
+            yaxis={'tickformat': ',.0f'},
+            height=450,
+            hovermode='x unified'
+        )
+        
+        # Add zero line
+        fig.add_hline(y=0, line_dash="dot", line_color="gray", opacity=0.5)
+        
+        return fig
     
     except Exception as e:
         # Return an error chart if something goes wrong
