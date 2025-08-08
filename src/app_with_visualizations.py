@@ -261,7 +261,7 @@ def render_dashboard_tab():
             st.metric("Week 3", "Visualizations", "✅ Complete")
 
 
-def render_analysis_results_tab():
+def render_analysis_tab():
     """Render comprehensive analysis results with visualizations"""
     if 'analysis_results' not in st.session_state:
         st.warning("⚠️ **No analysis results available.** Please complete the input sections in the Dashboard tab and run the analysis.")
@@ -332,7 +332,7 @@ def render_analysis_results_tab():
     )
 
 
-def render_detailed_comparison_tab():
+def render_comparison_tab():
     """Render detailed comparison views"""
     if 'analysis_results' not in st.session_state:
         st.warning("⚠️ **No analysis results available for comparison.** Please run the analysis first in the Dashboard tab.")
@@ -576,10 +576,10 @@ def main():
         render_dashboard_tab()
     
     with tab2:
-        render_analysis_results_tab()
+        render_analysis_tab()
     
     with tab3:
-        render_detailed_comparison_tab()
+        render_comparison_tab()
     
     with tab4:
         render_export_tab()
