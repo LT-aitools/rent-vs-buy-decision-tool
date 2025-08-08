@@ -11,7 +11,7 @@ Provides:
 
 import streamlit as st
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, date
 import json
 import sys
 import os
@@ -186,7 +186,7 @@ class SessionManager:
         for field_name in DEFAULT_VALUES.keys():
             value = st.session_state.get(field_name)
             # Convert datetime/date objects to strings for JSON serialization
-            if isinstance(value, (datetime, st._typing.Date)):
+            if isinstance(value, (datetime, date)):
                 value = value.isoformat()
             export_data["inputs"][field_name] = value
         
