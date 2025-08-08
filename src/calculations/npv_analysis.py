@@ -329,12 +329,20 @@ def calculate_npv_comparison(
         ownership_pv_flows.append(ownership_pv)
         rental_pv_flows.append(rental_pv)
     
-    # Present value of terminal values
+    # Present value of terminal values (with safe dictionary access)
+    net_property_equity = ownership_terminal.get('net_property_equity', 0.0)
+    if net_property_equity == 0.0:
+        logger.warning("Terminal value missing net_property_equity field, using 0.0")
+    
     ownership_terminal_pv = calculate_present_value(
-        ownership_terminal['net_property_equity'], cost_of_capital, analysis_period
+        net_property_equity, cost_of_capital, analysis_period
     )
+    security_deposit_recovery = rental_terminal.get('security_deposit_recovery', 0.0)
+    if security_deposit_recovery == 0.0:
+        logger.warning("Terminal value missing security_deposit_recovery field, using 0.0")
+    
     rental_terminal_pv = calculate_present_value(
-        rental_terminal['security_deposit_recovery'], cost_of_capital, analysis_period
+        security_deposit_recovery, cost_of_capital, analysis_period
     )
     
     # Calculate total NPVs (including initial investments and terminal values)
