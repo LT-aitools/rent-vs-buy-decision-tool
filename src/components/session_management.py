@@ -119,11 +119,13 @@ class SessionManager:
         )
         
         # Property & Market section
-        property_fields = ["total_property_size", "current_space_needed"]
-        st.session_state["property_market_complete"] = all(
-            st.session_state.get(field) not in [None, "", 0]
-            for field in property_fields
-        )
+        has_ownership_property = st.session_state.get("ownership_property_size") not in [None, "", 0]
+        has_rental_property = st.session_state.get("rental_property_size") not in [None, "", 0]
+        has_current_space = st.session_state.get("current_space_needed") not in [None, "", 0]
+        
+        # Property section is complete if we have current space and both property sizes
+        property_complete = has_current_space and has_ownership_property and has_rental_property
+        st.session_state["property_market_complete"] = property_complete
         
         # Purchase Parameters section
         purchase_fields = ["purchase_price"]
@@ -268,7 +270,8 @@ class SessionManager:
             },
             "Property Details": {
                 "Property Type": st.session_state.get("property_type"),
-                "Total Size": f"{st.session_state.get('total_property_size', 0):,.0f} m²",
+                "Ownership Property": f"{st.session_state.get('ownership_property_size', 0):,.0f} m²",
+                "Rental Property": f"{st.session_state.get('rental_property_size', 0):,.0f} m²",
                 "Current Need": f"{st.session_state.get('current_space_needed', 0):,.0f} m²",
                 "Market Appreciation": f"{st.session_state.get('market_appreciation_rate', 0):.1f}%"
             },

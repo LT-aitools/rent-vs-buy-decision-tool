@@ -167,7 +167,8 @@ class InputValidator:
         return result
     
     def validate_space_relationship(self, total_size: Optional[float],
-                                  current_needed: Optional[float]) -> ValidationResult:
+                                  current_needed: Optional[float],
+                                  scenario: str = "property") -> ValidationResult:
         """Validate space size relationships"""
         result = ValidationResult()
         
@@ -175,9 +176,18 @@ class InputValidator:
             return result
         
         if current_needed > total_size:
-            result.add_error(
-                "Current space needed cannot exceed total property size"
-            )
+            if scenario == "ownership":
+                result.add_error(
+                    "Current space needed cannot exceed ownership property size"
+                )
+            elif scenario == "rental":
+                result.add_error(
+                    "Current space needed cannot exceed rental property size" 
+                )
+            else:
+                result.add_error(
+                    "Current space needed cannot exceed property size"
+                )
         
         utilization = (current_needed / total_size) * 100
         
@@ -280,7 +290,8 @@ class InputValidator:
             ("project_name", "Project Name"),
             ("location", "Location"),
             ("analyst_name", "Analyst Name"),
-            ("total_property_size", "Total Property Size"),
+            ("ownership_property_size", "Ownership Property Size"),
+            ("rental_property_size", "Rental Property Size"),
             ("current_space_needed", "Current Space Needed"),
             ("purchase_price", "Purchase Price"),
             ("current_annual_rent", "Current Annual Rent")
@@ -298,7 +309,8 @@ class InputValidator:
         
         # Numeric range validations
         numeric_fields = [
-            ("total_property_size", "Total Property Size"),
+            ("ownership_property_size", "Ownership Property Size"),
+            ("rental_property_size", "Rental Property Size"),
             ("current_space_needed", "Current Space Needed"),
             ("market_appreciation_rate", "Market Appreciation Rate"),
             ("purchase_price", "Purchase Price"),
@@ -335,16 +347,25 @@ class InputValidator:
                 if not field_result.is_valid:
                     result.is_valid = False
         
-        # Cross-field validations
-        space_result = self.validate_space_relationship(
-            inputs.get("total_property_size"),
-            inputs.get("current_space_needed")
+        # Cross-field validations - validate space against both property scenarios
+        ownership_space_result = self.validate_space_relationship(
+            inputs.get("ownership_property_size"),
+            inputs.get("current_space_needed"),
+            "ownership"
         )
-        result.errors.extend(space_result.errors)
-        result.warnings.extend(space_result.warnings)
-        result.info.extend(space_result.info)
-        if not space_result.is_valid:
-            result.is_valid = False
+        rental_space_result = self.validate_space_relationship(
+            inputs.get("rental_property_size"), 
+            inputs.get("current_space_needed"),
+            "rental"
+        )
+        
+        # Collect results from both space validations
+        for space_result in [ownership_space_result, rental_space_result]:
+            result.errors.extend(space_result.errors)
+            result.warnings.extend(space_result.warnings)
+            result.info.extend(space_result.info)
+            if not space_result.is_valid:
+                result.is_valid = False
         
         loan_result = self.validate_loan_terms(
             inputs.get("purchase_price"),

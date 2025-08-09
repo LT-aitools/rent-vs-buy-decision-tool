@@ -34,7 +34,8 @@ DEFAULT_VALUES: Dict[str, Any] = {
     
     # 1.2 PROPERTY & MARKET INFORMATION  
     "property_type": "Warehouse",
-    "total_property_size": None,  # Required, no default
+    "ownership_property_size": None,  # Required, property size for ownership scenario
+    "rental_property_size": None,  # Required, property size for rental scenario  
     "current_space_needed": None,  # Required, no default
     "market_appreciation_rate": 3.0,  # 3%
     
@@ -90,8 +91,9 @@ VALIDATION_RANGES: Dict[str, Dict[str, Any]] = {
     "analyst_name": {"max_length": 50},
     
     # Numeric ranges
-    "total_property_size": {"min": 1000, "max": 1000000},
-    "current_space_needed": {"min": 500, "max": 1000000},
+    "ownership_property_size": {"min": 1000, "max": 1000000},
+    "rental_property_size": {"min": 1000, "max": 1000000}, 
+    "current_space_needed": {"min": 500, "max": 20000000},
     "market_appreciation_rate": {"min": 0.0, "max": 15.0},
     
     "purchase_price": {"min": 50000, "max": 100000000},
@@ -141,7 +143,8 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     
     # Property & Market
     "property_type": "Type of facility being analyzed for rent vs buy decision",
-    "total_property_size": "Total square meters of the entire property",
+    "ownership_property_size": "Total square meters of the property you're considering purchasing", 
+    "rental_property_size": "Total square meters of the property you're considering renting",
     "current_space_needed": "Current operational space requirement in square meters",
     "market_appreciation_rate": "Expected annual property value appreciation percentage",
     

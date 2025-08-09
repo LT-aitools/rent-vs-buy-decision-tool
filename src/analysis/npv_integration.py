@@ -88,8 +88,8 @@ class NPVIntegrationEngine:
         
         # Critical inputs that must be present
         critical_fields = [
-            'purchase_price', 'current_annual_rent', 'total_property_size', 
-            'current_space_needed', 'analysis_period', 'cost_of_capital'
+            'purchase_price', 'current_annual_rent', 'ownership_property_size', 
+            'rental_property_size', 'current_space_needed', 'analysis_period', 'cost_of_capital'
         ]
         
         # Extract all fields with validation
@@ -123,8 +123,16 @@ class NPVIntegrationEngine:
         if inputs.get('down_payment_percent', 0) < 0 or inputs.get('down_payment_percent', 0) > 100:
             self.validation_errors.append("Down payment percentage must be between 0% and 100%")
             
-        if inputs.get('current_space_needed', 0) > inputs.get('total_property_size', 0):
-            self.validation_errors.append("Current space needed cannot exceed total property size")
+        # Check that current space needed doesn't exceed either property size
+        current_space = inputs.get('current_space_needed', 0)
+        ownership_size = inputs.get('ownership_property_size', 0)
+        rental_size = inputs.get('rental_property_size', 0)
+        
+        if current_space > ownership_size:
+            self.validation_errors.append(f"Current space needed ({current_space:,.0f} m²) exceeds ownership property size ({ownership_size:,.0f} m²)")
+        
+        if current_space > rental_size:
+            self.validation_errors.append(f"Current space needed ({current_space:,.0f} m²) exceeds rental property size ({rental_size:,.0f} m²)")
             
         if inputs.get('interest_rate', 0) < 0 or inputs.get('interest_rate', 0) > 20:
             self.validation_errors.append("Interest rate must be between 0% and 20%")
@@ -471,8 +479,8 @@ def get_analysis_readiness() -> Dict[str, Any]:
     
     # Check critical fields
     critical_fields = [
-        'purchase_price', 'current_annual_rent', 'total_property_size',
-        'current_space_needed', 'analysis_period', 'cost_of_capital'
+        'purchase_price', 'current_annual_rent', 'ownership_property_size',
+        'rental_property_size', 'current_space_needed', 'analysis_period', 'cost_of_capital'
     ]
     
     missing_fields = []
@@ -498,7 +506,8 @@ if __name__ == "__main__":
     test_session = {
         'purchase_price': 500000,
         'current_annual_rent': 120000,
-        'total_property_size': 5000,
+        'ownership_property_size': 5000,
+        'rental_property_size': 4500,
         'current_space_needed': 4000,
         'analysis_period': 25,
         'cost_of_capital': 8.0,

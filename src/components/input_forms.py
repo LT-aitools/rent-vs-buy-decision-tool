@@ -95,22 +95,17 @@ def render_property_market_section():
             help=get_field_description("property_type")
         )
         
-        st.number_input(
-            "Total Property Size (m²)*",
-            key="total_property_size",
-            min_value=1000,
-            max_value=1000000,
-            step=100,
-            format="%d",
-            help=get_field_description("total_property_size")
-        )
-    
     with col2:
+        # Calculate maximum space needed based on available property sizes
+        ownership_size = st.session_state.get("ownership_property_size", 0) or 0
+        rental_size = st.session_state.get("rental_property_size", 0) or 0
+        max_available_space = max(ownership_size, rental_size, 20000000)  # 20,000 sq meters default
+        
         st.number_input(
             "Current Space Needed (m²)*", 
             key="current_space_needed",
             min_value=500,
-            max_value=st.session_state.get("total_property_size", 1000000) or 1000000,
+            max_value=max_available_space,
             step=100,
             format="%d",
             help=get_field_description("current_space_needed")
@@ -146,6 +141,16 @@ def render_purchase_parameters_section():
             step=10000,
             format="%d",
             help=get_field_description("purchase_price")
+        )
+        
+        st.number_input(
+            "Property Size (m²)*",
+            key="ownership_property_size",
+            min_value=1000,
+            max_value=1000000,
+            step=100,
+            format="%d",
+            help=get_field_description("ownership_property_size")
         )
         
         st.slider(
@@ -279,6 +284,16 @@ def render_rental_parameters_section():
             max_value=10000000,
             step=1000,
             help=get_field_description("current_annual_rent")
+        )
+        
+        st.number_input(
+            "Property Size (m²)*",
+            key="rental_property_size",
+            min_value=1000,
+            max_value=1000000,
+            step=100,
+            format="%d",
+            help=get_field_description("rental_property_size")
         )
         
         st.slider(
@@ -555,7 +570,8 @@ def render_input_summary():
     currency = st.session_state.get("currency", "USD")
     purchase_price = st.session_state.get("purchase_price", 0) or 0
     annual_rent = st.session_state.get("current_annual_rent", 0) or 0
-    total_space = st.session_state.get("total_property_size", 0) or 0
+    ownership_space = st.session_state.get("ownership_property_size", 0) or 0
+    rental_space = st.session_state.get("rental_property_size", 0) or 0
     analysis_period = st.session_state.get("analysis_period", 25)
     
     with col1:
@@ -572,8 +588,8 @@ def render_input_summary():
     
     with col3:
         st.metric(
-            "Property Size",
-            f"{total_space:,.0f} m²"
+            "Property Sizes",
+            f"Own: {ownership_space:,.0f} m² | Rent: {rental_space:,.0f} m²"
         )
     
     with col4:
