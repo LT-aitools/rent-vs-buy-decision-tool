@@ -384,7 +384,7 @@ class InputValidator:
         result.info.extend(rental_result.info)
         
         expansion_result = self.validate_expansion_parameters(
-            inputs.get("total_property_size"),
+            inputs.get("ownership_property_size"),
             inputs.get("current_space_needed"),
             inputs.get("additional_space_needed"),
             inputs.get("future_expansion_year")

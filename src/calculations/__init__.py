@@ -27,7 +27,8 @@ from .mortgage import (
 from .annual_costs import (
     calculate_annual_ownership_costs,
     calculate_annual_rental_costs,
-    calculate_cost_escalation
+    calculate_cost_escalation,
+    calculate_subletting_income
 )
 
 from .terminal_value import (
@@ -62,6 +63,7 @@ __all__ = [
     'calculate_annual_ownership_costs',
     'calculate_annual_rental_costs',
     'calculate_cost_escalation',
+    'calculate_subletting_income',
     
     # Terminal value analysis
     'calculate_terminal_value',

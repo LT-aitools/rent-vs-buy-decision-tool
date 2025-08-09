@@ -351,7 +351,7 @@ def calculate_tax_benefits(
 
 
 def calculate_subletting_income(
-    total_property_size: float,
+    property_size: float,
     current_space_needed: float,
     subletting_rate_per_unit: float,
     subletting_occupancy_rate: float,
@@ -361,11 +361,11 @@ def calculate_subletting_income(
     Calculate potential subletting income from excess space
     
     Based on Business PRD:
-    - Excess Space = MAX(0, Total Property Size - Current Space Needed)
+    - Excess Space = MAX(0, Property Size - Current Space Needed)
     - Subletting Income = Excess Space × Subletting Rate × Subletting Occupancy
     
     Args:
-        total_property_size: Total property size in square meters
+        property_size: Property size in square meters (ownership scenario)
         current_space_needed: Space needed for own operations
         subletting_rate_per_unit: Annual subletting rate per square meter
         subletting_occupancy_rate: Expected occupancy rate (percentage)
@@ -383,7 +383,7 @@ def calculate_subletting_income(
         }
     
     # Calculate excess space available for subletting
-    excess_space = max(0.0, total_property_size - current_space_needed)
+    excess_space = max(0.0, property_size - current_space_needed)
     
     # Calculate potential subletting income
     occupancy_rate = subletting_occupancy_rate / 100

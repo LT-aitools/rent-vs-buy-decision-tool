@@ -190,7 +190,7 @@ class TestAnnualCostCalculations:
     def test_subletting_income_calculation(self):
         """Test subletting income calculation"""
         income = calculate_subletting_income(
-            total_property_size=15000,  # 15,000 sq meters
+            property_size=15000,  # 15,000 sq meters
             current_space_needed=10000,  # 10,000 sq meters needed
             subletting_rate_per_unit=8.0,  # $8 per sq meter annually
             subletting_occupancy_rate=85.0,  # 85% occupancy
@@ -207,7 +207,7 @@ class TestAnnualCostCalculations:
     def test_subletting_disabled(self):
         """Test subletting calculation when disabled"""
         income = calculate_subletting_income(
-            total_property_size=15000,
+            property_size=15000,
             current_space_needed=10000,
             subletting_rate_per_unit=8.0,
             subletting_occupancy_rate=85.0,
@@ -221,7 +221,7 @@ class TestAnnualCostCalculations:
     def test_no_excess_space_subletting(self):
         """Test subletting when no excess space available"""
         income = calculate_subletting_income(
-            total_property_size=10000,
+            property_size=10000,
             current_space_needed=12000,  # Need more than available
             subletting_rate_per_unit=8.0,
             subletting_occupancy_rate=85.0,
