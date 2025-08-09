@@ -16,6 +16,7 @@ from typing import Dict, List, Any, Optional, Tuple
 import plotly.graph_objects as go
 
 from ..charts.core_charts import format_currency
+from ...utils.calculation_tooltips import display_calculation_tooltip
 
 
 def format_comparison_table(
@@ -199,22 +200,58 @@ def create_annual_costs_table(
         better_when="lower"
     )
     
-    # Display table
+    # Display table with calculation tooltips
     st.dataframe(
         indicator_df,
         use_container_width=True,
         hide_index=True,
         column_config={
             "Year": st.column_config.NumberColumn("Year", format="%d"),
-            "Ownership Total": st.column_config.TextColumn("Ownership Total", width="medium"),
-            "Mortgage Payment": st.column_config.TextColumn("Mortgage", width="small"),
-            "Property Taxes": st.column_config.TextColumn("Taxes", width="small"),
-            "Insurance": st.column_config.TextColumn("Insurance", width="small"),
-            "Maintenance": st.column_config.TextColumn("Maintenance", width="small"),
-            "Other Costs": st.column_config.TextColumn("Other", width="small"),
-            "Tax Benefits": st.column_config.TextColumn("Tax Benefits", width="small"),
-            "Rental Total": st.column_config.TextColumn("Rental Total", width="medium"),
-            "Annual Difference": st.column_config.TextColumn("Difference", width="medium")
+            "Ownership Total": st.column_config.TextColumn(
+                "Ownership Total", 
+                width="medium",
+                help="Total annual ownership costs including all expenses and tax benefits"
+            ),
+            "Mortgage Payment": st.column_config.TextColumn(
+                "Mortgage", 
+                width="small",
+                help=display_calculation_tooltip("mortgage_payment")
+            ),
+            "Property Taxes": st.column_config.TextColumn(
+                "Taxes", 
+                width="small",
+                help=display_calculation_tooltip("property_taxes")
+            ),
+            "Insurance": st.column_config.TextColumn(
+                "Insurance", 
+                width="small",
+                help=display_calculation_tooltip("insurance_cost")
+            ),
+            "Maintenance": st.column_config.TextColumn(
+                "Maintenance", 
+                width="small",
+                help=display_calculation_tooltip("maintenance_cost")
+            ),
+            "Other Costs": st.column_config.TextColumn(
+                "Other", 
+                width="small",
+                help="Property management, CapEx reserves, and obsolescence risk costs"
+            ),
+            "Tax Benefits": st.column_config.TextColumn(
+                "Tax Benefits", 
+                width="small",
+                help=display_calculation_tooltip("tax_benefits")
+            ),
+            "Rental Total": st.column_config.TextColumn(
+                "Rental Total", 
+                width="medium",
+                help=display_calculation_tooltip("annual_rent")
+            ),
+            "Annual Difference": st.column_config.TextColumn(
+                "Difference", 
+                width="medium",
+                help=display_calculation_tooltip("cash_flow_difference")
+            )
         }
     )
     
@@ -302,27 +339,63 @@ def create_cash_flow_comparison_table(
         hide_index=True,
         column_config={
             "Year": st.column_config.NumberColumn("Year", format="%d"),
-            "Ownership Cash Flow": st.column_config.TextColumn("Ownership CF", width="medium"),
-            "Rental Cash Flow": st.column_config.TextColumn("Rental CF", width="medium"),
-            "Annual Difference": st.column_config.TextColumn("CF Difference", width="medium"),
-            "Ownership PV": st.column_config.TextColumn("Ownership PV", width="medium"),
-            "Rental PV": st.column_config.TextColumn("Rental PV", width="medium"),
-            "PV Difference": st.column_config.TextColumn("PV Difference", width="medium"),
-            "Cumulative PV Difference": st.column_config.TextColumn("Cumulative PV Diff", width="medium")
+            "Ownership Cash Flow": st.column_config.TextColumn(
+                "Ownership CF", 
+                width="medium",
+                help="Annual cash flow from ownership scenario (negative = outflow)"
+            ),
+            "Rental Cash Flow": st.column_config.TextColumn(
+                "Rental CF", 
+                width="medium", 
+                help="Annual cash flow from rental scenario (negative = outflow)"
+            ),
+            "Annual Difference": st.column_config.TextColumn(
+                "CF Difference", 
+                width="medium",
+                help=display_calculation_tooltip("cash_flow_difference")
+            ),
+            "Ownership PV": st.column_config.TextColumn(
+                "Ownership PV", 
+                width="medium",
+                help=display_calculation_tooltip("present_value")
+            ),
+            "Rental PV": st.column_config.TextColumn(
+                "Rental PV", 
+                width="medium",
+                help=display_calculation_tooltip("present_value")
+            ),
+            "PV Difference": st.column_config.TextColumn(
+                "PV Difference", 
+                width="medium",
+                help="Present value difference between ownership and rental cash flows for this year"
+            ),
+            "Cumulative PV Difference": st.column_config.TextColumn(
+                "Cumulative PV Diff", 
+                width="medium",
+                help=display_calculation_tooltip("cumulative_npv")
+            )
         }
     )
     
-    # Add terminal values
+    # Add terminal values with tooltips
     st.markdown("**Terminal Values (Present Value):**")
     col1, col2 = st.columns(2)
     
     with col1:
         ownership_terminal = analysis_results.get('ownership_terminal_value', 0)
-        st.markdown(f"- Ownership Terminal Value: {format_currency(ownership_terminal)}")
+        st.metric(
+            label="Ownership Terminal Value", 
+            value=format_currency(ownership_terminal),
+            help=display_calculation_tooltip("terminal_value")
+        )
     
     with col2:
         rental_terminal = analysis_results.get('rental_terminal_value', 0) 
-        st.markdown(f"- Rental Terminal Value: {format_currency(rental_terminal)}")
+        st.metric(
+            label="Rental Terminal Value", 
+            value=format_currency(rental_terminal),
+            help=display_calculation_tooltip("alternative_investment")
+        )
 
 
 def create_investment_summary_table(analysis_results: Dict[str, Any]) -> None:
@@ -379,17 +452,33 @@ def create_investment_summary_table(analysis_results: Dict[str, Any]) -> None:
     # Add winner indicators
     df['Winner'] = df['Winner'].apply(lambda x: f"🏆 {x}" if x != 'Tie' else "⚖️ Tie")
     
-    # Display table
+    # Display table with calculation tooltips
     st.dataframe(
         df[['Component', 'Ownership', 'Rental', 'Difference', 'Winner']],
         use_container_width=True,
         hide_index=True,
         column_config={
             "Component": st.column_config.TextColumn("Component", width="medium"),
-            "Ownership": st.column_config.TextColumn("🏠 Ownership", width="medium"),
-            "Rental": st.column_config.TextColumn("🏢 Rental", width="medium"),
-            "Difference": st.column_config.TextColumn("Difference", width="medium"),
-            "Winner": st.column_config.TextColumn("Advantage", width="small")
+            "Ownership": st.column_config.TextColumn(
+                "🏠 Ownership", 
+                width="medium",
+                help="Financial metrics for the ownership scenario"
+            ),
+            "Rental": st.column_config.TextColumn(
+                "🏢 Rental", 
+                width="medium",
+                help="Financial metrics for the rental scenario"
+            ),
+            "Difference": st.column_config.TextColumn(
+                "Difference", 
+                width="medium",
+                help="Ownership value minus rental value (positive means ownership is higher)"
+            ),
+            "Winner": st.column_config.TextColumn(
+                "Advantage", 
+                width="small",
+                help="Which scenario performs better for this metric"
+            )
         }
     )
     

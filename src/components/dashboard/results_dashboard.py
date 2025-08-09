@@ -36,6 +36,12 @@ from ..charts.advanced_charts import (
     create_break_even_chart,
     create_roi_progression_chart
 )
+from ...utils.calculation_tooltips import (
+    add_metric_with_tooltip,
+    create_detailed_calculation_expander,
+    display_calculation_tooltip,
+    get_npv_analysis_tooltips
+)
 
 
 def render_executive_summary_dashboard(
@@ -70,6 +76,9 @@ def render_executive_summary_dashboard(
     
     # Key metrics grid
     create_key_metrics_grid(analysis_results, ownership_flows, rental_flows)
+    
+    # Calculation details section
+    create_calculation_details_section(analysis_results, ownership_flows, rental_flows)
     
     st.markdown("---")
     
@@ -146,34 +155,33 @@ def create_key_metrics_grid(
     """
     st.subheader("📈 Key Financial Metrics")
     
-    # Create metrics columns
+    # Create metrics columns with calculation tooltips
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        create_kpi_card(
-            "NPV Difference",
-            format_currency(analysis_results.get('npv_difference', 0)),
-            "Net advantage of recommended option",
-            "positive" if analysis_results.get('npv_difference', 0) > 0 else "negative"
+        npv_difference = analysis_results.get('npv_difference', 0)
+        st.metric(
+            label="NPV Difference",
+            value=format_currency(npv_difference),
+            delta="Recommended Option Advantage" if npv_difference != 0 else None,
+            help=display_calculation_tooltip("npv_difference")
         )
     
     with col2:
         initial_investment = analysis_results.get('ownership_initial_investment', 0)
-        create_kpi_card(
-            "Initial Investment",
-            format_currency(initial_investment),
-            "Required upfront capital for purchase",
-            "neutral"
+        st.metric(
+            label="Initial Investment",
+            value=format_currency(initial_investment),
+            help=display_calculation_tooltip("initial_investment")
         )
     
     with col3:
         if ownership_flows:
             annual_ownership_cost = abs(ownership_flows[0]['net_cash_flow'])
-            create_kpi_card(
-                "Year 1 Ownership Cost",
-                format_currency(annual_ownership_cost),
-                "First year total ownership costs",
-                "neutral"
+            st.metric(
+                label="Year 1 Ownership Cost",
+                value=format_currency(annual_ownership_cost),
+                help=display_calculation_tooltip("ownership_npv", "First year total ownership costs including mortgage, taxes, insurance, and maintenance")
             )
         else:
             st.empty()
@@ -181,11 +189,10 @@ def create_key_metrics_grid(
     with col4:
         if rental_flows:
             annual_rental_cost = abs(rental_flows[0]['net_cash_flow'])
-            create_kpi_card(
-                "Year 1 Rental Cost", 
-                format_currency(annual_rental_cost),
-                "First year rental costs",
-                "neutral"
+            st.metric(
+                label="Year 1 Rental Cost", 
+                value=format_currency(annual_rental_cost),
+                help=display_calculation_tooltip("annual_rent", "First year rental costs")
             )
         else:
             st.empty()
@@ -196,29 +203,26 @@ def create_key_metrics_grid(
     
     with col5:
         terminal_value = analysis_results.get('ownership_terminal_value', 0)
-        create_kpi_card(
-            "Terminal Value (PV)",
-            format_currency(terminal_value),
-            "Present value of terminal property equity",
-            "positive" if terminal_value > 0 else "neutral"
+        st.metric(
+            label="Terminal Value (PV)",
+            value=format_currency(terminal_value),
+            help=display_calculation_tooltip("terminal_value")
         )
     
     with col6:
         analysis_period = analysis_results.get('analysis_period', 25)
-        create_kpi_card(
-            "Analysis Period",
-            f"{analysis_period} Years",
-            "Investment analysis time horizon",
-            "neutral"
+        st.metric(
+            label="Analysis Period",
+            value=f"{analysis_period} Years",
+            help="Investment analysis time horizon. All cash flows and terminal values are calculated over this period."
         )
     
     with col7:
         cost_of_capital = analysis_results.get('cost_of_capital', 8.0)
-        create_kpi_card(
-            "Cost of Capital",
-            f"{cost_of_capital:.1f}%",
-            "Discount rate used for NPV analysis",
-            "neutral"
+        st.metric(
+            label="Cost of Capital",
+            value=f"{cost_of_capital:.1f}%",
+            help=display_calculation_tooltip("present_value", "Discount rate used to calculate present value of future cash flows")
         )
     
     with col8:
@@ -236,6 +240,73 @@ def create_key_metrics_grid(
             )
         else:
             st.empty()
+
+
+def create_calculation_details_section(
+    analysis_results: Dict[str, Any],
+    ownership_flows: List[Dict[str, float]],
+    rental_flows: List[Dict[str, float]]
+) -> None:
+    """
+    Create expandable section with detailed calculation explanations
+    
+    Args:
+        analysis_results: Analysis results
+        ownership_flows: Ownership cash flows
+        rental_flows: Rental cash flows
+    """
+    # Main NPV Analysis Details
+    create_detailed_calculation_expander(
+        "NPV Analysis Breakdown",
+        ["npv_difference", "ownership_npv", "rental_npv", "initial_investment", "terminal_value"],
+        {
+            "npv_difference": format_currency(analysis_results.get('npv_difference', 0)),
+            "ownership_npv": format_currency(analysis_results.get('ownership_npv', 0)),
+            "rental_npv": format_currency(analysis_results.get('rental_npv', 0)),
+            "initial_investment": format_currency(analysis_results.get('ownership_initial_investment', 0)),
+            "terminal_value": format_currency(analysis_results.get('ownership_terminal_value', 0))
+        }
+    )
+    
+    # Annual Costs Details
+    if ownership_flows and rental_flows:
+        first_year_ownership = ownership_flows[0]
+        first_year_rental = rental_flows[0]
+        
+        with st.expander("📊 Annual Costs Breakdown - Calculation Details", expanded=False):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 🏠 Ownership Costs (Year 1)")
+                
+                mortgage_payment = first_year_ownership.get('mortgage_payment', 0)
+                st.markdown(f"**Mortgage Payment**: {format_currency(mortgage_payment)}")
+                st.markdown(display_calculation_tooltip("mortgage_payment"))
+                
+                property_taxes = first_year_ownership.get('property_taxes', 0)
+                st.markdown(f"**Property Taxes**: {format_currency(property_taxes)}")
+                st.markdown(display_calculation_tooltip("property_taxes"))
+                
+                insurance = first_year_ownership.get('insurance', 0)
+                st.markdown(f"**Insurance**: {format_currency(insurance)}")
+                st.markdown(display_calculation_tooltip("insurance_cost"))
+                
+                maintenance = first_year_ownership.get('maintenance', 0)
+                st.markdown(f"**Maintenance**: {format_currency(maintenance)}")
+                st.markdown(display_calculation_tooltip("maintenance_cost"))
+                
+                tax_benefits = first_year_ownership.get('tax_benefits', 0)
+                st.markdown(f"**Tax Benefits**: {format_currency(tax_benefits)}")
+                st.markdown(display_calculation_tooltip("tax_benefits"))
+            
+            with col2:
+                st.markdown("### 🏢 Rental Costs (Year 1)")
+                
+                annual_rent = first_year_rental.get('annual_rent', abs(first_year_rental.get('net_cash_flow', 0)))
+                st.markdown(f"**Annual Rent**: {format_currency(annual_rent)}")
+                st.markdown(display_calculation_tooltip("annual_rent"))
+                
+                st.markdown("**Additional Costs**: Security deposit, moving costs, and rental commission are included in initial investment calculations.")
 
 
 def create_investment_comparison_section(analysis_results: Dict[str, Any]) -> None:
