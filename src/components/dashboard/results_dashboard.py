@@ -36,7 +36,11 @@ from ..charts.advanced_charts import (
     create_break_even_chart,
     create_roi_progression_chart
 )
-from ...utils.calculation_tooltips import (
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from utils.calculation_tooltips import (
     add_metric_with_tooltip,
     create_detailed_calculation_expander,
     display_calculation_tooltip,

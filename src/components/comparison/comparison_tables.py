@@ -15,8 +15,12 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple
 import plotly.graph_objects as go
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from ..charts.core_charts import format_currency
-from ...utils.calculation_tooltips import display_calculation_tooltip
+from utils.calculation_tooltips import display_calculation_tooltip
 
 
 def format_comparison_table(
