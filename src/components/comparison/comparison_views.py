@@ -23,7 +23,7 @@ from .comparison_tables import (
     create_cash_flow_comparison_table,
     format_comparison_table
 )
-from ...utils.calculation_tooltips import display_calculation_tooltip
+from utils.calculation_tooltips import display_calculation_tooltip
 
 
 def render_side_by_side_comparison(
