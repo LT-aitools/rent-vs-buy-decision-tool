@@ -279,7 +279,7 @@ class SessionManager:
             
             # Cost parameters
             "transaction_costs_percent", "property_tax_rate", "property_tax_escalation_rate",
-            "insurance_cost", "annual_maintenance_percent", "property_management",
+            "insurance_cost", "annual_maintenance_percent", "property_management", "space_improvement_cost",
             
             # Advanced parameters
             "longterm_capex_reserve", "obsolescence_risk_factor", "inflation_rate",

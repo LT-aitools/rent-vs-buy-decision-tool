@@ -39,9 +39,9 @@ NPV_TOOLTIPS = {
     
     "initial_investment": {
         "title": "Initial Investment",
-        "formula": "Down Payment + Transaction Costs",
-        "explanation": "Upfront cash required to purchase the property.",
-        "calculation": "Purchase Price × Down Payment % + Purchase Price × Transaction Costs %"
+        "formula": "Down Payment + Transaction Costs + Space Improvements",
+        "explanation": "Total upfront cash required to purchase and customize the property.",
+        "calculation": "Purchase Price × Down Payment % + Transaction Costs + Space Improvement Cost"
     },
     
     "terminal_value": {
@@ -115,6 +115,13 @@ ANNUAL_COST_TOOLTIPS = {
         "formula": "Subletting Space × Subletting Rate",
         "explanation": "Annual income from subletting specified space to other tenants.",
         "calculation": "MIN(Space User Wants to Sublet, Available Space) × Annual Subletting Rate per m²"
+    },
+    
+    "space_improvement_cost": {
+        "title": "Space Improvement Cost",
+        "formula": "One-time Improvement Investment",
+        "explanation": "Total cost for customizing and improving the space to meet specific business needs.",
+        "calculation": "Includes tenant improvements, customizations, equipment installations, and space modifications required before occupancy"
     }
 }
 

@@ -248,11 +248,12 @@ def render_purchase_parameters_section():
             )
             
             st.number_input(
-                f"Space Improvement Cost ({currency}/m²)",
+                f"Space Improvement Cost ({currency})",
                 key="space_improvement_cost",
                 min_value=0,
-                max_value=1000,
-                step=10,
+                max_value=1000000,
+                step=1000,
+                format="%d",
                 help=get_field_description("space_improvement_cost")
             )
             
@@ -675,7 +676,7 @@ def render_input_summary():
     with col4:
         st.metric(
             "Analysis Period",
-            f"{analysis_period} years"
+            f"{analysis_period}y"
         )
 
 def render_all_input_forms():

@@ -109,7 +109,10 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             # Tax parameters
             'corporate_tax_rate': session_data.get('corporate_tax_rate', session_data.get('inputs', {}).get('corporate_tax_rate', 25.0)),
             'interest_deductible': session_data.get('interest_deductible', session_data.get('inputs', {}).get('interest_deductible', True)),
-            'property_tax_deductible': session_data.get('property_tax_deductible', session_data.get('inputs', {}).get('property_tax_deductible', True))
+            'property_tax_deductible': session_data.get('property_tax_deductible', session_data.get('inputs', {}).get('property_tax_deductible', True)),
+            
+            # Space improvement costs
+            'space_improvement_cost': session_data.get('space_improvement_cost', session_data.get('inputs', {}).get('space_improvement_cost', 0.0))
         }
         
         # Validate critical parameters before analysis

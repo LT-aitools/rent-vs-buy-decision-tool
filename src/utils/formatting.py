@@ -225,7 +225,7 @@ def format_input_placeholder(field_name: str, currency: str = "USD") -> str:
         "total_property_size": "e.g., 5,000 m²",
         "current_space_needed": "e.g., 3,000 m²",
         "additional_space_needed": "e.g., 1,000 m²",
-        "space_improvement_cost": f"e.g., {currency_symbol}50 per m²",
+        "space_improvement_cost": f"e.g., {currency_symbol}25,000",
         "subletting_rate": f"e.g., {currency_symbol}15 per m²",
         "project_name": "e.g., Warehouse Project 2025",
         "location": "e.g., 123 Industrial Blvd, City",

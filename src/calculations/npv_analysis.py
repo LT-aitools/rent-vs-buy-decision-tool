@@ -261,7 +261,8 @@ def calculate_npv_comparison(
     # Initial costs
     security_deposit: float = 0.0,
     rental_commission: float = 0.0,
-    moving_costs: float = 0.0
+    moving_costs: float = 0.0,
+    space_improvement_cost: float = 0.0
 ) -> Dict[str, float]:
     """
     Calculate complete NPV comparison between ownership and rental
@@ -282,7 +283,7 @@ def calculate_npv_comparison(
     """
     # Calculate initial investments
     mortgage_info = calculate_mortgage_payment(
-        purchase_price, down_payment_pct, interest_rate, loan_term, transaction_costs
+        purchase_price, down_payment_pct, interest_rate, loan_term, transaction_costs, space_improvement_cost
     )
     ownership_initial_investment = mortgage_info['total_initial_investment']
     rental_initial_investment = security_deposit + rental_commission + moving_costs

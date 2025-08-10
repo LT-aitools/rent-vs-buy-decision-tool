@@ -106,7 +106,8 @@ def calculate_mortgage_payment(
     down_payment_pct: float,
     interest_rate: float,
     loan_term: int,
-    transaction_costs: float = 0.0
+    transaction_costs: float = 0.0,
+    space_improvement_cost: float = 0.0
 ) -> Dict[str, float]:
     """
     Calculate annual mortgage payment with comprehensive edge case handling
@@ -120,6 +121,7 @@ def calculate_mortgage_payment(
         interest_rate: Annual interest rate (as percentage, e.g., 5.0 for 5%)
         loan_term: Loan term in years
         transaction_costs: Additional closing costs and fees
+        space_improvement_cost: One-time cost for space improvements and customizations
     
     Returns:
         Dictionary containing:
@@ -127,7 +129,7 @@ def calculate_mortgage_payment(
         - monthly_payment: Monthly mortgage payment  
         - loan_amount: Total loan amount
         - down_payment_amount: Down payment in dollars
-        - total_initial_investment: Down payment + transaction costs
+        - total_initial_investment: Down payment + transaction costs + space improvements
         
     Examples:
         Standard mortgage:
@@ -153,7 +155,7 @@ def calculate_mortgage_payment(
     # Calculate loan amount
     loan_amount = calculate_loan_amount(purchase_price, down_payment_pct, transaction_costs)
     down_payment_amount = purchase_price * (down_payment_pct / 100)
-    total_initial_investment = down_payment_amount + transaction_costs
+    total_initial_investment = down_payment_amount + transaction_costs + space_improvement_cost
     
     # Edge case: 100% down payment (no loan needed)
     if down_payment_pct >= 100 or loan_amount <= 0:

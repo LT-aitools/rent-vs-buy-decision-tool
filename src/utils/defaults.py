@@ -50,7 +50,7 @@ DEFAULT_VALUES: Dict[str, Any] = {
     "annual_maintenance_percent": 2.0,  # 2% of purchase price
     "property_management": 0,  # $0
     "land_value_percent": 25.0,  # 25%
-    "space_improvement_cost": 50,  # $50 per sq meter
+    "space_improvement_cost": 25000,  # $25,000 total improvement cost
     "property_tax_escalation_rate": 2.0,  # 2.0%
     "inflation_rate": 3.0,  # 3.0%
     
@@ -106,7 +106,7 @@ VALIDATION_RANGES: Dict[str, Dict[str, Any]] = {
     "annual_maintenance_percent": {"min": 0.0, "max": 10.0},
     "property_management": {"min": 0, "max": 100000},
     "land_value_percent": {"min": 10.0, "max": 50.0},
-    "space_improvement_cost": {"min": 0, "max": 1000},
+    "space_improvement_cost": {"min": 0, "max": 1000000},
     "property_tax_escalation_rate": {"min": 0.0, "max": 10.0},
     "inflation_rate": {"min": 0.0, "max": 20.0},
     
@@ -159,7 +159,7 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     "annual_maintenance_percent": "Annual maintenance and repairs as % of purchase price",
     "property_management": "Annual property management fees",
     "land_value_percent": "Land value as percentage of total purchase price",
-    "space_improvement_cost": "Cost per square meter to improve unutilized space",
+    "space_improvement_cost": "Total cost for space improvements and customizations",
     "property_tax_escalation_rate": "Annual property tax assessment increase rate",
     "inflation_rate": "General annual inflation rate for cost escalations",
     
