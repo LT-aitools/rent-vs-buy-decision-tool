@@ -2,9 +2,8 @@
 developmentMode = false
 
 [server]
-headless = false
-enableCORS = true
-enableXsrfProtection = false
+headless = true
+enableCORS = false
 
 [browser]
 gatherUsageStats = false
