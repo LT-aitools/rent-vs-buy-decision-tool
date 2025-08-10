@@ -602,11 +602,35 @@ def main():
     # Then initialize other components
     initialize_session()
     
-    # Apply professional styling
+    # Apply professional styling and force light mode
     st.markdown("""
     <style>
+    /* Force light mode */
+    .stApp {
+        background-color: #FFFFFF !important;
+        color: #262730 !important;
+    }
+    
+    /* Main content styling */
     .main .block-container {
         padding-top: 2rem;
+        background-color: #FFFFFF !important;
+        color: #262730 !important;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #F0F2F6 !important;
+    }
+    
+    /* Text elements */
+    .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6 {
+        color: #262730 !important;
+    }
+    
+    /* Input widgets */
+    .stSelectbox, .stNumberInput, .stSlider, .stCheckbox {
+        color: #262730 !important;
     }
     
     /* Custom styling for charts and visualizations */
@@ -616,11 +640,21 @@ def main():
     
     /* Enhanced metric cards */
     div[data-testid="metric-container"] {
-        background-color: #f0f2f6;
+        background-color: #f0f2f6 !important;
         border: 1px solid #e1e5e9;
         padding: 1rem;
         border-radius: 0.5rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: #262730 !important;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: #262730 !important;
     }
     </style>
     """, unsafe_allow_html=True)
