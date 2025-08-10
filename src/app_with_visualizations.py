@@ -124,9 +124,6 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
         # Run NPV analysis
         analysis_results = calculate_npv_comparison(**analysis_params)
         
-        # Debug: Log analysis parameters
-        st.write(f"Debug - Current Annual Rent Parameter: {analysis_params['current_annual_rent']}")
-        
         # Calculate detailed cash flows
         ownership_flows = calculate_ownership_cash_flows(
             purchase_price=analysis_params['purchase_price'],
@@ -157,10 +154,6 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             analysis_period=analysis_params['analysis_period'],
             corporate_tax_rate=analysis_params['corporate_tax_rate']
         )
-        
-        # Debug: Log first year rental flow
-        if rental_flows:
-            st.write(f"Debug - Year 1 Rental Flow: {rental_flows[0]}")
         
         return analysis_results, ownership_flows, rental_flows
         
