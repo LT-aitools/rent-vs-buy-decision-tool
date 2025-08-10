@@ -112,9 +112,9 @@ ANNUAL_COST_TOOLTIPS = {
     
     "subletting_income": {
         "title": "Subletting Income",
-        "formula": "Excess Space × Subletting Rate × Occupancy Rate",
-        "explanation": "Annual income from subletting unused space to other tenants.",
-        "calculation": "MAX(0, Property Size - Space Needed) × Annual Subletting Rate per m² × Occupancy Rate %"
+        "formula": "Subletting Space × Subletting Rate",
+        "explanation": "Annual income from subletting specified space to other tenants.",
+        "calculation": "MIN(Space User Wants to Sublet, Available Space) × Annual Subletting Rate per m²"
     }
 }
 

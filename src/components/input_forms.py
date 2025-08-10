@@ -463,15 +463,20 @@ def render_operational_parameters_section():
                     help=get_field_description("subletting_rate")
                 )
                 
-                st.slider(
-                    "Subletting Occupancy (%)",
-                    key="subletting_occupancy",
-                    min_value=0.0,
-                    max_value=100.0,
-                    step=1.0,
-                    format="%.0f%%",
+                # Calculate max subletting space based on ownership property size
+                ownership_size = st.session_state.get("ownership_property_size", 0) or 0
+                current_space = st.session_state.get("current_space_needed", 0) or 0
+                max_subletting_space = max(0, ownership_size - current_space) if ownership_size > current_space else 10000
+                
+                st.number_input(
+                    "Space to Sublet (m²)",
+                    key="subletting_space_sqm",
+                    min_value=0,
+                    max_value=int(max_subletting_space) if max_subletting_space > 0 else 10000,
+                    step=100,
+                    format="%d",
                     disabled=not subletting_enabled,
-                    help=get_field_description("subletting_occupancy")
+                    help="Enter the actual square meters of space you plan to sublet to other tenants"
                 )
             
             with col4:
@@ -575,21 +580,48 @@ def render_input_summary():
     analysis_period = st.session_state.get("analysis_period", 25)
     
     with col1:
-        st.metric(
-            "Purchase Price",
-            format_currency(purchase_price, currency, include_cents=False)
-        )
+        if purchase_price >= 1000000:
+            # Use abbreviated format for values >= 1M
+            price_display = f"{CURRENCY_SYMBOLS.get(currency, currency)}{purchase_price/1000000:.1f}M"
+        elif purchase_price >= 10000:
+            # Use K format for values >= 10K 
+            price_display = f"{CURRENCY_SYMBOLS.get(currency, currency)}{purchase_price/1000:.0f}K"
+        else:
+            price_display = format_currency(purchase_price, currency, include_cents=False)
+        
+        st.metric("Purchase Price", price_display)
     
     with col2:
-        st.metric(
-            "Annual Rent", 
-            format_currency(annual_rent, currency, include_cents=False)
-        )
+        if annual_rent >= 1000000:
+            # Use abbreviated format for values >= 1M
+            rent_display = f"{CURRENCY_SYMBOLS.get(currency, currency)}{annual_rent/1000000:.1f}M"
+        elif annual_rent >= 10000:
+            # Use K format for values >= 10K
+            rent_display = f"{CURRENCY_SYMBOLS.get(currency, currency)}{annual_rent/1000:.0f}K"
+        else:
+            rent_display = format_currency(annual_rent, currency, include_cents=False)
+        
+        st.metric("Annual Rent", rent_display)
     
     with col3:
+        # Use very compact format to avoid truncation
+        if ownership_space >= 1000000:
+            own_display = f"{ownership_space/1000000:.1f}M"
+        elif ownership_space >= 1000:
+            own_display = f"{ownership_space/1000:.0f}K" 
+        else:
+            own_display = f"{ownership_space:.0f}"
+            
+        if rental_space >= 1000000:
+            rent_display = f"{rental_space/1000000:.1f}M"
+        elif rental_space >= 1000:
+            rent_display = f"{rental_space/1000:.0f}K"
+        else:
+            rent_display = f"{rental_space:.0f}"
+        
         st.metric(
             "Property Sizes",
-            f"Own: {ownership_space:,.0f} m² | Rent: {rental_space:,.0f} m²"
+            f"{own_display} | {rent_display} m²"
         )
     
     with col4:

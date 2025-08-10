@@ -193,16 +193,17 @@ class TestAnnualCostCalculations:
             property_size=15000,  # 15,000 sq meters
             current_space_needed=10000,  # 10,000 sq meters needed
             subletting_rate_per_unit=8.0,  # $8 per sq meter annually
-            subletting_occupancy_rate=85.0,  # 85% occupancy
+            subletting_space_sqm=4000,  # User wants to sublet 4,000 sq meters
             subletting_enabled=True
         )
         
-        excess_space = 15000 - 10000  # 5,000 sq meters
-        expected_income = 5000 * 8.0 * 0.85  # 34,000
+        available_space = 15000 - 10000  # 5,000 sq meters available
+        actual_subletting_space = 4000  # User wants 4,000 (less than available)
+        expected_income = 4000 * 8.0  # 32,000
         
-        assert income['excess_space'] == 5000
+        assert income['available_space'] == 5000
+        assert income['subletting_space'] == 4000
         assert abs(income['subletting_income'] - expected_income) < 0.01
-        assert income['effective_occupancy'] == 0.85
         
     def test_subletting_disabled(self):
         """Test subletting calculation when disabled"""
@@ -210,12 +211,12 @@ class TestAnnualCostCalculations:
             property_size=15000,
             current_space_needed=10000,
             subletting_rate_per_unit=8.0,
-            subletting_occupancy_rate=85.0,
+            subletting_space_sqm=4000,
             subletting_enabled=False
         )
         
         assert income['subletting_income'] == 0.0
-        assert income['excess_space'] == 0.0
+        assert income['subletting_space'] == 0.0
         assert income['subletting_enabled'] is False
         
     def test_no_excess_space_subletting(self):
@@ -224,11 +225,12 @@ class TestAnnualCostCalculations:
             property_size=10000,
             current_space_needed=12000,  # Need more than available
             subletting_rate_per_unit=8.0,
-            subletting_occupancy_rate=85.0,
+            subletting_space_sqm=2000,  # User wants to sublet but no space available
             subletting_enabled=True
         )
         
-        assert income['excess_space'] == 0.0  # max(0, 10000-12000)
+        assert income['available_space'] == 0.0  # max(0, 10000-12000)
+        assert income['subletting_space'] == 0.0  # Can't sublet when no available space
         assert income['subletting_income'] == 0.0
         
     def test_zero_escalation_rate(self):

@@ -13,11 +13,13 @@ import streamlit as st
 from typing import Dict, Any, Optional
 from datetime import datetime, date
 import json
+import hashlib
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.defaults import DEFAULT_VALUES, get_default_value
+from utils.formatting import format_currency
 
 class SessionManager:
     """Manages session state for the Real Estate Decision Tool"""
@@ -63,9 +65,11 @@ class SessionManager:
         # Initialize UI state
         ui_state_keys = [
             "validation_errors",
-            "show_advanced_options",
+            "show_advanced_options", 
             "current_tab",
-            "inputs_changed"
+            "inputs_changed",
+            "last_input_hash",
+            "analysis_input_hash"
         ]
         
         for key in ui_state_keys:
@@ -78,6 +82,10 @@ class SessionManager:
                     st.session_state[key] = "dashboard"
                 elif key == "inputs_changed":
                     st.session_state[key] = False
+                elif key == "last_input_hash":
+                    st.session_state[key] = ""
+                elif key == "analysis_input_hash":
+                    st.session_state[key] = ""
     
     def update_calculated_fields(self):
         """Update calculated fields based on current inputs"""
@@ -258,6 +266,94 @@ class SessionManager:
         # Update calculated fields
         self.update_calculated_fields()
     
+    def get_analysis_input_hash(self) -> str:
+        """Generate hash of inputs relevant to financial analysis"""
+        # Get all input fields that affect analysis
+        analysis_fields = [
+            # Core financial inputs
+            "purchase_price", "current_annual_rent", "down_payment_percent", 
+            "interest_rate", "loan_term", "analysis_period", "cost_of_capital",
+            
+            # Property details
+            "ownership_property_size", "rental_property_size", "current_space_needed",
+            
+            # Cost parameters
+            "transaction_costs_percent", "property_tax_rate", "property_tax_escalation_rate",
+            "insurance_cost", "annual_maintenance_percent", "property_management",
+            
+            # Advanced parameters
+            "longterm_capex_reserve", "obsolescence_risk_factor", "inflation_rate",
+            "market_appreciation_rate", "land_value_percent", "depreciation_period",
+            
+            # Tax parameters
+            "corporate_tax_rate", "interest_deductible", "property_tax_deductible",
+            
+            # Operational parameters
+            "rent_increase_rate", "growth_rate",
+            
+            # Subletting parameters
+            "subletting_enabled", "subletting_rate_per_unit", "subletting_space_sqm"
+        ]
+        
+        # Create a dictionary of relevant values
+        input_values = {}
+        for field in analysis_fields:
+            value = st.session_state.get(field)
+            # Convert to string for consistent hashing
+            if isinstance(value, (datetime, date)):
+                value = value.isoformat()
+            input_values[field] = str(value)
+        
+        # Create hash from sorted key-value pairs
+        input_string = json.dumps(input_values, sort_keys=True)
+        return hashlib.md5(input_string.encode()).hexdigest()
+    
+    def check_for_input_changes(self) -> bool:
+        """Check if analysis-relevant inputs have changed since last check"""
+        current_hash = self.get_analysis_input_hash()
+        last_hash = st.session_state.get("last_input_hash", "")
+        
+        if current_hash != last_hash:
+            st.session_state["last_input_hash"] = current_hash
+            st.session_state["inputs_changed"] = True
+            return True
+        
+        return False
+    
+    def mark_analysis_run(self):
+        """Mark that analysis has been run with current inputs"""
+        current_hash = self.get_analysis_input_hash()
+        st.session_state["analysis_input_hash"] = current_hash
+        st.session_state["inputs_changed"] = False
+    
+    def has_analysis_results(self) -> bool:
+        """Check if analysis results exist in session state"""
+        return 'analysis_results' in st.session_state
+    
+    def analysis_is_stale(self) -> bool:
+        """Check if current analysis results are stale (inputs changed)"""
+        if not self.has_analysis_results():
+            return False
+        
+        current_hash = self.get_analysis_input_hash()
+        analysis_hash = st.session_state.get("analysis_input_hash", "")
+        
+        return current_hash != analysis_hash
+    
+    def clear_stale_analysis(self):
+        """Clear analysis results if inputs have changed"""
+        if self.analysis_is_stale():
+            # Clear analysis results
+            for key in ['analysis_results', 'ownership_flows', 'rental_flows', 'using_demo_data']:
+                if key in st.session_state:
+                    del st.session_state[key]
+            
+            # Reset analysis hash
+            st.session_state["analysis_input_hash"] = ""
+            st.session_state["inputs_changed"] = True
+            return True
+        return False
+    
     def get_input_summary(self) -> Dict[str, Any]:
         """Get a summary of all current inputs for display"""
         summary = {
@@ -276,11 +372,11 @@ class SessionManager:
                 "Market Appreciation": f"{st.session_state.get('market_appreciation_rate', 0):.1f}%"
             },
             "Financial Parameters": {
-                "Purchase Price": st.session_state.get("purchase_price"),
+                "Purchase Price": format_currency(st.session_state.get("purchase_price", 0) or 0),
                 "Down Payment": f"{st.session_state.get('down_payment_percent', 0):.1f}%",
                 "Interest Rate": f"{st.session_state.get('interest_rate', 0):.1f}%",
-                "Annual Rent": st.session_state.get("current_annual_rent"),
-                "Rent per m²": f"{st.session_state.get('rent_per_sqm', 0):.2f}"
+                "Annual Rent": format_currency(st.session_state.get("current_annual_rent", 0) or 0),
+                "Rent per m²": format_currency(st.session_state.get('rent_per_sqm', 0))
             },
             "Analysis Settings": {
                 "Analysis Period": f"{st.session_state.get('analysis_period', 25)} years",

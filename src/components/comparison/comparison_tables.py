@@ -150,7 +150,7 @@ def add_visual_indicators(
 def create_annual_costs_table(
     ownership_flows: List[Dict[str, float]],
     rental_flows: List[Dict[str, float]],
-    max_years: int = 10
+    max_years: int = None
 ) -> None:
     """
     Create detailed annual costs breakdown table
@@ -158,7 +158,7 @@ def create_annual_costs_table(
     Args:
         ownership_flows: Ownership cash flow data
         rental_flows: Rental cash flow data
-        max_years: Maximum number of years to display
+        max_years: Maximum number of years to display (None = show all years from analysis period)
     """
     if not ownership_flows or not rental_flows:
         st.error("Annual costs data not available")
@@ -168,7 +168,11 @@ def create_annual_costs_table(
     
     # Prepare table data
     table_data = []
-    years_to_show = min(max_years, len(ownership_flows), len(rental_flows))
+    # Use full analysis period if max_years not specified
+    if max_years is None:
+        years_to_show = min(len(ownership_flows), len(rental_flows))
+    else:
+        years_to_show = min(max_years, len(ownership_flows), len(rental_flows))
     
     for i in range(years_to_show):
         ownership_flow = ownership_flows[i]
@@ -265,7 +269,7 @@ def create_annual_costs_table(
     total_difference = total_ownership - total_rental
     
     st.markdown(f"""
-    **{years_to_show}-Year Totals:**
+    **{years_to_show}-Year Analysis Period Totals:**
     - Ownership: {format_currency(total_ownership)}
     - Rental: {format_currency(total_rental)}
     - Difference: {format_currency(total_difference)} ({'Ownership costs more' if total_difference > 0 else 'Rental costs more'})

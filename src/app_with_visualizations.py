@@ -181,6 +181,10 @@ def render_dashboard_tab():
     # Main dashboard area
     try:
         session_manager = get_session_manager()
+        
+        # Check for input changes and clear stale analysis
+        session_manager.clear_stale_analysis()
+        
     except Exception as e:
         st.error(f"⚠️ **Session Error**: {str(e)}")
         st.info("🔄 Please refresh the page to continue")
@@ -224,6 +228,8 @@ def render_dashboard_tab():
                         # Clear demo data flag to ensure we're showing real data
                         if 'using_demo_data' in st.session_state:
                             del st.session_state['using_demo_data']
+                        # Mark that analysis has been run with current inputs
+                        session_manager.mark_analysis_run()
                         st.success("✅ Analysis completed successfully!")
                         st.rerun()
         
@@ -234,6 +240,14 @@ def render_dashboard_tab():
             create_results_summary_section(st.session_state['analysis_results'])
             
             st.info("📊 **Go to the 'Analysis Results' tab to view detailed visualizations and charts.**")
+        
+        # Show notification if inputs have changed since last analysis
+        elif session_manager.has_analysis_results() and session_manager.analysis_is_stale():
+            st.markdown("---")
+            st.warning("⚠️ **Your inputs have changed since the last analysis.** Click 'Run Financial Analysis' above to see updated results.")
+        elif st.session_state.get("inputs_changed", False) and not session_manager.has_analysis_results():
+            st.markdown("---")
+            st.info("💡 **Ready for analysis!** Click 'Run Financial Analysis' above to generate results based on your inputs.")
         
         # Show completion status
         try:
@@ -276,6 +290,13 @@ def render_dashboard_tab():
 def render_analysis_tab():
     """Render comprehensive analysis results with visualizations"""
     session_manager = get_session_manager()
+    
+    # Check for input changes and clear stale analysis
+    cleared_stale = session_manager.clear_stale_analysis()
+    
+    # Show notification if stale results were just cleared
+    if cleared_stale:
+        st.info("🔄 **Analysis results have been refreshed** because your inputs have changed. Please re-run the analysis to see updated results.")
     
     # Check if we have real analysis results
     if 'analysis_results' not in st.session_state:
@@ -374,6 +395,15 @@ def render_analysis_tab():
 
 def render_comparison_tab():
     """Render detailed comparison views"""
+    session_manager = get_session_manager()
+    
+    # Check for input changes and clear stale analysis
+    cleared_stale = session_manager.clear_stale_analysis()
+    
+    # Show notification if stale results were just cleared
+    if cleared_stale:
+        st.info("🔄 **Analysis results have been refreshed** because your inputs have changed. Please re-run the analysis to see updated results.")
+    
     if 'analysis_results' not in st.session_state:
         st.warning("⚠️ **No analysis results available for comparison.** Please run the analysis first in the Dashboard tab.")
         return

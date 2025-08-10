@@ -69,7 +69,7 @@ DEFAULT_VALUES: Dict[str, Any] = {
     "additional_space_needed": 0,  # 0 sq meter
     "subletting_potential": False,  # No
     "subletting_rate": 0,  # $0 per sq meter
-    "subletting_occupancy": 85.0,  # 85%
+    "subletting_space_sqm": 0,  # 0 square meters to sublet
     "cost_of_capital": 8.0,  # 8%
     "longterm_capex_reserve": 1.5,  # 1.5%
     "property_upgrade_cycle": 15,  # 15 years
@@ -122,7 +122,7 @@ VALIDATION_RANGES: Dict[str, Dict[str, Any]] = {
     "future_expansion_year": {"min": 1, "max": 100},
     "additional_space_needed": {"min": 0, "max": 100000},
     "subletting_rate": {"min": 0, "max": 1000},
-    "subletting_occupancy": {"min": 0.0, "max": 100.0},
+    "subletting_space_sqm": {"min": 0, "max": 50000},
     "cost_of_capital": {"min": 0.0, "max": 20.0},
     "longterm_capex_reserve": {"min": 0.0, "max": 10.0},
     "property_upgrade_cycle": {"min": 5, "max": 50},
@@ -178,7 +178,7 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     "additional_space_needed": "Extra square meters required for future growth",
     "subletting_potential": "Whether excess space can be sublet to generate income",
     "subletting_rate": "Annual income per square meter from subletting",
-    "subletting_occupancy": "Expected occupancy rate for subletting activities",
+    "subletting_space_sqm": "Square meters of space you plan to sublet to other tenants",
     "cost_of_capital": "Company's cost of capital/discount rate for NPV calculations",
     "longterm_capex_reserve": "Annual reserve for major property improvements",
     "property_upgrade_cycle": "Years between major renovations or upgrades",

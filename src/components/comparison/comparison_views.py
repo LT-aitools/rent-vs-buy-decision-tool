@@ -202,11 +202,12 @@ def create_cost_comparison_table(
         st.warning("Cost comparison data not available")
         return
     
-    # Create comparison dataframe
-    years = [f"Year {f['year']}" for f in ownership_flows[:10]]  # Show first 10 years
+    # Create comparison dataframe for all analysis years
+    max_years = min(len(ownership_flows), len(rental_flows))
+    years = [f"Year {f['year']}" for f in ownership_flows[:max_years]]
     
     comparison_data = []
-    for i in range(min(10, len(ownership_flows), len(rental_flows))):
+    for i in range(max_years):
         ownership_cost = abs(ownership_flows[i]['net_cash_flow'])
         rental_cost = abs(rental_flows[i]['net_cash_flow'])
         difference = ownership_cost - rental_cost
@@ -235,12 +236,12 @@ def create_cost_comparison_table(
         }
     )
     
-    # Add summary statistics
-    total_ownership = sum(abs(f['net_cash_flow']) for f in ownership_flows[:10])
-    total_rental = sum(abs(f['net_cash_flow']) for f in rental_flows[:10])
+    # Add summary statistics for full analysis period
+    total_ownership = sum(abs(f['net_cash_flow']) for f in ownership_flows[:max_years])
+    total_rental = sum(abs(f['net_cash_flow']) for f in rental_flows[:max_years])
     
     st.markdown(f"""
-    **10-Year Summary:**
+    **{max_years}-Year Analysis Period Summary:**
     - Total Ownership Costs: {format_currency(total_ownership)}
     - Total Rental Costs: {format_currency(total_rental)}
     - Net Difference: {format_currency(total_ownership - total_rental)} ({'Ownership costs more' if total_ownership > total_rental else 'Rental costs more'})

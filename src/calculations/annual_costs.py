@@ -354,21 +354,22 @@ def calculate_subletting_income(
     property_size: float,
     current_space_needed: float,
     subletting_rate_per_unit: float,
-    subletting_occupancy_rate: float,
+    subletting_space_sqm: float,
     subletting_enabled: bool = False
 ) -> Dict[str, float]:
     """
-    Calculate potential subletting income from excess space
+    Calculate potential subletting income from specified space
     
-    Based on Business PRD:
-    - Excess Space = MAX(0, Property Size - Current Space Needed)
-    - Subletting Income = Excess Space × Subletting Rate × Subletting Occupancy
+    Updated to use direct space input instead of occupancy percentage:
+    - Available Space = MAX(0, Property Size - Current Space Needed)  
+    - Subletting Space = MIN(subletting_space_sqm, Available Space)
+    - Subletting Income = Subletting Space × Subletting Rate
     
     Args:
         property_size: Property size in square meters (ownership scenario)
         current_space_needed: Space needed for own operations
         subletting_rate_per_unit: Annual subletting rate per square meter
-        subletting_occupancy_rate: Expected occupancy rate (percentage)
+        subletting_space_sqm: Actual square meters user plans to sublet
         subletting_enabled: Whether subletting is allowed/feasible
     
     Returns:
@@ -376,23 +377,25 @@ def calculate_subletting_income(
     """
     if not subletting_enabled:
         return {
-            'excess_space': 0.0,
+            'available_space': 0.0,
+            'subletting_space': 0.0,
             'subletting_income': 0.0,
-            'effective_occupancy': 0.0,
             'subletting_enabled': False
         }
     
-    # Calculate excess space available for subletting
-    excess_space = max(0.0, property_size - current_space_needed)
+    # Calculate available space for subletting
+    available_space = max(0.0, property_size - current_space_needed)
     
-    # Calculate potential subletting income
-    occupancy_rate = subletting_occupancy_rate / 100
-    subletting_income = excess_space * subletting_rate_per_unit * occupancy_rate
+    # Use the minimum of what user wants to sublet and what's actually available
+    actual_subletting_space = min(subletting_space_sqm, available_space)
+    
+    # Calculate subletting income based on actual space to be sublet
+    subletting_income = actual_subletting_space * subletting_rate_per_unit
     
     return {
-        'excess_space': float(excess_space),
+        'available_space': float(available_space),
+        'subletting_space': float(actual_subletting_space),
         'subletting_income': float(subletting_income),
-        'effective_occupancy': float(occupancy_rate),
         'subletting_enabled': True
     }
 
