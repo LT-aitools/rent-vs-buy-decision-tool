@@ -208,7 +208,8 @@ def create_cost_comparison_table(
     comparison_data = []
     for i in range(min(10, len(ownership_flows), len(rental_flows))):
         ownership_cost = abs(ownership_flows[i]['net_cash_flow'])
-        rental_cost = abs(rental_flows[i]['net_cash_flow'])
+        # Use annual_rent instead of net_cash_flow to show gross rental cost
+        rental_cost = rental_flows[i]['annual_rent']
         difference = ownership_cost - rental_cost
         
         comparison_data.append({
@@ -237,7 +238,8 @@ def create_cost_comparison_table(
     
     # Add summary statistics
     total_ownership = sum(abs(f['net_cash_flow']) for f in ownership_flows[:10])
-    total_rental = sum(abs(f['net_cash_flow']) for f in rental_flows[:10])
+    # Use annual_rent for rental costs to match the table above
+    total_rental = sum(f['annual_rent'] for f in rental_flows[:10])
     
     st.markdown(f"""
     **10-Year Summary:**

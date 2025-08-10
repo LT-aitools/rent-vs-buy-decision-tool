@@ -180,7 +180,8 @@ def create_key_metrics_grid(
     
     with col4:
         if rental_flows:
-            annual_rental_cost = abs(rental_flows[0]['net_cash_flow'])
+            # Use annual_rent to show gross rental cost, not net after tax benefits
+            annual_rental_cost = rental_flows[0]['annual_rent']
             create_kpi_card(
                 "Year 1 Rental Cost", 
                 format_currency(annual_rental_cost),

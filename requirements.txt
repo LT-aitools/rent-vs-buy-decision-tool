@@ -14,6 +14,8 @@ plotly>=5.24.1
 
 # Excel Export
 openpyxl>=3.1.5
+xlsxwriter>=3.1.9  # Alternative Excel writer with advanced formatting support
+kaleido>=0.2.1     # Required for static image export from Plotly charts
 
 # Optional Performance Enhancement
 orjson>=3.9.0  # For faster Plotly rendering
