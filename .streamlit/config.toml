@@ -1,30 +1,17 @@
-[logger]
-level = "info"
+[global]
+developmentMode = false
 
-[client]
-toolbarMode = "viewer"
-showErrorDetails = true
-showSidebarNavigation = true
+[server]
+headless = true
+port = $PORT
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
 
 [theme]
-# Professional theme for executive presentations
 primaryColor = "#FF6B6B"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
-
-# Enhanced theming (Streamlit 1.45+)
-headingFontSizes = ["1.25rem", "1.125rem", "1rem", "0.875rem"]
-headingFontWeights = [600, 500, 500, 400]
-chartCategoricalColors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FECA57", "#FF9FF3"]
-chartSequentialColors = ["#FF6B6B", "#FF8E8E", "#FFB1B1"]
-dataframeHeaderBackgroundColor = "#F0F2F6"
-linkUnderline = true
-
-[server]
-maxUploadSize = 200
-enableCORS = true
-enableXsrfProtection = false
-
-[browser]
-gatherUsageStats = false
+EOF < /dev/null
