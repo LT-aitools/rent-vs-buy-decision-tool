@@ -103,6 +103,13 @@ ANNUAL_COST_TOOLTIPS = {
         "calculation": "Year 1: Current Annual Rent. Year N: Year 1 Amount × (1 + Rent Increase Rate)^(N-1)"
     },
     
+    "rental_cost_comparison": {
+        "title": "Rental Cost in Comparisons",
+        "formula": "Annual Rent - Tax Benefits",
+        "explanation": "After-tax rental cost used in comparison tables. Lower than gross rent because rent is tax-deductible as a business expense.",
+        "calculation": "Gross Annual Rent - (Gross Annual Rent × Corporate Tax Rate). This ensures fair comparison with ownership costs that also include tax benefits."
+    },
+    
     "tax_benefits": {
         "title": "Tax Benefits",
         "formula": "(Mortgage Interest + Property Taxes + Depreciation) × Tax Rate",

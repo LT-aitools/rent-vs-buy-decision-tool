@@ -23,6 +23,7 @@ from .comparison_tables import (
     create_cash_flow_comparison_table,
     format_comparison_table
 )
+from ...utils.calculation_tooltips import display_calculation_tooltip
 
 
 def render_side_by_side_comparison(
@@ -198,6 +199,13 @@ def create_cost_comparison_table(
     """
     st.markdown("#### 📋 Annual Cost Comparison")
     
+    # Add explanation tooltip
+    st.info("""
+    💡 **Important**: This comparison shows **after-tax business costs** for both scenarios. 
+    The rental costs here are **lower** than your gross rental input because they include tax deductions 
+    (rent is deductible as a business expense). This ensures a fair comparison between ownership and rental scenarios.
+    """)
+    
     if not ownership_flows or not rental_flows:
         st.warning("Cost comparison data not available")
         return
@@ -230,7 +238,11 @@ def create_cost_comparison_table(
         column_config={
             "Year": st.column_config.TextColumn("Year", width="small"),
             "Ownership Cost": st.column_config.TextColumn("Ownership Cost", width="medium"),
-            "Rental Cost": st.column_config.TextColumn("Rental Cost", width="medium"),
+            "Rental Cost": st.column_config.TextColumn(
+                "Rental Cost", 
+                width="medium",
+                help=display_calculation_tooltip("rental_cost_comparison")
+            ),
             "Difference": st.column_config.TextColumn("Difference", width="medium"),
             "Better Option": st.column_config.TextColumn("Better Option", width="small")
         }
