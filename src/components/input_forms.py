@@ -392,34 +392,82 @@ def render_operational_parameters_section():
             )
         
         with col2:
-            # Ensure analysis_period is a valid integer
+            # Clear any corrupted session state for future_expansion_year
+            if "future_expansion_year" in st.session_state:
+                current_val = st.session_state["future_expansion_year"]
+                if not isinstance(current_val, str):
+                    del st.session_state["future_expansion_year"]
+            
+            # Ensure analysis_period is a valid integer and reasonable size
             analysis_period = st.session_state.get("analysis_period", 25)
-            if not isinstance(analysis_period, int) or analysis_period <= 0:
+            try:
+                if not isinstance(analysis_period, (int, float)) or analysis_period <= 0:
+                    analysis_period = 25
+                analysis_period = int(analysis_period)
+                # Cap to prevent memory issues
+                if analysis_period > 50:
+                    analysis_period = 50
+            except (TypeError, ValueError, OverflowError):
                 analysis_period = 25
             
             # Generate expansion options safely
             try:
                 expansion_options = get_expansion_year_options(analysis_period)
-            except (TypeError, ValueError):
+                # Ensure we have valid options
+                if not expansion_options or not isinstance(expansion_options, list):
+                    expansion_options = ["Never", "Year 10", "Year 15", "Year 20"]
+            except Exception:
                 expansion_options = ["Never", "Year 10", "Year 15", "Year 20"]
             
+            # Ensure current selection is valid and reset if corrupted
             current_selection = st.session_state.get("future_expansion_year", "Never")
-            if current_selection not in expansion_options:
+            if not isinstance(current_selection, str) or current_selection not in expansion_options:
                 current_selection = "Never"
+                # Reset the session state to a safe value
+                st.session_state["future_expansion_year"] = "Never"
             
             # Get safe index
             try:
-                default_index = expansion_options.index(current_selection)
+                default_index = expansion_options.index(current_selection) if current_selection in expansion_options else 0
             except (ValueError, TypeError):
                 default_index = 0
             
-            st.selectbox(
-                "Future Expansion Year",
-                options=expansion_options,
-                key="future_expansion_year",
-                index=default_index,
-                help=get_field_description("future_expansion_year")
-            )
+            # Ensure index is valid
+            if default_index >= len(expansion_options):
+                default_index = 0
+            
+            # Extra safety checks before creating selectbox
+            try:
+                # Ensure all options are strings
+                expansion_options = [str(option) for option in expansion_options]
+                
+                # Ensure index is an integer and within bounds
+                default_index = int(default_index) if isinstance(default_index, (int, float)) else 0
+                default_index = max(0, min(default_index, len(expansion_options) - 1))
+                
+                # Get help text safely
+                try:
+                    help_text = get_field_description("future_expansion_year")
+                except Exception:
+                    help_text = "Year when future expansion might be needed"
+                
+                st.selectbox(
+                    "Future Expansion Year",
+                    options=expansion_options,
+                    key="future_expansion_year",
+                    index=default_index,
+                    help=help_text
+                )
+            except Exception as e:
+                # If selectbox fails, show a simple text input as fallback
+                st.text_input(
+                    "Future Expansion Year",
+                    value="Never",
+                    key="future_expansion_year_fallback",
+                    help="Selectbox failed, using text input as fallback"
+                )
+                # Store the fallback value in the main session state key
+                st.session_state["future_expansion_year"] = st.session_state.get("future_expansion_year_fallback", "Never")
             
             st.number_input(
                 "Additional Space Needed (m²)",

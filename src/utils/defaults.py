@@ -212,6 +212,11 @@ def get_expansion_year_options(analysis_period: int) -> list:
             analysis_period = 25
         
         analysis_period = int(analysis_period)
+        
+        # Cap the analysis period to prevent memory issues
+        if analysis_period > 50:
+            analysis_period = 50
+            
         options = ["Never"] + [f"Year {i}" for i in range(1, analysis_period + 1)]
         return options
     except (TypeError, ValueError, OverflowError):
