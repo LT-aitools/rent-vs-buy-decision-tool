@@ -11,8 +11,30 @@ This module provides PDF export capabilities including:
 Repository: https://github.com/LT-aitools/rent-vs-buy-decision-tool
 """
 
-# PDF export components will be implemented in future phases
-# For now, this establishes the module structure
+try:
+    from .pdf_generator import PDFGenerator
+    from .layout_engine import LayoutEngine, LayoutDimensions, ContentType
+    from .chart_renderer import PDFChartRenderer
+    from .executive_templates import ExecutiveTemplateBuilder, TemplateConfig, TemplateType
+    
+    __all__ = [
+        'PDFGenerator',
+        'LayoutEngine',
+        'LayoutDimensions', 
+        'ContentType',
+        'PDFChartRenderer',
+        'ExecutiveTemplateBuilder',
+        'TemplateConfig',
+        'TemplateType'
+    ]
+    
+    PDF_SYSTEM_AVAILABLE = True
+    
+except ImportError as e:
+    # Graceful degradation if dependencies not available
+    __all__ = []
+    PDF_SYSTEM_AVAILABLE = False
+    import logging
+    logging.warning(f"PDF system not fully available: {e}")
 
 __version__ = "1.0.0"
-__all__ = []
