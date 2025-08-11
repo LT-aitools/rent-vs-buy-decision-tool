@@ -330,16 +330,18 @@ class ExcelGenerator:
         ws['A1'] = "Cash Flow Analysis"
         ws['A1'].font = Font(size=16, bold=True)
         
+        current_row = 3
+        
         # Ownership cash flows
-        await self._insert_data_table(ws, cash_flows['ownership_table'], start_row=3, title="Ownership Cash Flows")
+        rows_used = await self._insert_data_table(ws, cash_flows['ownership_table'], start_row=current_row, title="Ownership Cash Flows")
+        current_row += rows_used + 2  # Add spacing
         
         # Rental cash flows  
-        ownership_rows = len(cash_flows['ownership_table'].get('data', [])) + 5
-        await self._insert_data_table(ws, cash_flows['rental_table'], start_row=ownership_rows, title="Rental Cash Flows")
+        rows_used = await self._insert_data_table(ws, cash_flows['rental_table'], start_row=current_row, title="Rental Cash Flows")
+        current_row += rows_used + 2  # Add spacing
         
         # Comparison table
-        total_rows = ownership_rows + len(cash_flows['rental_table'].get('data', [])) + 5
-        await self._insert_data_table(ws, cash_flows['comparison_table'], start_row=total_rows, title="Side-by-Side Comparison")
+        await self._insert_data_table(ws, cash_flows['comparison_table'], start_row=current_row, title="Side-by-Side Comparison")
     
     async def _create_charts_sheet(
         self,
@@ -348,25 +350,48 @@ class ExcelGenerator:
         config: Dict[str, Any]
     ) -> None:
         """Create charts and visualizations worksheet"""
+        # Render charts if not already done
         chart_images = excel_data.get('chart_images', {})
+        if not chart_images:
+            logger.info("Rendering charts for Excel embedding")
+            chart_images = await self.render_charts(excel_data, resolution=300)
+            excel_data['chart_images'] = chart_images
         
         ws['A1'] = "Charts & Visualizations"
         ws['A1'].font = Font(size=16, bold=True)
         
         # Embed charts as images
         row = 3
+        col = 1
+        charts_per_row = 1  # One chart per row for better readability
+        
         for chart_name, image_path in chart_images.items():
             if Path(image_path).exists():
                 try:
                     img = Image(str(image_path))
-                    img.width = 600  # Adjust size as needed
-                    img.height = 400
+                    # Scale images for Excel display
+                    img.width = 720  # 10 inches at 72 DPI
+                    img.height = 480  # 6.67 inches at 72 DPI
                     
-                    ws.add_image(img, f'A{row}')
-                    row += 25  # Space between charts
+                    # Add chart title
+                    chart_title = chart_name.replace('_', ' ').title()
+                    title_cell = ws[f'{get_column_letter(col)}{row}']
+                    title_cell.value = chart_title
+                    title_cell.font = Font(size=12, bold=True)
+                    
+                    # Add image below title
+                    ws.add_image(img, f'{get_column_letter(col)}{row + 1}')
+                    row += 30  # Space between charts (title + image + spacing)
                     
                 except Exception as e:
                     logger.warning(f"Failed to embed chart {chart_name}: {str(e)}")
+                    # Add a text placeholder instead
+                    ws[f'A{row}'] = f"Chart: {chart_name} (Failed to load)"
+                    row += 2
+            else:
+                logger.warning(f"Chart image not found: {image_path}")
+                ws[f'A{row}'] = f"Chart: {chart_name} (Image not found)"
+                row += 2
     
     async def _create_calculations_sheet(
         self,
@@ -385,8 +410,8 @@ class ExcelGenerator:
         # Insert each calculation section
         for calc_name, calc_data in calculations.items():
             title = calc_name.replace('_', ' ').title()
-            await self._insert_data_table(ws, calc_data, start_row=current_row, title=title)
-            current_row += len(calc_data.get('data', [])) + 5
+            rows_used = await self._insert_data_table(ws, calc_data, start_row=current_row, title=title)
+            current_row += rows_used + 3  # Add spacing between sections
     
     async def _create_assumptions_sheet(
         self,
@@ -408,33 +433,17 @@ class ExcelGenerator:
         table_data: Dict[str, Any],
         start_row: int,
         title: str
-    ) -> None:
+    ) -> int:
         """Insert formatted data table into worksheet"""
         
         # Section title
         ws[f'A{start_row}'] = title
         ws[f'A{start_row}'].font = Font(size=14, bold=True)
         
-        # Headers
-        headers = table_data.get('headers', [])
-        data_rows = table_data.get('data', [])
+        # Apply professional table formatting using the formatter
+        self.formatter.apply_table_formatting(ws, table_data, start_row + 2, 1)
         
-        header_row = start_row + 2
-        for col_idx, header in enumerate(headers):
-            col_letter = get_column_letter(col_idx + 1)
-            ws[f'{col_letter}{header_row}'] = header
-            ws[f'{col_letter}{header_row}'].font = Font(bold=True)
-        
-        # Data rows
-        for row_idx, data_row in enumerate(data_rows):
-            excel_row = header_row + row_idx + 1
-            for col_idx, cell_value in enumerate(data_row):
-                col_letter = get_column_letter(col_idx + 1)
-                ws[f'{col_letter}{excel_row}'] = cell_value
-                
-                # Apply formatting based on data type
-                if isinstance(cell_value, (int, float)) and abs(cell_value) > 1000:
-                    ws[f'{col_letter}{excel_row}'].number_format = '$#,##0'
+        return len(table_data.get('data', [])) + 3  # Return the number of rows used
     
     async def _apply_workbook_styling(self, template_config: Dict[str, Any]) -> None:
         """Apply professional styling to entire workbook"""
@@ -467,10 +476,67 @@ class ExcelGenerator:
                         )
                         cell.alignment = Alignment(vertical='center')
     
+    async def validate_data(self, export_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate export data for Excel generation
+        
+        Args:
+            export_data: Export data package to validate
+            
+        Returns:
+            Validation results with errors and warnings
+        """
+        validation_results = {
+            'is_valid': True,
+            'errors': [],
+            'warnings': []
+        }
+        
+        # Check required data keys
+        required_keys = ['analysis_results', 'ownership_flows', 'rental_flows', 'session_data']
+        for key in required_keys:
+            if key not in export_data:
+                validation_results['errors'].append(f"Missing required key: {key}")
+                validation_results['is_valid'] = False
+        
+        # Validate analysis results
+        if 'analysis_results' in export_data:
+            analysis = export_data['analysis_results']
+            required_analysis_keys = ['ownership_npv', 'rental_npv', 'npv_difference', 'recommendation']
+            for key in required_analysis_keys:
+                if key not in analysis:
+                    validation_results['warnings'].append(f"Missing analysis result: {key}")
+        
+        # Validate cash flows
+        if 'ownership_flows' in export_data and 'rental_flows' in export_data:
+            ownership_flows = export_data['ownership_flows']
+            rental_flows = export_data['rental_flows']
+            
+            if not ownership_flows.get('annual_cash_flows'):
+                validation_results['warnings'].append("No ownership cash flows data")
+            if not rental_flows.get('annual_cash_flows'):
+                validation_results['warnings'].append("No rental cash flows data")
+        
+        return validation_results
+    
+    def cleanup(self) -> None:
+        """Clean up temporary resources"""
+        try:
+            if self.workbook:
+                self.workbook.close()
+            
+            # Clean up temporary directory if it exists and is empty
+            if self.temp_dir.exists():
+                import shutil
+                try:
+                    shutil.rmtree(self.temp_dir)
+                    logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
+                except Exception as e:
+                    logger.warning(f"Could not clean up temp directory: {e}")
+                    
+        except Exception as e:
+            logger.warning(f"Cleanup error: {e}")
+    
     def __del__(self):
         """Cleanup on destruction"""
-        if self.workbook:
-            try:
-                self.workbook.close()
-            except:
-                pass
+        self.cleanup()

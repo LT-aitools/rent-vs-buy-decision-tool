@@ -20,9 +20,51 @@ class ExportValidationError(Exception):
     pass
 
 
-def validate_export_data(export_data: Dict[str, Any]) -> None:
+def validate_export_data(export_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Comprehensive validation of export data
+    
+    Args:
+        export_data: Complete export data package
+        
+    Returns:
+        Dictionary with validation results: {'is_valid': bool, 'errors': list, 'warnings': list}
+    """
+    logger.info("Starting export data validation")
+    
+    validation_result = {
+        'is_valid': True,
+        'errors': [],
+        'warnings': []
+    }
+    
+    try:
+        # Validate core data components
+        _validate_analysis_results(export_data.get('analysis_results'))
+        _validate_cash_flows_dict(export_data.get('ownership_flows'), "ownership")
+        _validate_cash_flows_dict(export_data.get('rental_flows'), "rental")
+        _validate_session_data(export_data.get('session_data'))
+        
+        # Validate data consistency
+        _validate_data_consistency_dict(export_data)
+        
+        logger.info("Export data validation completed successfully")
+        
+    except ExportValidationError as e:
+        validation_result['is_valid'] = False
+        validation_result['errors'].append(str(e))
+        logger.error(f"Export data validation failed: {str(e)}")
+    except Exception as e:
+        validation_result['is_valid'] = False
+        validation_result['errors'].append(f"Unexpected validation error: {str(e)}")
+        logger.error(f"Unexpected export data validation error: {str(e)}")
+    
+    return validation_result
+
+
+def validate_export_data_strict(export_data: Dict[str, Any]) -> None:
+    """
+    Comprehensive validation of export data (raises exceptions)
     
     Args:
         export_data: Complete export data package
@@ -30,23 +72,9 @@ def validate_export_data(export_data: Dict[str, Any]) -> None:
     Raises:
         ExportValidationError: If validation fails
     """
-    logger.info("Starting export data validation")
-    
-    try:
-        # Validate core data components
-        _validate_analysis_results(export_data.get('analysis_results'))
-        _validate_cash_flows(export_data.get('ownership_flows'), "ownership")
-        _validate_cash_flows(export_data.get('rental_flows'), "rental")
-        _validate_session_data(export_data.get('session_data'))
-        
-        # Validate data consistency
-        _validate_data_consistency(export_data)
-        
-        logger.info("Export data validation completed successfully")
-        
-    except Exception as e:
-        logger.error(f"Export data validation failed: {str(e)}")
-        raise ExportValidationError(f"Export data validation failed: {str(e)}") from e
+    validation_result = validate_export_data(export_data)
+    if not validation_result['is_valid']:
+        raise ExportValidationError("; ".join(validation_result['errors']))
 
 
 def _validate_analysis_results(analysis_results: Optional[Dict[str, Any]]) -> None:
@@ -155,6 +183,67 @@ def _validate_session_data(session_data: Optional[Dict[str, Any]]) -> None:
     
     if missing_critical:
         raise ExportValidationError(f"Missing critical session data fields: {', '.join(missing_critical)}")
+
+
+def _validate_cash_flows_dict(cash_flows: Optional[Dict[str, Any]], flow_type: str) -> None:
+    """Validate cash flow data when it's in dictionary format"""
+    if not cash_flows:
+        raise ExportValidationError(f"{flow_type.title()} cash flows are required")
+    
+    if not isinstance(cash_flows, dict):
+        raise ExportValidationError(f"{flow_type.title()} cash flows must be a dictionary")
+    
+    # Extract annual cash flows array
+    annual_flows = cash_flows.get('annual_cash_flows', [])
+    if not isinstance(annual_flows, list):
+        raise ExportValidationError(f"{flow_type.title()} annual_cash_flows must be a list")
+    
+    if len(annual_flows) == 0:
+        raise ExportValidationError(f"{flow_type.title()} annual_cash_flows cannot be empty")
+    
+    # Validate each cash flow value
+    for i, flow in enumerate(annual_flows):
+        if not isinstance(flow, (int, float)):
+            raise ExportValidationError(f"Invalid cash flow value in {flow_type} entry {i}: {flow}")
+
+
+def _validate_data_consistency_dict(export_data: Dict[str, Any]) -> None:
+    """Validate consistency between different data components (dict format)"""
+    analysis = export_data.get('analysis_results', {})
+    ownership_flows = export_data.get('ownership_flows', {})
+    rental_flows = export_data.get('rental_flows', {})
+    session_data = export_data.get('session_data', {})
+    
+    # Check analysis period consistency
+    analysis_period = analysis.get('analysis_period') or session_data.get('analysis_period') or _find_nested_field(session_data, 'analysis_period')
+    
+    ownership_annual = ownership_flows.get('annual_cash_flows', [])
+    rental_annual = rental_flows.get('annual_cash_flows', [])
+    
+    if analysis_period:
+        if len(ownership_annual) != analysis_period:
+            raise ExportValidationError(f"Ownership cash flows ({len(ownership_annual)} years) don't match analysis period ({analysis_period} years)")
+        
+        if len(rental_annual) != analysis_period:
+            raise ExportValidationError(f"Rental cash flows ({len(rental_annual)} years) don't match analysis period ({analysis_period} years)")
+    
+    # Check NPV calculation consistency
+    ownership_npv = analysis.get('ownership_npv')
+    rental_npv = analysis.get('rental_npv')
+    npv_difference = analysis.get('npv_difference')
+    
+    if all(x is not None for x in [ownership_npv, rental_npv, npv_difference]):
+        calculated_difference = ownership_npv - rental_npv
+        if abs(calculated_difference - npv_difference) > 1:  # Allow small rounding differences
+            raise ExportValidationError(f"NPV difference inconsistency: calculated {calculated_difference:.2f}, stored {npv_difference:.2f}")
+    
+    # Validate recommendation logic
+    recommendation = analysis.get('recommendation')
+    if recommendation and npv_difference is not None:
+        if recommendation == 'BUY' and npv_difference <= 0:
+            raise ExportValidationError("Recommendation is BUY but NPV difference is not positive")
+        elif recommendation == 'RENT' and npv_difference >= 0:
+            raise ExportValidationError("Recommendation is RENT but NPV difference is not negative")
 
 
 def _validate_data_consistency(export_data: Dict[str, Any]) -> None:
