@@ -199,7 +199,8 @@ class ExecutiveTemplateBuilder:
         styles['ExecutiveBody'] = ParagraphStyle(
             'ExecutiveBody',
             fontSize=12,
-            spaceAfter=8,
+            spaceAfter=12,
+            spaceBefore=8,
             textColor=self.colors['dark'],
             fontName='Helvetica',
             alignment=TA_JUSTIFY,
@@ -220,13 +221,14 @@ class ExecutiveTemplateBuilder:
         styles['RiskBox'] = ParagraphStyle(
             'RiskBox',
             fontSize=11,
-            spaceAfter=8,
+            spaceAfter=12,
+            spaceBefore=8,
             textColor=self.colors['dark'],
             fontName='Helvetica',
             alignment=TA_JUSTIFY,
             borderWidth=1,
             borderColor=self.colors['warning'],
-            borderPadding=12,
+            borderPadding=15,
             backColor=HexColor('#FFFBF0')
         )
         
@@ -274,9 +276,13 @@ class ExecutiveTemplateBuilder:
         # NPV comparison visualization
         if chart_images and 'npv_comparison' in chart_images:
             story.append(Paragraph("Net Present Value Analysis", self.styles['SectionHeader']))
-            chart_width, chart_height = self.layout.optimize_chart_size(ContentType.CHART, 12, 1.6)
-            chart_img = Image(str(chart_images['npv_comparison']), width=chart_width, height=chart_height)
-            story.append(chart_img)
+            try:
+                chart_width, chart_height = self.layout.optimize_chart_size(ContentType.CHART, 12, 1.6)
+                chart_img = Image(str(chart_images['npv_comparison']), width=chart_width, height=chart_height)
+                story.append(chart_img)
+            except Exception as e:
+                # If chart fails, add a placeholder message
+                story.append(Paragraph("Chart rendering temporarily unavailable", self.styles['ExecutiveBody']))
             story.append(Spacer(1, 0.2 * inch))
         
         # Strategic insights
@@ -287,12 +293,14 @@ class ExecutiveTemplateBuilder:
         story.append(Paragraph(insights_text, self.styles['ExecutiveBody']))
         
         # Risk assessment
+        story.append(Spacer(1, 0.3 * inch))
         story.append(Paragraph("Risk Assessment", self.styles['SectionHeader']))
         
         risk_text = self._generate_risk_assessment(analysis_results, confidence)
         story.append(Paragraph(risk_text, self.styles['RiskBox']))
         
         # Investment timeline
+        story.append(Spacer(1, 0.3 * inch))
         story.append(Paragraph("Key Assumptions & Parameters", self.styles['SectionHeader']))
         
         assumptions_text = self._generate_assumptions_summary(inputs)

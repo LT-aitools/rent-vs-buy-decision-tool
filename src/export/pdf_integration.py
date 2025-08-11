@@ -171,9 +171,24 @@ class PDFExportManager:
             elif template_type == 'investor':
                 story = template_builder.build_investor_presentation(export_data, chart_images)
             
-            # Generate final PDF
+            # Generate final PDF using template builder's layout engine
             pdf_path = Path(tempfile.mktemp(suffix='.pdf'))
-            doc = self.pdf_generator._create_document(pdf_path)
+            
+            # Use the template builder's document creation instead of the basic generator
+            from reportlab.platypus import SimpleDocTemplate
+            
+            doc = SimpleDocTemplate(
+                str(pdf_path),
+                pagesize=template_builder.layout.page_size,
+                topMargin=template_builder.layout.margins['top'],
+                bottomMargin=template_builder.layout.margins['bottom'],
+                leftMargin=template_builder.layout.margins['left'],
+                rightMargin=template_builder.layout.margins['right'],
+                title="Real Estate Investment Analysis",
+                subject="Investment Analysis and Recommendation",
+                author="Real Estate Decision Tool"
+            )
+            
             doc.build(story)
             
             # Update generation info
