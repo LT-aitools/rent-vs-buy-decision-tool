@@ -18,21 +18,42 @@ Export Process Flow:
 Repository: https://github.com/LT-aitools/rent-vs-buy-decision-tool
 """
 
-from .export_coordinator import ExportCoordinator, ExportOptions
-from .file_manager import FileManager, ExportFile
-from .validation import validate_export_data, ExportValidationError
+try:
+    from .file_manager import FileManager, ExportFile
+    FILE_MANAGER_AVAILABLE = True
+except ImportError:
+    FILE_MANAGER_AVAILABLE = False
+
+try:
+    from .validation import validate_export_data, ExportValidationError
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
+
+try:
+    from .pdf_integration import PDFExportManager
+    PDF_INTEGRATION_AVAILABLE = True
+except ImportError:
+    PDF_INTEGRATION_AVAILABLE = False
+
+try:
+    from .streamlit_integration import ExcelExportManager
+    EXCEL_INTEGRATION_AVAILABLE = True
+except ImportError:
+    EXCEL_INTEGRATION_AVAILABLE = False
 
 __version__ = "1.0.0"
-__all__ = [
-    # Main coordinator
-    'ExportCoordinator',
-    'ExportOptions', 
-    
-    # File management
-    'FileManager',
-    'ExportFile',
-    
-    # Validation
-    'validate_export_data',
-    'ExportValidationError'
-]
+__all__ = []
+
+# Add available components to __all__
+if FILE_MANAGER_AVAILABLE:
+    __all__.extend(['FileManager', 'ExportFile'])
+
+if VALIDATION_AVAILABLE:
+    __all__.extend(['validate_export_data', 'ExportValidationError'])
+
+if PDF_INTEGRATION_AVAILABLE:
+    __all__.append('PDFExportManager')
+
+if EXCEL_INTEGRATION_AVAILABLE:
+    __all__.append('ExcelExportManager')

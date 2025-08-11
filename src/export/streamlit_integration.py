@@ -9,17 +9,261 @@ from the Streamlit application to generate professional Excel reports.
 import asyncio
 import logging
 import tempfile
+import time
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
 import streamlit as st
 
-from .excel.excel_generator import ExcelGenerator
-from .excel.template_manager import ExcelTemplateManager, TemplateType
-from .validation import validate_export_data
+try:
+    from .excel.excel_generator import ExcelGenerator
+    from .excel.template_manager import ExcelTemplateManager, TemplateType
+    from .validation import validate_export_data
+    EXCEL_SYSTEM_AVAILABLE = True
+except ImportError:
+    EXCEL_SYSTEM_AVAILABLE = False
+    logging.warning("Excel export system not fully available - some dependencies missing")
 
 logger = logging.getLogger(__name__)
+
+
+class ExcelExportManager:
+    """
+    Excel Export Manager for Streamlit Integration
+    
+    Provides comprehensive Excel report generation with template support,
+    chart embedding, and progress tracking for Streamlit applications.
+    """
+    
+    def __init__(self):
+        """Initialize Excel export manager"""
+        
+        if not EXCEL_SYSTEM_AVAILABLE:
+            raise ImportError("Excel system dependencies not available")
+        
+        # Initialize Excel system components
+        self.excel_generator = ExcelGenerator()
+        self.template_manager = ExcelTemplateManager()
+        
+        # Available templates
+        self.available_templates = ['comprehensive', 'executive', 'detailed']
+        
+        logger.info("Excel Export Manager initialized")
+    
+    async def generate_excel_report(
+        self,
+        export_data: Dict[str, Any],
+        template_type: str = 'comprehensive',
+        output_path: Optional[Path] = None,
+        include_charts: bool = True
+    ) -> Tuple[Path, Dict[str, Any]]:
+        """
+        Generate Excel report with progress tracking
+        
+        Args:
+            export_data: Complete analysis data
+            template_type: Excel template type
+            output_path: Output file path (temp file if None)
+            include_charts: Whether to include charts
+            
+        Returns:
+            Tuple of (excel_path, export_info)
+        """
+        
+        start_time = time.time()
+        logger.info(f"Starting Excel generation - template: {template_type}")
+        
+        try:
+            # Validate export data
+            validation = validate_export_data(export_data)
+            if not validation['is_valid']:
+                raise ValueError("Export data validation failed")
+            
+            # Set up output path
+            if output_path is None:
+                output_path = Path(tempfile.mktemp(suffix='.xlsx'))
+            
+            # Generate Excel file
+            excel_path = await self._generate_with_template(
+                export_data=export_data,
+                template_type=template_type,
+                output_path=output_path,
+                include_charts=include_charts
+            )
+            
+            # Prepare export information
+            generation_time = time.time() - start_time
+            export_info = {
+                'template_type': template_type,
+                'include_charts': include_charts,
+                'generation_time': generation_time,
+                'file_size': excel_path.stat().st_size if excel_path.exists() else 0,
+                'worksheets': self._count_worksheets(template_type),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            logger.info(f"Excel generation completed in {generation_time:.1f}s")
+            return excel_path, export_info
+            
+        except Exception as e:
+            logger.error(f"Excel generation failed: {str(e)}")
+            raise
+    
+    async def _generate_with_template(
+        self,
+        export_data: Dict[str, Any],
+        template_type: str,
+        output_path: Path,
+        include_charts: bool
+    ) -> Path:
+        """Generate Excel using template manager"""
+        
+        # Use the existing generate_excel_report function
+        return await asyncio.to_thread(
+            generate_excel_report,
+            analysis_results=export_data.get('analysis_results', {}),
+            ownership_flows=export_data.get('ownership_flows', []),
+            rental_flows=export_data.get('rental_flows', []),
+            session_data=export_data.get('inputs', {}),
+            template_type=template_type,
+            output_file=str(output_path),
+            include_charts=include_charts
+        )
+    
+    def _count_worksheets(self, template_type: str) -> int:
+        """Estimate worksheet count for template type"""
+        
+        worksheet_counts = {
+            'comprehensive': 5,  # Summary, Ownership, Rental, Charts, Assumptions
+            'executive': 3,      # Summary, Key Metrics, Charts
+            'detailed': 6        # All worksheets plus additional analysis
+        }
+        
+        return worksheet_counts.get(template_type, 5)
+    
+    def create_streamlit_download_button(
+        self,
+        export_data: Dict[str, Any],
+        template_type: str = 'comprehensive',
+        button_label: Optional[str] = None,
+        include_charts: bool = True,
+        professional_formatting: bool = True
+    ) -> bool:
+        """
+        Create Streamlit download button for Excel report
+        
+        Args:
+            export_data: Export data for report generation
+            template_type: Template type to generate
+            button_label: Custom button label
+            include_charts: Whether to include charts
+            professional_formatting: Whether to apply professional formatting
+            
+        Returns:
+            True if button was clicked and download initiated
+        """
+        if button_label is None:
+            button_label = f"Generate {template_type.title()} Excel Report"
+        
+        # Create download button
+        if st.button(button_label, key=f"excel_download_{template_type}"):
+            try:
+                # Show progress
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                status_text.text("🔄 Initializing Excel export...")
+                progress_bar.progress(10)
+                
+                # Generate Excel file
+                with st.spinner("Generating Excel report..."):
+                    excel_path, generation_info = asyncio.run(
+                        self.generate_excel_report(
+                            export_data=export_data,
+                            template_type=template_type,
+                            include_charts=include_charts
+                        )
+                    )
+                
+                status_text.text("✅ Excel report generated successfully!")
+                progress_bar.progress(100)
+                
+                # Read Excel for download
+                with open(excel_path, 'rb') as excel_file:
+                    excel_bytes = excel_file.read()
+                
+                # Generate filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"real_estate_analysis_{template_type}_{timestamp}.xlsx"
+                
+                # Create download button
+                st.download_button(
+                    label="📊 Download Excel Report",
+                    data=excel_bytes,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"excel_download_final_{template_type}"
+                )
+                
+                # Show generation info
+                st.success(f"✅ Excel report generated successfully!")
+                
+                with st.expander("Generation Details"):
+                    st.write(f"**Template:** {generation_info['template_type'].title()}")
+                    st.write(f"**Worksheets:** {generation_info['worksheets']}")
+                    st.write(f"**File Size:** {generation_info['file_size']:,} bytes")
+                    st.write(f"**Generation Time:** {generation_info.get('generation_time', 0):.2f} seconds")
+                
+                # Clean up
+                try:
+                    excel_path.unlink()
+                except:
+                    pass
+                
+                # Clear progress indicators
+                progress_bar.empty()
+                status_text.empty()
+                
+                return True
+                
+            except Exception as e:
+                st.error(f"❌ Error generating Excel report: {str(e)}")
+                logger.error(f"Error in Streamlit Excel download: {str(e)}")
+                
+                # Clear progress indicators
+                try:
+                    progress_bar.empty()
+                    status_text.empty()
+                except:
+                    pass
+        
+        return False
+    
+    def get_export_capabilities(self) -> Dict[str, Any]:
+        """Get Excel export capabilities"""
+        
+        capabilities = {
+            'excel_system_available': EXCEL_SYSTEM_AVAILABLE,
+            'templates': self.available_templates,
+            'features': {
+                'professional_formatting': True,
+                'chart_embedding': True,
+                'multiple_worksheets': True,
+                'data_validation': True,
+                'conditional_formatting': True
+            },
+            'formats': ['xlsx'],
+            'chart_types': [
+                'npv_comparison',
+                'annual_cash_flows',
+                'cumulative_cash_flows',
+                'financial_metrics',
+                'sensitivity_analysis'
+            ]
+        }
+        
+        return capabilities
 
 
 def generate_excel_report(

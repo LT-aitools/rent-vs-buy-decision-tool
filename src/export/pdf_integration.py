@@ -501,6 +501,7 @@ class PDFExportManager:
         return {
             'pdf_system_available': PDF_SYSTEM_AVAILABLE,
             'streamlit_available': STREAMLIT_AVAILABLE,
+            'templates': list(self.template_configs.keys()) if PDF_SYSTEM_AVAILABLE else [],
             'supported_templates': list(self.template_configs.keys()) if PDF_SYSTEM_AVAILABLE else [],
             'chart_rendering_available': hasattr(self, 'chart_renderer'),
             'template_configurations': {
