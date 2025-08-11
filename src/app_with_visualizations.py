@@ -431,15 +431,150 @@ def render_export_tab():
         )
         return
     
-    # Export options
+    # Check if we have analysis results for professional exports
+    has_analysis_results = ('analysis_results' in st.session_state and 
+                            'ownership_flows' in st.session_state and 
+                            'rental_flows' in st.session_state)
+    
+    if has_analysis_results:
+        # Professional Export Section
+        st.markdown("### 📊 Professional Reports")
+        st.markdown("Generate executive-ready Excel and PDF reports with charts and comprehensive analysis.")
+        
+        # Try to initialize export system
+        try:
+            from export.pdf_integration import PDFExportManager, PDF_SYSTEM_AVAILABLE
+            from export.streamlit_integration import ExcelExportManager, EXCEL_SYSTEM_AVAILABLE
+            
+            # Prepare export data
+            export_data = {
+                'analysis_results': st.session_state['analysis_results'],
+                'ownership_flows': st.session_state['ownership_flows'],
+                'rental_flows': st.session_state['rental_flows'],
+                'inputs': session_manager.export_session_data()
+            }
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### 📋 PDF Reports")
+                if PDF_SYSTEM_AVAILABLE:
+                    try:
+                        pdf_manager = PDFExportManager()
+                        
+                        # Template selection
+                        template_type = st.selectbox(
+                            "Select PDF Report Template:",
+                            options=['executive', 'detailed', 'investor'],
+                            format_func=lambda x: {
+                                'executive': '📊 Executive Summary (2-3 pages)',
+                                'detailed': '📈 Detailed Analysis (8-12 pages)', 
+                                'investor': '💼 Investor Presentation (6-8 pages)'
+                            }[x],
+                            help="Choose the report template that best fits your audience"
+                        )
+                        
+                        # Generate PDF button
+                        if st.button(f"🚀 Generate {template_type.title()} PDF", type="primary"):
+                            pdf_manager.create_streamlit_download_button(
+                                export_data=export_data,
+                                template_type=template_type
+                            )
+                    except Exception as e:
+                        st.error(f"PDF system error: {str(e)}")
+                else:
+                    st.error("PDF generation not available. Missing dependencies.")
+                    st.code("pip install reportlab Pillow pypdf")
+            
+            with col2:
+                st.markdown("#### 📊 Excel Reports")
+                if EXCEL_SYSTEM_AVAILABLE:
+                    try:
+                        excel_manager = ExcelExportManager()
+                        
+                        # Excel options
+                        include_charts = st.checkbox("Include Charts", value=True, help="Embed analysis charts in Excel")
+                        professional_format = st.checkbox("Professional Formatting", value=True, help="Apply corporate styling")
+                        
+                        # Generate Excel button
+                        if st.button("🚀 Generate Excel Report", type="primary"):
+                            excel_manager.create_streamlit_download_button(
+                                export_data=export_data,
+                                include_charts=include_charts,
+                                professional_formatting=professional_format
+                            )
+                    except Exception as e:
+                        st.error(f"Excel system error: {str(e)}")
+                else:
+                    st.error("Excel generation not available. Missing dependencies.")
+                    st.code("pip install openpyxl kaleido plotly")
+                    
+        except ImportError:
+            st.warning("⚠️ Professional export system not available. Showing basic export options.")
+            
+            # Fallback to basic JSON exports
+            _render_basic_export_options(session_manager)
+    
+    else:
+        create_info_box(
+            "Run the financial analysis first to enable professional PDF and Excel report generation.",
+            "info"
+        )
+        
+        # Show basic export options even without analysis
+        _render_basic_export_options(session_manager)
+    
+    # Session management section
+    st.markdown("---")
+    st.markdown("### 🔄 Session Management")
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 📊 Export Current Analysis")
+        if st.button("🔄 Reset All Inputs", type="secondary"):
+            session_manager.reset_session()
+            # Clear analysis results
+            if 'analysis_results' in st.session_state:
+                del st.session_state['analysis_results']
+            if 'ownership_flows' in st.session_state:
+                del st.session_state['ownership_flows']
+            if 'rental_flows' in st.session_state:
+                del st.session_state['rental_flows']
+            st.success("✅ All inputs and results have been reset")
+            st.rerun()
+    
+    with col2:
+        st.markdown("**Import Analysis:**")
+        uploaded_file = st.file_uploader(
+            "Upload JSON file",
+            type=['json'],
+            help="Upload a previously exported analysis JSON file"
+        )
         
-        # Export session data as JSON
-        export_data = session_manager.export_session_data()
-        
+        if uploaded_file is not None:
+            try:
+                import json
+                data = json.load(uploaded_file)
+                if session_manager.import_session_data(data):
+                    st.success("✅ Analysis imported successfully!")
+                    st.rerun()
+                else:
+                    st.error("❌ Error importing analysis data")
+            except Exception as e:
+                st.error(f"❌ Error reading file: {str(e)}")
+
+
+def _render_basic_export_options(session_manager):
+    """Render basic JSON export options when professional exports aren't available"""
+    
+    st.markdown("### 📄 Basic Export Options")
+    
+    # Export session data as JSON
+    export_data = session_manager.export_session_data()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
         st.download_button(
             label="📄 Download Input Data (JSON)",
             data=str(export_data),
@@ -447,7 +582,8 @@ def render_export_tab():
             mime="application/json",
             help="Download all input parameters for backup or sharing"
         )
-        
+    
+    with col2:
         # Export analysis results if available
         if 'analysis_results' in st.session_state:
             results_data = {
@@ -469,40 +605,6 @@ def render_export_tab():
                 disabled=True,
                 help="Run analysis first to enable report export"
             )
-    
-    with col2:
-        st.markdown("### 🔄 Session Management")
-        
-        if st.button("🔄 Reset All Inputs", type="secondary"):
-            session_manager.reset_session()
-            # Clear analysis results
-            if 'analysis_results' in st.session_state:
-                del st.session_state['analysis_results']
-            if 'ownership_flows' in st.session_state:
-                del st.session_state['ownership_flows']
-            if 'rental_flows' in st.session_state:
-                del st.session_state['rental_flows']
-            st.success("✅ All inputs and results have been reset")
-            st.rerun()
-        
-        st.markdown("**Import Analysis:**")
-        uploaded_file = st.file_uploader(
-            "Upload JSON file",
-            type=['json'],
-            help="Upload a previously exported analysis JSON file"
-        )
-        
-        if uploaded_file is not None:
-            try:
-                import json
-                data = json.load(uploaded_file)
-                if session_manager.import_session_data(data):
-                    st.success("✅ Analysis imported successfully!")
-                    st.rerun()
-                else:
-                    st.error("❌ Error importing analysis data")
-            except Exception as e:
-                st.error(f"❌ Error reading file: {str(e)}")
 
 
 def render_help_tab():
