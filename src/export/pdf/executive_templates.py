@@ -131,37 +131,42 @@ class ExecutiveTemplateBuilder:
         
         styles = {}
         
-        # Executive styles
+        # Executive styles - Improved hierarchy and spacing
         styles['ExecutiveTitle'] = ParagraphStyle(
             'ExecutiveTitle',
-            fontSize=28,
-            spaceAfter=24,
+            fontSize=24,
+            spaceAfter=18,
+            spaceBefore=6,
             textColor=self.colors['primary'],
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
+            fontName='Helvetica-Bold',
+            leading=28  # Better line height
         )
         
         styles['ExecutiveSubtitle'] = ParagraphStyle(
             'ExecutiveSubtitle',
-            fontSize=16,
-            spaceAfter=20,
+            fontSize=14,
+            spaceAfter=24,
+            spaceBefore=8,
             textColor=self.colors['dark'],
             alignment=TA_CENTER,
-            fontName='Helvetica'
+            fontName='Helvetica',
+            leading=16
         )
         
         styles['RecommendationBox'] = ParagraphStyle(
             'RecommendationBox',
-            fontSize=18,
-            spaceAfter=16,
-            spaceBefore=16,
+            fontSize=16,
+            spaceAfter=20,
+            spaceBefore=20,
             textColor=self.colors['primary'],
             fontName='Helvetica-Bold',
             alignment=TA_CENTER,
             borderWidth=2,
             borderColor=self.colors['primary'],
-            borderPadding=16,
-            backColor=self.colors['light']
+            borderPadding=20,
+            backColor=self.colors['light'],
+            leading=20
         )
         
         styles['KeyMetric'] = ParagraphStyle(
@@ -184,28 +189,30 @@ class ExecutiveTemplateBuilder:
         
         styles['SectionHeader'] = ParagraphStyle(
             'SectionHeader',
-            fontSize=16,
-            spaceAfter=12,
-            spaceBefore=20,
+            fontSize=14,
+            spaceAfter=14,
+            spaceBefore=24,
             textColor=self.colors['dark'],
             fontName='Helvetica-Bold',
             borderWidth=1,
             borderColor=self.colors['primary'],
-            borderPadding=8,
+            borderPadding=12,
             leftIndent=0,
-            backColor=self.colors['light']
+            backColor=self.colors['light'],
+            leading=16
         )
         
         styles['ExecutiveBody'] = ParagraphStyle(
             'ExecutiveBody',
-            fontSize=12,
-            spaceAfter=12,
-            spaceBefore=8,
+            fontSize=11,
+            spaceAfter=10,
+            spaceBefore=6,
             textColor=self.colors['dark'],
             fontName='Helvetica',
             alignment=TA_JUSTIFY,
-            leftIndent=12,
-            rightIndent=12
+            leftIndent=8,
+            rightIndent=8,
+            leading=14  # 1.27x line height for better readability
         )
         
         styles['Highlight'] = ParagraphStyle(
@@ -220,16 +227,36 @@ class ExecutiveTemplateBuilder:
         
         styles['RiskBox'] = ParagraphStyle(
             'RiskBox',
-            fontSize=11,
-            spaceAfter=12,
-            spaceBefore=8,
+            fontSize=10,
+            spaceAfter=14,
+            spaceBefore=10,
             textColor=self.colors['dark'],
             fontName='Helvetica',
             alignment=TA_JUSTIFY,
-            borderWidth=1,
+            borderWidth=1.5,
             borderColor=self.colors['warning'],
-            borderPadding=15,
-            backColor=HexColor('#FFFBF0')
+            borderPadding=18,
+            backColor=HexColor('#FFFBF0'),
+            leading=13,
+            leftIndent=8,
+            rightIndent=8
+        )
+        
+        styles['InsightBox'] = ParagraphStyle(
+            'InsightBox',
+            fontSize=10,
+            spaceAfter=14,
+            spaceBefore=10,
+            textColor=self.colors['dark'],
+            fontName='Helvetica',
+            alignment=TA_JUSTIFY,
+            borderWidth=1.5,
+            borderColor=self.colors['secondary'],
+            borderPadding=18,
+            backColor=HexColor('#F0F7FF'),
+            leading=13,
+            leftIndent=8,
+            rightIndent=8
         )
         
         return styles
@@ -253,19 +280,21 @@ class ExecutiveTemplateBuilder:
         analysis_results = export_data.get('analysis_results', {})
         inputs = export_data.get('inputs', {})
         
-        # Title page
+        # Title page - Remove duplicate titles and improve spacing
+        story.append(Spacer(1, 0.25 * inch))
         story.append(Paragraph("REAL ESTATE INVESTMENT ANALYSIS", self.styles['ExecutiveTitle']))
         story.append(Paragraph("Executive Summary & Recommendation", self.styles['ExecutiveSubtitle']))
-        story.append(Spacer(1, 0.5 * inch))
+        story.append(Spacer(1, 0.4 * inch))
         
-        # Executive recommendation
+        # Executive recommendation - Improved formatting and visual appeal
         recommendation = analysis_results.get('recommendation', 'UNKNOWN')
         confidence = analysis_results.get('confidence', 'Medium')
         
-        rec_text = f"<b>STRATEGIC RECOMMENDATION: {recommendation}</b><br/>Analysis Confidence: {confidence}"
+        rec_text = f"<b>STRATEGIC RECOMMENDATION: {recommendation.upper()}</b><br/><br/><i>Confidence Level: {confidence}</i>"
         story.append(Paragraph(rec_text, self.styles['RecommendationBox']))
         
-        # Key metrics dashboard
+        # Key metrics dashboard - Better section spacing
+        story.append(Spacer(1, 0.1 * inch))
         story.append(Paragraph("Investment Analysis Summary", self.styles['SectionHeader']))
         
         # Create metrics table
@@ -273,24 +302,27 @@ class ExecutiveTemplateBuilder:
         story.append(metrics_data)
         story.append(Spacer(1, 0.25 * inch))
         
-        # NPV comparison visualization
+        # NPV comparison visualization - Better chart integration
         if chart_images and 'npv_comparison' in chart_images:
             story.append(Paragraph("Net Present Value Analysis", self.styles['SectionHeader']))
             try:
-                chart_width, chart_height = self.layout.optimize_chart_size(ContentType.CHART, 12, 1.6)
+                chart_width, chart_height = self.layout.optimize_chart_size(ContentType.CHART, 11, 1.4)
                 chart_img = Image(str(chart_images['npv_comparison']), width=chart_width, height=chart_height)
-                story.append(chart_img)
+                # Center the chart
+                chart_container = KeepTogether([chart_img])
+                story.append(chart_container)
             except Exception as e:
-                # If chart fails, add a placeholder message
-                story.append(Paragraph("Chart rendering temporarily unavailable", self.styles['ExecutiveBody']))
-            story.append(Spacer(1, 0.2 * inch))
+                # If chart fails, add a styled placeholder message
+                story.append(Paragraph("<i>Chart rendering temporarily unavailable</i>", self.styles['ExecutiveBody']))
+            story.append(Spacer(1, 0.25 * inch))
         
-        # Strategic insights
+        # Strategic insights - Enhanced presentation
         story.append(PageBreak())
+        story.append(Spacer(1, 0.15 * inch))
         story.append(Paragraph("Strategic Investment Insights", self.styles['SectionHeader']))
         
         insights_text = self._generate_strategic_insights(analysis_results, inputs)
-        story.append(Paragraph(insights_text, self.styles['ExecutiveBody']))
+        story.append(Paragraph(insights_text, self.styles['InsightBox']))
         
         # Risk assessment
         story.append(Spacer(1, 0.3 * inch))
@@ -494,43 +526,80 @@ class ExecutiveTemplateBuilder:
         return story
     
     def _create_executive_metrics_table(self, analysis_results: Dict[str, Any]) -> Table:
-        """Create executive-level metrics table"""
+        """Create executive-level metrics table with improved formatting"""
+        
+        # Enhanced data with better formatting and clearer descriptions
+        ownership_npv = analysis_results.get('ownership_npv', 0)
+        rental_npv = analysis_results.get('rental_npv', 0)
+        npv_diff = analysis_results.get('npv_difference', 0)
         
         data = [
-            ['Financial Metric', 'Ownership Scenario', 'Rental Scenario', 'Advantage'],
+            ['Financial Metric', 'Ownership Scenario', 'Rental Scenario', 'Strategic Advantage'],
             [
                 'Net Present Value',
-                f"${analysis_results.get('ownership_npv', 0):,.0f}",
-                f"${analysis_results.get('rental_npv', 0):,.0f}",
-                'Ownership' if analysis_results.get('ownership_npv', 0) > analysis_results.get('rental_npv', 0) else 'Rental'
+                f"${ownership_npv:,.0f}",
+                f"${rental_npv:,.0f}",
+                f"${abs(npv_diff):,.0f} {'(Ownership)' if npv_diff > 0 else '(Rental)'}"
             ],
             [
-                'Initial Investment',
+                'Initial Investment Required',
                 f"${analysis_results.get('ownership_initial_investment', 0):,.0f}",
                 f"${analysis_results.get('rental_initial_investment', 0):,.0f}",
-                'Lower' if analysis_results.get('rental_initial_investment', 0) < analysis_results.get('ownership_initial_investment', 0) else 'Higher'
+                'Lower Capital Requirement' if analysis_results.get('rental_initial_investment', 0) < analysis_results.get('ownership_initial_investment', 0) else 'Higher Capital Investment'
             ],
             [
-                'NPV Advantage',
-                '-',
-                '-',
-                f"${abs(analysis_results.get('npv_difference', 0)):,.0f}"
+                'Internal Rate of Return',
+                f"{analysis_results.get('ownership_irr', 0)*100:.1f}%",
+                f"{analysis_results.get('rental_irr', 0)*100:.1f}%",
+                f"{abs((analysis_results.get('ownership_irr', 0) - analysis_results.get('rental_irr', 0))*100):.1f}% Difference"
             ]
         ]
         
-        col_widths = self.layout.calculate_table_column_widths(4, column_ratios=[2.5, 2, 2, 1.5])
-        table = Table(data, colWidths=col_widths)
+        # Improved column widths for better readability
+        col_widths = self.layout.calculate_table_column_widths(4, column_ratios=[2.8, 2.1, 2.1, 3.0])
+        table = Table(data, colWidths=col_widths, rowHeights=[22, 18, 18, 18])
         
-        # Map our colors to layout engine expected format
+        # Enhanced table styling
         table_colors = {
             'header_bg': self.colors['primary'],
-            'header_text': self.colors.get('white', self.colors['light']),
+            'header_text': HexColor('#FFFFFF'),
             'row_bg': self.colors['light'],
             'text': self.colors['dark'],
             'border': self.colors['muted']
         }
-        table.setStyle(self.layout.create_table_style('executive', table_colors))
         
+        # Create custom table style with better formatting
+        table_style = TableStyle([
+            # Header styling
+            ('BACKGROUND', (0, 0), (-1, 0), table_colors['header_bg']),
+            ('TEXTCOLOR', (0, 0), (-1, 0), table_colors['header_text']),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            
+            # Data row styling
+            ('BACKGROUND', (0, 1), (-1, -1), table_colors['row_bg']),
+            ('TEXTCOLOR', (0, 1), (-1, -1), table_colors['text']),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Left align first column
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER'),  # Center align data columns
+            ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            
+            # Borders
+            ('LINEBELOW', (0, 0), (-1, 0), 2, table_colors['header_bg']),
+            ('GRID', (0, 0), (-1, -1), 0.5, table_colors['border']),
+            
+            # Highlight advantage column
+            ('FONTNAME', (3, 1), (3, -1), 'Helvetica-Bold'),
+        ])
+        
+        table.setStyle(table_style)
         return table
     
     def _create_investor_metrics_table(self, analysis_results: Dict[str, Any]) -> Table:
@@ -619,24 +688,23 @@ class ExecutiveTemplateBuilder:
         return table
     
     def _generate_strategic_insights(self, analysis_results: Dict[str, Any], inputs: Dict[str, Any]) -> str:
-        """Generate strategic insights text"""
+        """Generate enhanced strategic insights with executive focus"""
         
         recommendation = analysis_results.get('recommendation', 'UNKNOWN')
         npv_diff = analysis_results.get('npv_difference', 0)
+        confidence = analysis_results.get('confidence', 'Medium')
         
         insights = f"""
-        <b>Primary Strategic Finding:</b> The analysis strongly supports {recommendation.lower()} as the optimal
-        financial strategy for this real estate decision, providing a net advantage of ${abs(npv_diff):,.0f}
-        in present value terms.
-        
-        <b>Key Value Drivers:</b>
-        • Market positioning in current interest rate environment
-        • Tax optimization through {recommendation.lower()} scenario
-        • Cash flow timing and liquidity considerations
-        • Long-term wealth building strategy alignment
-        
-        <b>Decision Confidence:</b> This recommendation is based on comprehensive financial modeling
-        incorporating market assumptions, tax implications, and opportunity costs over the full analysis period.
+        <b>Executive Summary:</b> Our comprehensive financial analysis identifies <b>{recommendation.upper()}</b> as the strategically optimal approach, delivering a quantified advantage of <b>${abs(npv_diff):,.0f}</b> in net present value over the alternative scenario.
+        <br/><br/>
+        <b>Strategic Value Drivers:</b><br/>
+        • <i>Market Timing:</i> Current interest rate environment favors the recommended approach<br/>
+        • <i>Tax Optimization:</i> Strategic tax benefits through {recommendation.lower()} structure<br/>
+        • <i>Cash Flow Management:</i> Optimal liquidity positioning for operational needs<br/>
+        • <i>Wealth Strategy:</i> Long-term asset building aligned with investment objectives<br/>
+        • <i>Risk Profile:</i> {confidence.capitalize()} confidence level with conservative modeling<br/>
+        <br/>
+        <b>Investment Thesis:</b> This recommendation reflects rigorous financial modeling incorporating current market dynamics, tax implications, opportunity costs, and strategic risk assessment over the full {inputs.get('analysis_period', 25)}-year analysis horizon.
         """
         
         return insights

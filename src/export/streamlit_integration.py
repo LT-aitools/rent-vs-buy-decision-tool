@@ -119,17 +119,60 @@ class ExcelExportManager:
     ) -> Path:
         """Generate Excel using template manager"""
         
+        # Handle both list and dict formats for cash flows
+        ownership_flows = export_data.get('ownership_flows', [])
+        rental_flows = export_data.get('rental_flows', [])
+        
+        # Convert list format to expected format for Excel generation
+        if isinstance(ownership_flows, list):
+            ownership_flows_processed = ownership_flows
+        else:
+            # Already in dict format, extract the list
+            ownership_flows_processed = ownership_flows.get('annual_cash_flows', [])
+            # Convert back to list of dicts if needed
+            if isinstance(ownership_flows_processed, list) and ownership_flows_processed:
+                if not isinstance(ownership_flows_processed[0], dict):
+                    # Convert from simple array to list of dicts
+                    ownership_flows_processed = [
+                        {'year': i+1, 'net_cash_flow': flow} 
+                        for i, flow in enumerate(ownership_flows_processed)
+                    ]
+        
+        if isinstance(rental_flows, list):
+            rental_flows_processed = rental_flows
+        else:
+            # Already in dict format, extract the list
+            rental_flows_processed = rental_flows.get('annual_cash_flows', [])
+            # Convert back to list of dicts if needed
+            if isinstance(rental_flows_processed, list) and rental_flows_processed:
+                if not isinstance(rental_flows_processed[0], dict):
+                    # Convert from simple array to list of dicts
+                    rental_flows_processed = [
+                        {'year': i+1, 'net_cash_flow': flow}
+                        for i, flow in enumerate(rental_flows_processed)
+                    ]
+        
         # Use the existing generate_excel_report function
-        return await asyncio.to_thread(
+        result_path = await asyncio.to_thread(
             generate_excel_report,
             analysis_results=export_data.get('analysis_results', {}),
-            ownership_flows=export_data.get('ownership_flows', []),
-            rental_flows=export_data.get('rental_flows', []),
-            session_data=export_data.get('inputs', {}),
-            template_type=template_type,
-            output_file=str(output_path),
-            include_charts=include_charts
+            ownership_flows=ownership_flows_processed,
+            rental_flows=rental_flows_processed,
+            session_data=export_data.get('inputs', {}) or export_data.get('session_data', {}),
+            template_type=template_type
         )
+        
+        # If a result path was returned and it's different from our desired path, move it
+        if result_path and result_path != output_path:
+            import shutil
+            if output_path.parent != result_path.parent:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(result_path), str(output_path))
+            return output_path
+        elif result_path:
+            return result_path
+        else:
+            return output_path
     
     def _count_worksheets(self, template_type: str) -> int:
         """Estimate worksheet count for template type"""

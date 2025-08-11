@@ -211,8 +211,9 @@ class ChartEmbedder:
             ownership_flows = export_data.get('ownership_flows', {})
             rental_flows = export_data.get('rental_flows', {})
             
-            ownership_annual = ownership_flows.get('annual_cash_flows', [])
-            rental_annual = rental_flows.get('annual_cash_flows', [])
+            # Handle both list and dict formats for cash flows
+            ownership_annual = self._extract_cash_flows(ownership_flows)
+            rental_annual = self._extract_cash_flows(rental_flows)
             
             if not ownership_annual or not rental_annual:
                 logger.warning("Insufficient cash flow data for chart rendering")
@@ -595,3 +596,31 @@ class ChartEmbedder:
             'plotly_available': PLOTLY_AVAILABLE,
             'supported_formats': self.supported_formats
         }
+    
+    def _extract_cash_flows(self, flows_data: Any) -> List[float]:
+        """
+        Extract cash flow values from either list or dict format
+        
+        Args:
+            flows_data: Either a list of flow dicts or a dict with 'annual_cash_flows' key
+            
+        Returns:
+            List of cash flow values
+        """
+        if isinstance(flows_data, list):
+            # List of flow dictionaries - extract 'net_cash_flow' values
+            return [
+                flow.get('net_cash_flow', 0) if isinstance(flow, dict) else float(flow)
+                for flow in flows_data
+            ]
+        elif isinstance(flows_data, dict):
+            if 'annual_cash_flows' in flows_data:
+                # Dictionary format with 'annual_cash_flows' key
+                annual_flows = flows_data['annual_cash_flows']
+                if isinstance(annual_flows, list):
+                    return [float(flow) for flow in annual_flows]
+            # If dict doesn't have expected structure, return empty list
+            return []
+        else:
+            # Unsupported format
+            return []

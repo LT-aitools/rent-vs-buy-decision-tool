@@ -76,25 +76,28 @@ class PDFGenerator:
         
         self.page_size = letter if page_size.lower() == 'letter' else A4
         
-        # Initialize color scheme
+        # Initialize enhanced color scheme for professional documents
         self.COLORS = {
-            'primary': HexColor('#FF6B6B'),           # Primary red
-            'secondary': HexColor('#74B9FF'),         # Blue accent
-            'success': HexColor('#96CEB4'),           # Green for positive metrics
-            'warning': HexColor('#FECA57'),           # Yellow for caution
-            'danger': HexColor('#FF7675'),            # Red for negative metrics
-            'dark': HexColor('#2D3436'),              # Dark text
-            'light': HexColor('#F8F9FA'),             # Light background
-            'muted': HexColor('#6C757D'),             # Muted text
+            'primary': HexColor('#FF6B6B'),           # Primary coral red
+            'secondary': HexColor('#74B9FF'),         # Professional blue accent
+            'success': HexColor('#00B894'),           # Strong green for positive metrics
+            'warning': HexColor('#FDCB6E'),           # Warm yellow for caution
+            'danger': HexColor('#E17055'),            # Muted red for negative metrics
+            'dark': HexColor('#2D3436'),              # Dark charcoal text
+            'light': HexColor('#F8F9FA'),             # Clean light background
+            'muted': HexColor('#636E72'),             # Professional muted text
+            'accent': HexColor('#A29BFE'),            # Purple accent
+            'neutral': HexColor('#DDD6D6'),           # Neutral gray
             'white': white,
             'black': black,
-            'gray': gray
+            'gray': HexColor('#B2BEC3')               # Softer gray
         }
+        # Optimized margins for professional documents
         self.margins = {
-            'top': 1.0 * inch,
-            'bottom': 1.0 * inch,
-            'left': 0.75 * inch,
-            'right': 0.75 * inch
+            'top': 0.9 * inch,
+            'bottom': 0.9 * inch,
+            'left': 0.8 * inch,
+            'right': 0.8 * inch
         }
         
         # Initialize styles
@@ -114,36 +117,40 @@ class PDFGenerator:
         base_styles = getSampleStyleSheet()
         custom_styles = {}
         
-        # Title style
+        # Title style - Improved hierarchy
         custom_styles['Title'] = ParagraphStyle(
             'CustomTitle',
             parent=base_styles['Title'],
-            fontSize=24,
-            spaceAfter=30,
+            fontSize=22,
+            spaceAfter=20,
+            spaceBefore=8,
             textColor=self.COLORS['primary'],
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
+            fontName='Helvetica-Bold',
+            leading=26
         )
         
-        # Heading styles
+        # Heading styles - Better spacing and hierarchy
         custom_styles['Heading1'] = ParagraphStyle(
             'CustomHeading1',
             parent=base_styles['Heading1'],
-            fontSize=18,
-            spaceAfter=12,
-            spaceBefore=20,
+            fontSize=16,
+            spaceAfter=14,
+            spaceBefore=22,
             textColor=self.COLORS['dark'],
-            fontName='Helvetica-Bold'
+            fontName='Helvetica-Bold',
+            leading=18
         )
         
         custom_styles['Heading2'] = ParagraphStyle(
             'CustomHeading2',
             parent=base_styles['Heading2'],
-            fontSize=14,
-            spaceAfter=8,
-            spaceBefore=16,
+            fontSize=13,
+            spaceAfter=10,
+            spaceBefore=18,
             textColor=self.COLORS['dark'],
-            fontName='Helvetica-Bold'
+            fontName='Helvetica-Bold',
+            leading=15
         )
         
         custom_styles['Heading3'] = ParagraphStyle(
@@ -331,27 +338,52 @@ class PDFGenerator:
             ]
         ]
         
-        metrics_table = Table(metrics_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        # Enhanced table styling with better proportions and formatting
+        metrics_table = Table(metrics_data, colWidths=[2.2*inch, 1.6*inch, 1.6*inch, 1.6*inch], rowHeights=[20, 16, 16, 16, 16])
         metrics_table.setStyle(TableStyle([
+            # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), self.COLORS['primary']),
             ('TEXTCOLOR', (0, 0), (-1, 0), self.COLORS['white']),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            
+            # Data row styling
             ('BACKGROUND', (0, 1), (-1, -1), self.COLORS['light']),
-            ('GRID', (0, 0), (-1, -1), 1, self.COLORS['gray'])
+            ('TEXTCOLOR', (0, 1), (-1, -1), self.COLORS['dark']),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Left align first column
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER'),  # Center align data
+            ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            
+            # Borders and lines
+            ('LINEBELOW', (0, 0), (-1, 0), 1.5, self.COLORS['primary']),
+            ('GRID', (0, 0), (-1, -1), 0.5, self.COLORS['gray']),
+            ('LINEAFTER', (0, 0), (-1, -1), 0.5, self.COLORS['gray']),
+            
+            # Highlight last column (Advantage)
+            ('FONTNAME', (3, 1), (3, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (3, 1), (3, -1), self.COLORS['primary'])
         ]))
         
         story.append(metrics_table)
         story.append(Spacer(1, 0.25 * inch))
         
-        # NPV comparison chart
+        # NPV comparison chart - Improved integration
         if chart_images and 'npv_comparison' in chart_images:
             story.append(Paragraph("NPV Comparison Analysis", self.styles['Heading2']))
-            chart_img = Image(str(chart_images['npv_comparison']), width=6*inch, height=4*inch)
-            story.append(chart_img)
-            story.append(Spacer(1, 0.25 * inch))
+            # Better sized chart with professional positioning
+            chart_img = Image(str(chart_images['npv_comparison']), width=6.5*inch, height=3.8*inch)
+            # Center the chart using KeepTogether
+            chart_container = KeepTogether([chart_img])
+            story.append(chart_container)
+            story.append(Spacer(1, 0.2 * inch))
         
         # Key assumptions
         story.append(PageBreak())

@@ -195,7 +195,8 @@ class PDFExportManager:
             generation_info['success'] = True
             generation_info['file_size'] = pdf_path.stat().st_size
             generation_info['end_time'] = datetime.now()
-            generation_info['duration'] = (generation_info['end_time'] - generation_info['start_time']).total_seconds()
+            generation_info['generation_time'] = (generation_info['end_time'] - generation_info['start_time']).total_seconds()
+            generation_info['duration'] = generation_info['generation_time']
             
             # Update progress
             if progress_callback:

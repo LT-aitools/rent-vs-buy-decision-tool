@@ -187,11 +187,15 @@ class ExcelGenerator:
         ownership_flows = excel_data['ownership_flows']
         rental_flows = excel_data['rental_flows']
         
+        # Normalize cash flow format for processing
+        normalized_ownership = self._normalize_cash_flows(ownership_flows)
+        normalized_rental = self._normalize_cash_flows(rental_flows)
+        
         # Create formatted cash flow tables
         formatted_flows = {
-            'ownership_table': await self.formatter.format_cash_flow_table(ownership_flows, "ownership"),
-            'rental_table': await self.formatter.format_cash_flow_table(rental_flows, "rental"),
-            'comparison_table': await self.formatter.create_comparison_table(ownership_flows, rental_flows)
+            'ownership_table': await self.formatter.format_cash_flow_table(normalized_ownership, "ownership"),
+            'rental_table': await self.formatter.format_cash_flow_table(normalized_rental, "rental"),
+            'comparison_table': await self.formatter.create_comparison_table(normalized_ownership, normalized_rental)
         }
         
         excel_data['formatted_tables']['cash_flows'] = formatted_flows
@@ -269,52 +273,135 @@ class ExcelGenerator:
         """Create executive summary worksheet"""
         summary = excel_data['summary_metrics']
         
-        # Title section
-        ws['A1'] = "Real Estate Investment Analysis"
-        ws['A1'].font = Font(size=16, bold=True)
+        # Enhanced title section with professional styling
+        ws['A1'] = "REAL ESTATE INVESTMENT ANALYSIS"
+        ws['A1'].font = Font(name='Calibri', size=18, bold=True, color='FF6B6B')
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A1:D1')  # Merge cells for better title presentation
         
-        ws['A2'] = f"Executive Summary - {datetime.now().strftime('%B %d, %Y')}"
-        ws['A2'].font = Font(size=12, italic=True)
+        ws['A2'] = f"Executive Summary & Strategic Recommendation - {datetime.now().strftime('%B %d, %Y')}"
+        ws['A2'].font = Font(name='Calibri', size=12, italic=True, color='2D3436')
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A2:D2')
         
-        # Recommendation section
+        # Add professional spacing
+        ws.row_dimensions[1].height = 25
+        ws.row_dimensions[2].height = 20
+        
+        # Enhanced recommendation section with better visual hierarchy
         row = 4
-        ws[f'A{row}'] = "RECOMMENDATION"
-        ws[f'A{row}'].font = Font(size=14, bold=True)
+        ws[f'A{row}'] = "STRATEGIC RECOMMENDATION"
+        ws[f'A{row}'].font = Font(name='Calibri', size=14, bold=True, color='2D3436')
         
         row += 1
         recommendation = summary['recommendation']
-        ws[f'B{row}'] = recommendation
-        ws[f'B{row}'].font = Font(size=12, bold=True)
+        confidence = summary.get('confidence', 'Medium')
         
-        # Color code recommendation
+        # Create a more professional recommendation display
+        ws[f'A{row}'] = f"{recommendation.upper()}"
+        ws[f'A{row}'].font = Font(name='Calibri', size=14, bold=True, color='FFFFFF')
+        ws[f'A{row}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        ws[f'C{row}'] = f"Confidence: {confidence}"
+        ws[f'C{row}'].font = Font(name='Calibri', size=11, italic=True, color='2D3436')
+        ws[f'C{row}'].alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Enhanced color coding with professional palette
         if recommendation == "BUY":
-            ws[f'B{row}'].fill = PatternFill(start_color="96CEB4", end_color="96CEB4", fill_type="solid")
+            ws[f'A{row}'].fill = PatternFill(start_color="00B894", end_color="00B894", fill_type="solid")
         elif recommendation == "RENT":
-            ws[f'B{row}'].fill = PatternFill(start_color="FECA57", end_color="FECA57", fill_type="solid")
+            ws[f'A{row}'].fill = PatternFill(start_color="FDCB6E", end_color="FDCB6E", fill_type="solid")
         
-        # Key metrics section
+        # Add cell borders for professional appearance
+        thin_border = Border(
+            left=Side(style='thin', color='D3D3D3'),
+            right=Side(style='thin', color='D3D3D3'),
+            top=Side(style='thin', color='D3D3D3'),
+            bottom=Side(style='thin', color='D3D3D3')
+        )
+        ws[f'A{row}'].border = thin_border
+        ws.row_dimensions[row].height = 25
+        
+        # Enhanced key metrics section with professional table formatting
         row += 3
         ws[f'A{row}'] = "KEY FINANCIAL METRICS"
-        ws[f'A{row}'].font = Font(size=14, bold=True)
+        ws[f'A{row}'].font = Font(name='Calibri', size=14, bold=True, color='2D3436')
+        ws.merge_cells(f'A{row}:D{row}')
+        ws[f'A{row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'A{row}'].fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+        ws.row_dimensions[row].height = 22
         
         row += 1
+        
+        # Create table headers
+        headers = ['Metric', 'Value', 'Comparison', 'Analysis Notes']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+            cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+        ws.row_dimensions[row].height = 20
+        
+        row += 1
+        
+        # Enhanced metrics with more context
         metrics = [
-            ("NPV Advantage", summary['npv_difference']),
-            ("Ownership NPV", summary['ownership_npv']),
-            ("Rental NPV", summary['rental_npv']),
-            ("Initial Investment", summary['ownership_initial_investment']),
-            ("Analysis Period", f"{summary['analysis_period']} years"),
-            ("Cost of Capital", f"{summary['cost_of_capital']:.1f}%")
+            ("NPV Advantage", summary['npv_difference'], 
+             f"${abs(summary['npv_difference']):,.0f} {'(Ownership)' if summary['npv_difference'] > 0 else '(Rental)'}", 
+             "Net Present Value difference"),
+            ("Ownership NPV", summary['ownership_npv'], 
+             f"${summary['ownership_npv']:,.0f}", 
+             "Total ownership scenario value"),
+            ("Rental NPV", summary['rental_npv'], 
+             f"${summary['rental_npv']:,.0f}", 
+             "Total rental scenario value"),
+            ("Initial Investment", summary['ownership_initial_investment'], 
+             f"${summary['ownership_initial_investment']:,.0f}", 
+             "Required upfront capital"),
+            ("Analysis Period", f"{summary['analysis_period']} years", 
+             f"{summary['analysis_period']} years", 
+             "Investment time horizon"),
+            ("Cost of Capital", f"{summary['cost_of_capital']:.1f}%", 
+             f"{summary['cost_of_capital']:.1f}% annual discount rate", 
+             "Required rate of return")
         ]
         
-        for metric_name, metric_value in metrics:
+        for metric_name, metric_value, comparison, notes in metrics:
+            # Metric name
             ws[f'A{row}'] = metric_name
+            ws[f'A{row}'].font = Font(name='Calibri', size=10, bold=True, color='2D3436')
+            ws[f'A{row}'].alignment = Alignment(horizontal='left', vertical='center')
+            ws[f'A{row}'].border = thin_border
+            
+            # Value
             ws[f'B{row}'] = metric_value
+            ws[f'B{row}'].font = Font(name='Calibri', size=10, color='2D3436')
+            ws[f'B{row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'B{row}'].border = thin_border
+            
+            # Comparison
+            ws[f'C{row}'] = comparison
+            ws[f'C{row}'].font = Font(name='Calibri', size=10, color='2D3436')
+            ws[f'C{row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'C{row}'].border = thin_border
+            
+            # Notes
+            ws[f'D{row}'] = notes
+            ws[f'D{row}'].font = Font(name='Calibri', size=9, italic=True, color='636E72')
+            ws[f'D{row}'].alignment = Alignment(horizontal='left', vertical='center')
+            ws[f'D{row}'].border = thin_border
             
             # Format currency values
             if isinstance(metric_value, (int, float)) and abs(metric_value) > 1000:
                 ws[f'B{row}'].number_format = '$#,##0'
             
+            # Color code positive/negative values
+            if isinstance(metric_value, (int, float)):
+                if metric_value > 0 and 'NPV' in metric_name:
+                    ws[f'B{row}'].font = Font(name='Calibri', size=10, color='00B894', bold=True)
+            
+            ws.row_dimensions[row].height = 18
             row += 1
     
     async def _create_cash_flows_sheet(
@@ -326,9 +413,19 @@ class ExcelGenerator:
         """Create cash flows analysis worksheet"""
         cash_flows = excel_data['formatted_tables']['cash_flows']
         
-        # Title
-        ws['A1'] = "Cash Flow Analysis"
-        ws['A1'].font = Font(size=16, bold=True)
+        # Enhanced title with professional styling
+        ws['A1'] = "CASH FLOW ANALYSIS & PROJECTIONS"
+        ws['A1'].font = Font(name='Calibri', size=16, bold=True, color='FF6B6B')
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A1:F1')
+        ws.row_dimensions[1].height = 25
+        
+        # Add subtitle with analysis context
+        ws['A2'] = f"Multi-Scenario Financial Analysis - {datetime.now().strftime('%B %Y')}"
+        ws['A2'].font = Font(name='Calibri', size=11, italic=True, color='636E72')
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A2:F2')
+        ws.row_dimensions[2].height = 18
         
         current_row = 3
         
@@ -360,38 +457,75 @@ class ExcelGenerator:
         ws['A1'] = "Charts & Visualizations"
         ws['A1'].font = Font(size=16, bold=True)
         
-        # Embed charts as images
+        # Enhanced chart embedding with professional layout
         row = 3
         col = 1
-        charts_per_row = 1  # One chart per row for better readability
+        charts_per_page = 2  # Two charts per page for better organization
+        charts_added = 0
         
         for chart_name, image_path in chart_images.items():
             if Path(image_path).exists():
                 try:
                     img = Image(str(image_path))
-                    # Scale images for Excel display
-                    img.width = 720  # 10 inches at 72 DPI
-                    img.height = 480  # 6.67 inches at 72 DPI
                     
-                    # Add chart title
-                    chart_title = chart_name.replace('_', ' ').title()
+                    # Professional chart sizing for Excel
+                    img.width = 650  # Optimized width for readability
+                    img.height = 400  # Optimal height for screen viewing
+                    
+                    # Add professional chart title with styling
+                    chart_title = chart_name.replace('_', ' ').title().replace('Npv', 'NPV')
                     title_cell = ws[f'{get_column_letter(col)}{row}']
                     title_cell.value = chart_title
-                    title_cell.font = Font(size=12, bold=True)
+                    title_cell.font = Font(name='Calibri', size=13, bold=True, color='2D3436')
+                    title_cell.alignment = Alignment(horizontal='center', vertical='center')
                     
-                    # Add image below title
+                    # Add subtle background for title
+                    title_cell.fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+                    ws.merge_cells(f'{get_column_letter(col)}{row}:{get_column_letter(col+8)}{row}')
+                    ws.row_dimensions[row].height = 22
+                    
+                    # Add image with proper positioning
                     ws.add_image(img, f'{get_column_letter(col)}{row + 1}')
-                    row += 30  # Space between charts (title + image + spacing)
+                    
+                    # Add chart description/context
+                    context_row = row + 25  # Below the chart
+                    context_cell = ws[f'{get_column_letter(col)}{context_row}']
+                    
+                    # Create contextual descriptions
+                    descriptions = {
+                        'NPV Comparison': 'Comparative analysis of Net Present Value between ownership and rental scenarios',
+                        'Annual Cash Flows': 'Year-over-year cash flow projections for both investment scenarios', 
+                        'Cumulative Cash Flows': 'Cumulative cash position over the analysis period',
+                        'Financial Metrics': 'Key financial performance indicators and ratios',
+                        'Sensitivity Analysis': 'Impact of key variables on investment outcomes'
+                    }
+                    
+                    description = descriptions.get(chart_title, f'Analysis chart: {chart_title}')
+                    context_cell.value = description
+                    context_cell.font = Font(name='Calibri', size=9, italic=True, color='636E72')
+                    context_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                    ws.merge_cells(f'{get_column_letter(col)}{context_row}:{get_column_letter(col+8)}{context_row}')
+                    ws.row_dimensions[context_row].height = 16
+                    
+                    row += 32  # Space for next chart (title + image + description + spacing)
+                    charts_added += 1
                     
                 except Exception as e:
                     logger.warning(f"Failed to embed chart {chart_name}: {str(e)}")
-                    # Add a text placeholder instead
-                    ws[f'A{row}'] = f"Chart: {chart_name} (Failed to load)"
-                    row += 2
+                    # Add a styled placeholder instead
+                    placeholder_cell = ws[f'A{row}']
+                    placeholder_cell.value = f"Chart: {chart_name} (Unable to display)"
+                    placeholder_cell.font = Font(name='Calibri', size=10, italic=True, color='E74C3C')
+                    placeholder_cell.fill = PatternFill(start_color="FADBD8", end_color="FADBD8", fill_type="solid")
+                    row += 3
             else:
                 logger.warning(f"Chart image not found: {image_path}")
-                ws[f'A{row}'] = f"Chart: {chart_name} (Image not found)"
-                row += 2
+                # Styled placeholder for missing images
+                missing_cell = ws[f'A{row}']
+                missing_cell.value = f"Chart: {chart_name} (File not found)"
+                missing_cell.font = Font(name='Calibri', size=10, italic=True, color='E67E22')
+                missing_cell.fill = PatternFill(start_color="FEF9E7", end_color="FEF9E7", fill_type="solid")
+                row += 3
     
     async def _create_calculations_sheet(
         self,
@@ -402,8 +536,19 @@ class ExcelGenerator:
         """Create detailed calculations worksheet"""
         calculations = excel_data['formatted_tables']['calculations']
         
-        ws['A1'] = "Detailed Calculations"
-        ws['A1'].font = Font(size=16, bold=True)
+        # Enhanced calculations title
+        ws['A1'] = "DETAILED FINANCIAL CALCULATIONS"
+        ws['A1'].font = Font(name='Calibri', size=16, bold=True, color='FF6B6B')
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A1:E1')
+        ws.row_dimensions[1].height = 25
+        
+        # Add calculation methodology note
+        ws['A2'] = "NPV Analysis, Mortgage Calculations, Tax Benefits & Terminal Value Computations"
+        ws['A2'].font = Font(name='Calibri', size=10, italic=True, color='636E72')
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A2:E2')
+        ws.row_dimensions[2].height = 16
         
         current_row = 3
         
@@ -422,8 +567,19 @@ class ExcelGenerator:
         """Create input assumptions worksheet"""
         assumptions = excel_data['formatted_tables']['assumptions']
         
-        ws['A1'] = "Input Assumptions & Parameters"
-        ws['A1'].font = Font(size=16, bold=True)
+        # Enhanced assumptions title
+        ws['A1'] = "INPUT ASSUMPTIONS & MODEL PARAMETERS"
+        ws['A1'].font = Font(name='Calibri', size=16, bold=True, color='FF6B6B')
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A1:E1')
+        ws.row_dimensions[1].height = 25
+        
+        # Add assumptions context
+        ws['A2'] = "Key Variables & Assumptions Used in Financial Modeling"
+        ws['A2'].font = Font(name='Calibri', size=10, italic=True, color='636E72')
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A2:E2')
+        ws.row_dimensions[2].height = 16
         
         await self._insert_data_table(ws, assumptions, start_row=3, title="All Input Parameters")
     
@@ -446,35 +602,95 @@ class ExcelGenerator:
         return len(table_data.get('data', [])) + 3  # Return the number of rows used
     
     async def _apply_workbook_styling(self, template_config: Dict[str, Any]) -> None:
-        """Apply professional styling to entire workbook"""
+        """Apply enhanced professional styling to entire workbook"""
+        
+        # Define professional color scheme consistent with PDF
+        colors = {
+            'primary': 'FF6B6B',
+            'secondary': '74B9FF', 
+            'success': '00B894',
+            'warning': 'FDCB6E',
+            'light': 'F8F9FA',
+            'dark': '2D3436',
+            'muted': '636E72',
+            'white': 'FFFFFF',
+            'border': 'D3D3D3'
+        }
         
         for ws in self.workbook.worksheets:
-            # Set column widths
+            # Enhanced column width calculation with professional standards
+            column_widths = {
+                'A': 25,  # Metric/Category names
+                'B': 18,  # Values
+                'C': 20,  # Comparison/Analysis
+                'D': 35,  # Notes/Descriptions
+                'E': 15,  # Additional data
+                'F': 15   # Additional data
+            }
+            
+            # Apply optimized column widths
+            for col_letter, width in column_widths.items():
+                ws.column_dimensions[col_letter].width = width
+            
+            # Auto-adjust remaining columns intelligently
             for column in ws.columns:
-                max_length = 0
                 column_letter = get_column_letter(column[0].column)
                 
-                for cell in column:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                
-                adjusted_width = min(max_length + 2, 50)
-                ws.column_dimensions[column_letter].width = adjusted_width
+                if column_letter not in column_widths:
+                    max_length = 0
+                    for cell in column:
+                        if cell.value is not None:
+                            try:
+                                cell_length = len(str(cell.value))
+                                if cell_length > max_length:
+                                    max_length = cell_length
+                            except:
+                                pass
+                    
+                    # Set intelligent width with bounds
+                    adjusted_width = min(max(max_length + 3, 12), 40)
+                    ws.column_dimensions[column_letter].width = adjusted_width
             
-            # Apply borders and formatting
+            # Apply enhanced cell formatting
+            thin_border = Border(
+                left=Side(style='thin', color=colors['border']),
+                right=Side(style='thin', color=colors['border']),
+                top=Side(style='thin', color=colors['border']),
+                bottom=Side(style='thin', color=colors['border'])
+            )
+            
             for row in ws.iter_rows():
                 for cell in row:
                     if cell.value is not None:
-                        cell.border = Border(
-                            left=Side(style='thin'),
-                            right=Side(style='thin'), 
-                            top=Side(style='thin'),
-                            bottom=Side(style='thin')
+                        cell.border = thin_border
+                        cell.alignment = Alignment(
+                            vertical='center',
+                            horizontal='left' if cell.column == 1 else 'center',
+                            wrap_text=True
                         )
-                        cell.alignment = Alignment(vertical='center')
+                        
+                        # Apply consistent font styling
+                        if cell.font.name != 'Calibri':  # Don't override already styled cells
+                            cell.font = Font(
+                                name='Calibri',
+                                size=cell.font.size if cell.font.size else 10,
+                                bold=cell.font.bold,
+                                italic=cell.font.italic,
+                                color=cell.font.color if cell.font.color else colors['dark']
+                            )
+            
+            # Set professional row heights
+            for row_num in range(1, ws.max_row + 1):
+                if ws.row_dimensions[row_num].height is None:
+                    ws.row_dimensions[row_num].height = 16
+            
+            # Apply worksheet-level formatting
+            ws.sheet_properties.pageSetUpPr.fitToPage = True
+            ws.page_setup.fitToHeight = False
+            ws.page_setup.fitToWidth = 1
+            
+            # Add professional gridlines
+            ws.sheet_view.showGridLines = True
     
     async def validate_data(self, export_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -507,17 +723,65 @@ class ExcelGenerator:
                 if key not in analysis:
                     validation_results['warnings'].append(f"Missing analysis result: {key}")
         
-        # Validate cash flows
+        # Validate cash flows (handle both list and dict formats)
         if 'ownership_flows' in export_data and 'rental_flows' in export_data:
             ownership_flows = export_data['ownership_flows']
             rental_flows = export_data['rental_flows']
             
-            if not ownership_flows.get('annual_cash_flows'):
-                validation_results['warnings'].append("No ownership cash flows data")
-            if not rental_flows.get('annual_cash_flows'):
-                validation_results['warnings'].append("No rental cash flows data")
+            # Handle list format (direct list of cash flow dicts)
+            if isinstance(ownership_flows, list):
+                if not ownership_flows:
+                    validation_results['warnings'].append("No ownership cash flows data")
+            # Handle dict format (with annual_cash_flows key)
+            elif isinstance(ownership_flows, dict):
+                if not ownership_flows.get('annual_cash_flows'):
+                    validation_results['warnings'].append("No ownership cash flows data")
+            else:
+                validation_results['errors'].append("Ownership cash flows must be a list or dictionary")
+                validation_results['is_valid'] = False
+            
+            # Same for rental flows
+            if isinstance(rental_flows, list):
+                if not rental_flows:
+                    validation_results['warnings'].append("No rental cash flows data")
+            elif isinstance(rental_flows, dict):
+                if not rental_flows.get('annual_cash_flows'):
+                    validation_results['warnings'].append("No rental cash flows data")
+            else:
+                validation_results['errors'].append("Rental cash flows must be a list or dictionary")
+                validation_results['is_valid'] = False
         
         return validation_results
+    
+    def _normalize_cash_flows(self, cash_flows: Any) -> List[Dict[str, Any]]:
+        """
+        Normalize cash flows to a consistent format
+        
+        Args:
+            cash_flows: Either a list of dicts or a dict with 'annual_cash_flows' key
+            
+        Returns:
+            List of dictionaries with cash flow data
+        """
+        if isinstance(cash_flows, list):
+            # Already in the expected format
+            return cash_flows
+        elif isinstance(cash_flows, dict):
+            if 'annual_cash_flows' in cash_flows:
+                annual_flows = cash_flows['annual_cash_flows']
+                if isinstance(annual_flows, list):
+                    # Convert simple array to list of dicts if needed
+                    if annual_flows and not isinstance(annual_flows[0], dict):
+                        return [
+                            {'year': i+1, 'net_cash_flow': flow}
+                            for i, flow in enumerate(annual_flows)
+                        ]
+                    else:
+                        return annual_flows
+            # If dict doesn't have annual_cash_flows, try to extract what we can
+            return []
+        else:
+            return []
     
     def cleanup(self) -> None:
         """Clean up temporary resources"""

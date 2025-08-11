@@ -41,12 +41,35 @@ def validate_export_data(export_data: Dict[str, Any]) -> Dict[str, Any]:
     try:
         # Validate core data components
         _validate_analysis_results(export_data.get('analysis_results'))
-        _validate_cash_flows_dict(export_data.get('ownership_flows'), "ownership")
-        _validate_cash_flows_dict(export_data.get('rental_flows'), "rental")
-        _validate_session_data(export_data.get('session_data'))
         
-        # Validate data consistency
-        _validate_data_consistency_dict(export_data)
+        # Check cash flow format and validate accordingly
+        ownership_flows = export_data.get('ownership_flows')
+        rental_flows = export_data.get('rental_flows')
+        
+        # Handle both list and dict formats for cash flows
+        if isinstance(ownership_flows, list):
+            _validate_cash_flows(ownership_flows, "ownership")
+        elif isinstance(ownership_flows, dict):
+            _validate_cash_flows_dict(ownership_flows, "ownership")
+        else:
+            raise ExportValidationError("Ownership cash flows must be either a list or dictionary")
+            
+        if isinstance(rental_flows, list):
+            _validate_cash_flows(rental_flows, "rental")  
+        elif isinstance(rental_flows, dict):
+            _validate_cash_flows_dict(rental_flows, "rental")
+        else:
+            raise ExportValidationError("Rental cash flows must be either a list or dictionary")
+        
+        # Handle flexible session data format (could be 'session_data' or 'inputs')
+        session_data = export_data.get('session_data') or export_data.get('inputs')
+        _validate_session_data(session_data)
+        
+        # Validate data consistency based on detected format
+        if isinstance(ownership_flows, list) and isinstance(rental_flows, list):
+            _validate_data_consistency(export_data)
+        else:
+            _validate_data_consistency_dict(export_data)
         
         logger.info("Export data validation completed successfully")
         
@@ -212,7 +235,7 @@ def _validate_data_consistency_dict(export_data: Dict[str, Any]) -> None:
     analysis = export_data.get('analysis_results', {})
     ownership_flows = export_data.get('ownership_flows', {})
     rental_flows = export_data.get('rental_flows', {})
-    session_data = export_data.get('session_data', {})
+    session_data = export_data.get('session_data', {}) or export_data.get('inputs', {})
     
     # Check analysis period consistency
     analysis_period = analysis.get('analysis_period') or session_data.get('analysis_period') or _find_nested_field(session_data, 'analysis_period')
@@ -251,7 +274,7 @@ def _validate_data_consistency(export_data: Dict[str, Any]) -> None:
     analysis = export_data.get('analysis_results', {})
     ownership_flows = export_data.get('ownership_flows', [])
     rental_flows = export_data.get('rental_flows', [])
-    session_data = export_data.get('session_data', {})
+    session_data = export_data.get('session_data', {}) or export_data.get('inputs', {})
     
     # Check analysis period consistency
     analysis_period = analysis.get('analysis_period') or session_data.get('analysis_period') or _find_nested_field(session_data, 'analysis_period')

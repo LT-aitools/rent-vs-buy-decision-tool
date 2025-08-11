@@ -32,40 +32,44 @@ class ExcelFormatter:
     for professional Excel workbooks.
     """
     
-    # Color scheme based on the Streamlit app primary color (#FF6B6B)
+    # Enhanced professional color scheme consistent with PDF exports
     COLORS = {
-        'primary': 'FF6B6B',        # Main accent color
-        'secondary': 'FFA07A',      # Light salmon
-        'success': '96CEB4',        # Mint green  
-        'warning': 'FECA57',        # Yellow
-        'danger': 'FF7675',         # Light red
-        'info': '74B9FF',           # Light blue
-        'light': 'F8F9FA',          # Light gray
-        'dark': '2D3436',           # Dark gray
+        'primary': 'FF6B6B',        # Professional coral red
+        'secondary': '74B9FF',      # Professional blue
+        'success': '00B894',        # Strong success green
+        'warning': 'FDCB6E',        # Warm warning yellow
+        'danger': 'E17055',         # Muted danger red
+        'info': 'A29BFE',           # Professional purple
+        'light': 'F8F9FA',          # Clean light background
+        'dark': '2D3436',           # Charcoal text
+        'muted': '636E72',          # Professional muted text
+        'accent': '74B9FF',         # Blue accent
+        'neutral': 'DDD6D6',        # Neutral border
         'white': 'FFFFFF',          # White
         'black': '000000'           # Black
     }
     
     def __init__(self):
-        """Initialize Excel formatter with predefined styles"""
-        self.currency_format = '$#,##0_);[Red]($#,##0)'
-        self.currency_detailed_format = '$#,##0.00_);[Red]($#,##0.00)'
-        self.percentage_format = '0.0%_);[Red](0.0%)'
-        self.number_format = '#,##0_);[Red](#,##0)'
+        """Initialize Excel formatter with enhanced professional styles"""
+        self.currency_format = '_($* #,##0_);_($* (#,##0);_($* "-"_);_(@_)'
+        self.currency_detailed_format = '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'
+        self.percentage_format = '0.00%_);[Red](0.00%)'
+        self.number_format = '_* #,##0_);_* (#,##0);_* "-"_);_(@_)'
         self.date_format = 'mm/dd/yyyy'
+        self.accounting_format = '_($* #,##0_);_($* (#,##0);_($* "-"_);_(@_)'
         
         logger.info("ExcelFormatter initialized with professional styling")
     
     async def format_cash_flow_table(
         self, 
-        cash_flows: Dict[str, Any], 
+        cash_flows: Union[Dict[str, Any], List[Dict[str, Any]]], 
         flow_type: str
     ) -> Dict[str, Any]:
         """
         Format cash flow data for Excel table display
         
         Args:
-            cash_flows: Cash flow data from NPV analysis
+            cash_flows: Cash flow data from NPV analysis (list or dict format)
             flow_type: "ownership" or "rental"
             
         Returns:
@@ -73,8 +77,8 @@ class ExcelFormatter:
         """
         logger.info(f"Formatting {flow_type} cash flow table")
         
-        # Extract cash flow arrays
-        annual_cash_flows = cash_flows.get('annual_cash_flows', [])
+        # Extract cash flow arrays - handle both list and dict formats
+        annual_cash_flows = self._extract_cash_flows(cash_flows)
         years = list(range(len(annual_cash_flows)))
         
         # Create headers
@@ -139,23 +143,23 @@ class ExcelFormatter:
     
     async def create_comparison_table(
         self, 
-        ownership_flows: Dict[str, Any], 
-        rental_flows: Dict[str, Any]
+        ownership_flows: Union[Dict[str, Any], List[Dict[str, Any]]], 
+        rental_flows: Union[Dict[str, Any], List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
         """
         Create side-by-side comparison table of ownership vs rental cash flows
         
         Args:
-            ownership_flows: Ownership cash flow data
-            rental_flows: Rental cash flow data
+            ownership_flows: Ownership cash flow data (list or dict format)
+            rental_flows: Rental cash flow data (list or dict format)
             
         Returns:
             Formatted comparison table
         """
         logger.info("Creating ownership vs rental comparison table")
         
-        ownership_annual = ownership_flows.get('annual_cash_flows', [])
-        rental_annual = rental_flows.get('annual_cash_flows', [])
+        ownership_annual = self._extract_cash_flows(ownership_flows)
+        rental_annual = self._extract_cash_flows(rental_flows)
         
         # Ensure both arrays are same length
         max_years = max(len(ownership_annual), len(rental_annual))
@@ -611,22 +615,27 @@ class ExcelFormatter:
         data_rows = table_data.get('data', [])
         formatting_rules = table_data.get('formatting_rules', {})
         
-        # Apply header formatting
+        # Apply enhanced professional header formatting
         for col_idx, header in enumerate(headers):
             col_letter = get_column_letter(start_col + col_idx)
             cell = ws[f'{col_letter}{start_row}']
             cell.value = header
-            cell.font = Font(bold=True, color=self.COLORS['white'])
+            cell.font = Font(name='Calibri', size=11, bold=True, color=self.COLORS['white'])
             cell.fill = PatternFill(start_color=self.COLORS['primary'], end_color=self.COLORS['primary'], fill_type='solid')
-            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            
+            # Professional border styling
             cell.border = Border(
-                left=Side(style='thin'),
-                right=Side(style='thin'),
-                top=Side(style='thin'),
-                bottom=Side(style='thin')
+                left=Side(style='thin', color=self.COLORS['neutral']),
+                right=Side(style='thin', color=self.COLORS['neutral']),
+                top=Side(style='medium', color=self.COLORS['primary']),
+                bottom=Side(style='medium', color=self.COLORS['primary'])
             )
+            
+            # Set appropriate row height for headers
+            ws.row_dimensions[start_row].height = 22
         
-        # Apply data row formatting
+        # Apply enhanced data row formatting
         for row_idx, data_row in enumerate(data_rows):
             excel_row = start_row + row_idx + 1
             
@@ -635,29 +644,50 @@ class ExcelFormatter:
                 cell = ws[f'{col_letter}{excel_row}']
                 cell.value = cell_value
                 
-                # Apply number formatting
+                # Enhanced font and alignment
+                cell.font = Font(name='Calibri', size=10, color=self.COLORS['dark'])
+                cell.alignment = Alignment(
+                    horizontal='left' if col_idx == 0 else 'center',
+                    vertical='center',
+                    wrap_text=True
+                )
+                
+                # Enhanced number formatting
                 if col_idx in formatting_rules.get('currency_columns', []):
                     if isinstance(cell_value, (int, float)):
-                        cell.number_format = self.currency_format
+                        cell.number_format = self.accounting_format
+                        cell.alignment = Alignment(horizontal='right', vertical='center')
                 elif col_idx in formatting_rules.get('percentage_columns', []):
                     if isinstance(cell_value, (int, float)):
                         cell.number_format = self.percentage_format
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                elif isinstance(cell_value, (int, float)) and abs(cell_value) >= 1:
+                    cell.number_format = self.number_format
                 
-                # Apply conditional formatting
+                # Apply enhanced conditional formatting
                 self._apply_conditional_formatting(cell, cell_value, formatting_rules.get('conditional_formatting', {}))
                 
-                # Apply borders
+                # Professional borders with subtle styling
                 cell.border = Border(
-                    left=Side(style='thin'),
-                    right=Side(style='thin'),
-                    top=Side(style='thin'),
-                    bottom=Side(style='thin')
+                    left=Side(style='thin', color=self.COLORS['neutral']),
+                    right=Side(style='thin', color=self.COLORS['neutral']),
+                    top=Side(style='hair', color=self.COLORS['neutral']),
+                    bottom=Side(style='hair', color=self.COLORS['neutral'])
                 )
                 
-                # Highlight total/summary rows
+                # Enhanced total/summary row highlighting
                 if row_idx == formatting_rules.get('total_row_index', -1):
-                    cell.font = Font(bold=True)
+                    cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['primary'])
                     cell.fill = PatternFill(start_color=self.COLORS['light'], end_color=self.COLORS['light'], fill_type='solid')
+                    cell.border = Border(
+                        left=Side(style='thin', color=self.COLORS['primary']),
+                        right=Side(style='thin', color=self.COLORS['primary']),
+                        top=Side(style='medium', color=self.COLORS['primary']),
+                        bottom=Side(style='medium', color=self.COLORS['primary'])
+                    )
+                
+                # Set appropriate row height
+                ws.row_dimensions[excel_row].height = 18
     
     def _apply_conditional_formatting(
         self, 
@@ -665,10 +695,10 @@ class ExcelFormatter:
         cell_value: Any, 
         conditional_rules: Dict[str, Any]
     ) -> None:
-        """Apply conditional formatting based on cell value"""
+        """Apply enhanced conditional formatting based on cell value and context"""
         
         if isinstance(cell_value, (int, float)):
-            # Positive/negative value formatting
+            # Enhanced positive/negative value formatting
             if cell_value > 0:
                 for rule_name, rule_config in conditional_rules.items():
                     if 'positive' in rule_name.lower() or 'advantage' in rule_name.lower():
@@ -677,9 +707,12 @@ class ExcelFormatter:
                             end_color=rule_config['color'], 
                             fill_type='solid'
                         )
-                        # Add light font color for better contrast
-                        if rule_config['color'] in ['96CEB4', 'FF7675']:  # Dark backgrounds
-                            cell.font = Font(color='FFFFFF')
+                        # Enhanced contrast and readability
+                        if rule_config['color'] in ['00B894', 'FF7675']:  # Dark backgrounds
+                            cell.font = Font(name='Calibri', size=10, bold=True, color='FFFFFF')
+                        else:
+                            cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['dark'])
+                            
             elif cell_value < 0:
                 for rule_name, rule_config in conditional_rules.items():
                     if 'negative' in rule_name.lower() or 'disadvantage' in rule_name.lower():
@@ -688,20 +721,57 @@ class ExcelFormatter:
                             end_color=rule_config['color'], 
                             fill_type='solid'
                         )
-                        # Add light font color for better contrast
-                        if rule_config['color'] in ['96CEB4', 'FF7675']:  # Dark backgrounds
-                            cell.font = Font(color='FFFFFF')
+                        # Enhanced contrast for negative values
+                        if rule_config['color'] in ['E17055', 'FF7675']:  # Red backgrounds
+                            cell.font = Font(name='Calibri', size=10, bold=True, color='FFFFFF')
+                        else:
+                            cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['danger'])
+            
+            # Add magnitude-based formatting for large values
+            if abs(cell_value) >= 100000:  # Values >= 100k
+                current_font = cell.font
+                cell.font = Font(
+                    name=current_font.name or 'Calibri',
+                    size=current_font.size or 10,
+                    bold=True,
+                    color=current_font.color or self.COLORS['dark']
+                )
         
-        # Handle string-based conditional formatting (e.g., recommendations)
+        # Enhanced string-based conditional formatting
         elif isinstance(cell_value, str):
+            value_upper = cell_value.upper().strip()
+            
+            # Recommendation formatting
             for rule_name, rule_config in conditional_rules.items():
                 if 'recommendation' in rule_name.lower():
-                    if cell_value.upper() == 'BUY':
-                        cell.fill = PatternFill(start_color=self.COLORS['success'], end_color=self.COLORS['success'], fill_type='solid')
-                        cell.font = Font(bold=True, color='FFFFFF')
-                    elif cell_value.upper() == 'RENT':
-                        cell.fill = PatternFill(start_color=self.COLORS['warning'], end_color=self.COLORS['warning'], fill_type='solid')
-                        cell.font = Font(bold=True)
+                    if 'BUY' in value_upper:
+                        cell.fill = PatternFill(
+                            start_color=self.COLORS['success'], 
+                            end_color=self.COLORS['success'], 
+                            fill_type='solid'
+                        )
+                        cell.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                    elif 'RENT' in value_upper:
+                        cell.fill = PatternFill(
+                            start_color=self.COLORS['warning'], 
+                            end_color=self.COLORS['warning'], 
+                            fill_type='solid'
+                        )
+                        cell.font = Font(name='Calibri', size=11, bold=True, color=self.COLORS['dark'])
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Status and confidence level formatting
+            if value_upper in ['HIGH', 'STRONG', 'EXCELLENT']:
+                cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['success'])
+            elif value_upper in ['MEDIUM', 'MODERATE', 'GOOD']:
+                cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['info'])
+            elif value_upper in ['LOW', 'WEAK', 'POOR']:
+                cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['danger'])
+            
+            # Priority and importance indicators
+            if 'ADVANTAGE' in value_upper or 'BENEFIT' in value_upper:
+                cell.font = Font(name='Calibri', size=10, bold=True, color=self.COLORS['primary'])
     
     def get_currency_format(self, detailed: bool = False) -> str:
         """Get appropriate currency format string"""
@@ -749,32 +819,74 @@ class ExcelFormatter:
         return f"{value*100:.{precision}f}%"
     
     def create_header_style(self) -> NamedStyle:
-        """Create named style for table headers"""
-        header_style = NamedStyle(name="table_header")
-        header_style.font = Font(bold=True, color=self.COLORS['white'])
+        """Create enhanced named style for professional table headers"""
+        header_style = NamedStyle(name="professional_header")
+        header_style.font = Font(
+            name='Calibri', 
+            size=11, 
+            bold=True, 
+            color=self.COLORS['white']
+        )
         header_style.fill = PatternFill(
             start_color=self.COLORS['primary'], 
             end_color=self.COLORS['primary'], 
             fill_type='solid'
         )
-        header_style.alignment = Alignment(horizontal='center', vertical='center')
+        header_style.alignment = Alignment(
+            horizontal='center', 
+            vertical='center', 
+            wrap_text=True
+        )
         header_style.border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
+            left=Side(style='thin', color=self.COLORS['neutral']),
+            right=Side(style='thin', color=self.COLORS['neutral']),
+            top=Side(style='medium', color=self.COLORS['primary']),
+            bottom=Side(style='medium', color=self.COLORS['primary'])
         )
         return header_style
     
     def create_currency_style(self, positive_color: str = None, negative_color: str = None) -> NamedStyle:
-        """Create named style for currency values"""
-        currency_style = NamedStyle(name="currency_value")
-        currency_style.number_format = self.currency_format
-        currency_style.alignment = Alignment(horizontal='right', vertical='center')
+        """Create enhanced named style for professional currency formatting"""
+        currency_style = NamedStyle(name="professional_currency")
+        currency_style.font = Font(name='Calibri', size=10, color=self.COLORS['dark'])
+        currency_style.number_format = self.accounting_format
+        currency_style.alignment = Alignment(
+            horizontal='right', 
+            vertical='center',
+            indent=1
+        )
         currency_style.border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
+            left=Side(style='thin', color=self.COLORS['neutral']),
+            right=Side(style='thin', color=self.COLORS['neutral']),
+            top=Side(style='hair', color=self.COLORS['neutral']),
+            bottom=Side(style='hair', color=self.COLORS['neutral'])
         )
         return currency_style
+    
+    def _extract_cash_flows(self, flows_data: Union[Dict[str, Any], List[Dict[str, Any]]]) -> List[float]:
+        """
+        Extract cash flow values from either list or dict format
+        
+        Args:
+            flows_data: Either a list of flow dicts or a dict with 'annual_cash_flows' key
+            
+        Returns:
+            List of cash flow values
+        """
+        if isinstance(flows_data, list):
+            # List of flow dictionaries - extract 'net_cash_flow' values
+            return [
+                flow.get('net_cash_flow', 0) if isinstance(flow, dict) else float(flow)
+                for flow in flows_data
+            ]
+        elif isinstance(flows_data, dict):
+            if 'annual_cash_flows' in flows_data:
+                # Dictionary format with 'annual_cash_flows' key
+                annual_flows = flows_data['annual_cash_flows']
+                if isinstance(annual_flows, list):
+                    return [float(flow) for flow in annual_flows]
+            # If dict doesn't have expected structure, return empty list
+            return []
+        else:
+            # Unsupported format
+            return []

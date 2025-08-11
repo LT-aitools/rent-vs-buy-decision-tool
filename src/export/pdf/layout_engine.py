@@ -183,25 +183,30 @@ class LayoutEngine:
         content_width, _ = self.calculate_content_area(0, grid_span)
         
         if content_type == ContentType.CHART:
-            # Charts should have good readability
-            max_width = min(content_width, 7.5 * inch)  # Don't exceed 7.5 inches
-            width = max_width
+            # Enhanced chart sizing for professional documents
+            max_width = min(content_width, 6.8 * inch)  # Optimal width for readability
+            width = max_width * 0.95  # Leave small margins
             height = width / aspect_ratio
             
-            # Ensure height doesn't exceed reasonable limits
-            max_height = 5 * inch
+            # Ensure height doesn't exceed reasonable limits for page flow
+            max_height = 4.2 * inch
+            min_height = 2.5 * inch
+            
             if height > max_height:
                 height = max_height
                 width = height * aspect_ratio
+            elif height < min_height:
+                height = min_height
+                width = height * aspect_ratio
                 
         elif content_type == ContentType.METRICS:
-            # Metric displays can be wider and shorter
-            width = content_width * 0.8  # Leave some padding
-            height = 2.5 * inch
+            # Enhanced metric displays for executive presentation
+            width = content_width * 0.85  # Better proportion
+            height = 2.2 * inch  # Optimal height for metrics
             
         elif content_type == ContentType.TABLE:
-            # Tables use full width available
-            width = content_width
+            # Tables with professional spacing
+            width = content_width * 0.95  # Small margin for better appearance
             height = None  # Let table determine height
             
         else:
@@ -265,8 +270,10 @@ class LayoutEngine:
                     'header_bg': HexColor('#FF6B6B'),
                     'header_text': HexColor('#FFFFFF'),
                     'row_bg': HexColor('#F8F9FA'),
+                    'alt_row_bg': HexColor('#FFFFFF'),
                     'text': HexColor('#2D3436'),
-                    'border': HexColor('#E9ECEF')
+                    'border': HexColor('#DDD6D6'),
+                    'accent': HexColor('#74B9FF')
                 }
             else:
                 colors = {}
@@ -276,47 +283,68 @@ class LayoutEngine:
             
         if style_type == 'professional':
             table_style = TableStyle([
-                # Header styling
+                # Enhanced header styling
                 ('BACKGROUND', (0, 0), (-1, 0), colors['header_bg']),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors['header_text']),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
                 
-                # Body styling
+                # Enhanced body styling
                 ('BACKGROUND', (0, 1), (-1, -1), colors['row_bg']),
                 ('TEXTCOLOR', (0, 1), (-1, -1), colors['text']),
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-                ('TOPPADDING', (0, 1), (-1, -1), 8),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Left align first column
+                ('ALIGN', (1, 1), (-1, -1), 'CENTER'),  # Center align data
+                ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
                 
-                # Alignment and borders
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('GRID', (0, 0), (-1, -1), 1, colors['border']),
+                # Professional borders and lines
+                ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors['header_bg']),
+                ('LINEAFTER', (0, 0), (-1, -1), 0.5, colors['border']),
+                ('LINEBEFORE', (0, 0), (-1, -1), 0.5, colors['border']),
+                ('LINEABOVE', (0, 0), (-1, 0), 1, colors['border']),
+                ('LINEBELOW', (0, -1), (-1, -1), 1, colors['border']),
                 
-                # Alternating row colors for readability
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors['row_bg'], colors.get('white', colors['row_bg'])])
+                # Subtle alternating row colors
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors['row_bg'], colors.get('alt_row_bg', colors['row_bg'])])
             ])
             
         elif style_type == 'executive':
             table_style = TableStyle([
+                # Executive header with premium styling
                 ('BACKGROUND', (0, 0), (-1, 0), colors['header_bg']),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors['header_text']),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 14),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 15),
-                ('TOPPADDING', (0, 0), (-1, 0), 15),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                
+                # Executive body styling
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors['text']),
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 12),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
-                ('TOPPADDING', (0, 1), (-1, -1), 10),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Left align labels
+                ('ALIGN', (1, 1), (-1, -1), 'CENTER'),  # Center align data
+                ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+                
+                # Premium borders and emphasis
                 ('LINEBELOW', (0, 0), (-1, 0), 2, colors['header_bg']),
-                ('LINEAFTER', (0, 0), (-1, -1), 1, colors['border'])
+                ('LINEAFTER', (0, 0), (-1, -1), 0.5, colors['border']),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors['border']),
+                
+                # Highlight important columns
+                ('FONTNAME', (-1, 1), (-1, -1), 'Helvetica-Bold'),  # Last column bold
+                ('TEXTCOLOR', (-1, 1), (-1, -1), colors.get('accent', colors['header_bg']))
             ])
             
         else:  # minimal
