@@ -543,14 +543,24 @@ class ExcelFormatter:
         data_rows = []
         
         # Extract actual values from potentially nested structure
-        inputs_data = session_data.get('inputs', session_data) if isinstance(session_data.get('inputs'), dict) else session_data
+        # Handle both direct session data and nested structure from session manager
+        if 'inputs' in session_data and isinstance(session_data['inputs'], dict):
+            # Session manager format: {'inputs': {'field': value, ...}, 'timestamp': ...}
+            inputs_data = session_data['inputs']
+        elif isinstance(session_data, dict) and any(key in session_data for key in ['purchase_price', 'current_annual_rent']):
+            # Direct session data format: {'field': value, ...}
+            inputs_data = session_data
+        else:
+            # Fallback to session_data itself
+            inputs_data = session_data
         
         # Property Information
         data_rows.extend([
             ['Property', 'Purchase Price', inputs_data.get('purchase_price', 500000), '$', 'Property acquisition cost'],
-            ['Property', 'Total Size', inputs_data.get('total_property_size', 5000), 'sq ft', 'Total building area'],
-            ['Property', 'Space Needed', inputs_data.get('current_space_needed', 4000), 'sq ft', 'Current space requirements'],
-            ['Property', 'Property Type', inputs_data.get('property_type', 'Commercial'), '', 'Building classification'],
+            ['Property', 'Ownership Property Size', inputs_data.get('ownership_property_size', 5000), 'sq m', 'Total ownership building area'],
+            ['Property', 'Rental Property Size', inputs_data.get('rental_property_size', 4000), 'sq m', 'Total rental building area'],
+            ['Property', 'Current Space Needed', inputs_data.get('current_space_needed', 3000), 'sq m', 'Current space requirements'],
+            ['Property', 'Property Type', inputs_data.get('property_type', 'Warehouse'), '', 'Building classification'],
             ['Property', 'Location', inputs_data.get('location', ''), '', 'Property location'],
             ['', '', '', '', ''],  # Blank row
         ])
@@ -560,6 +570,7 @@ class ExcelFormatter:
             ['Finance', 'Down Payment', inputs_data.get('down_payment_percent', 30), '%', 'Initial equity percentage'],
             ['Finance', 'Interest Rate', inputs_data.get('interest_rate', 5.0), '%', 'Mortgage interest rate'],
             ['Finance', 'Loan Term', inputs_data.get('loan_term', 20), 'years', 'Mortgage amortization period'],
+            ['Finance', 'Transaction Costs', inputs_data.get('transaction_costs_percent', 5.0), '%', 'Purchase transaction costs'],
             ['Finance', 'Cost of Capital', inputs_data.get('cost_of_capital', 8.0), '%', 'Discount rate for NPV'],
             ['Finance', 'Corporate Tax Rate', inputs_data.get('corporate_tax_rate', 25), '%', 'Tax rate for deductions'],
             ['', '', '', '', ''],  # Blank row
@@ -569,8 +580,7 @@ class ExcelFormatter:
         data_rows.extend([
             ['Rental', 'Annual Rent', inputs_data.get('current_annual_rent', 120000), '$', 'Current rental cost'],
             ['Rental', 'Rent Increase Rate', inputs_data.get('rent_increase_rate', 3.0), '%/year', 'Annual rent escalation'],
-            ['Rental', 'Security Deposit', inputs_data.get('security_deposit_months', 2), 'months', 'Upfront security deposit'],
-            ['Rental', 'Moving Costs', inputs_data.get('moving_costs', 10000), '$', 'One-time moving expense'],
+            ['Rental', 'Moving Costs', inputs_data.get('moving_costs', 0), '$', 'One-time moving expense'],
             ['', '', '', '', ''],  # Blank row
         ])
         
@@ -579,7 +589,30 @@ class ExcelFormatter:
             ['Operations', 'Property Tax Rate', inputs_data.get('property_tax_rate', 1.2), '%/year', 'Annual property tax rate'],
             ['Operations', 'Insurance Cost', inputs_data.get('insurance_cost', 5000), '$/year', 'Annual insurance premium'],
             ['Operations', 'Maintenance', inputs_data.get('annual_maintenance_percent', 2.0), '%/year', 'Annual maintenance as % of value'],
-            ['Operations', 'CapEx Reserve', inputs_data.get('longterm_capex_reserve', 1.5), '%/year', 'Capital expenditure reserve'],
+            ['Operations', 'CapEx Reserve', inputs_data.get('longterm_capex_reserve', 0.0), '%/year', 'Capital expenditure reserve'],
+            ['Operations', 'Obsolescence Risk', inputs_data.get('obsolescence_risk_factor', 0.0), '%/year', 'Annual obsolescence risk factor'],
+            ['', '', '', '', ''],  # Blank row
+        ])
+        
+        # Expansion Parameters
+        data_rows.extend([
+            ['Expansion', 'Future Expansion Year', inputs_data.get('future_expansion_year', 'Never'), '', 'When additional space is needed'],
+            ['Expansion', 'Additional Space Needed', inputs_data.get('additional_space_needed', 0), 'sq m', 'Extra space for expansion'],
+            ['', '', '', '', ''],  # Blank row
+        ])
+        
+        # Subletting Parameters
+        subletting_enabled = inputs_data.get('subletting_potential', False)
+        data_rows.extend([
+            ['Subletting', 'Subletting Potential', 'Yes' if subletting_enabled else 'No', '', 'Can excess space be sublet'],
+            ['Subletting', 'Subletting Rate', inputs_data.get('subletting_rate', 0), '$/sq m/year', 'Income per square meter'],
+            ['Subletting', 'Subletting Space', inputs_data.get('subletting_space_sqm', 0), 'sq m', 'Planned subletting space'],
+            ['', '', '', '', ''],  # Blank row
+        ])
+        
+        # Property Upgrade Parameters
+        data_rows.extend([
+            ['Upgrades', 'Property Upgrade Cycle', inputs_data.get('property_upgrade_cycle', 30), 'years', 'Years between major upgrades'],
             ['', '', '', '', ''],  # Blank row
         ])
         
@@ -604,6 +637,103 @@ class ExcelFormatter:
             }
         }
     
+    def format_detailed_cash_flow_table(self, ownership_flows: List[Dict], rental_flows: List[Dict]) -> Dict[str, Any]:
+        """
+        Create comprehensive cash flow breakdown table showing all new features
+        
+        Args:
+            ownership_flows: List of ownership cash flow dictionaries
+            rental_flows: List of rental cash flow dictionaries
+            
+        Returns:
+            Dictionary containing formatted table data with detailed breakdowns
+        """
+        logger.info(f"Formatting detailed cash flow table with {len(ownership_flows) if ownership_flows else 0} ownership flows and {len(rental_flows) if rental_flows else 0} rental flows")
+        
+        if not ownership_flows or not rental_flows:
+            logger.warning("Missing cash flow data for detailed table")
+            return {
+                'headers': ['Year', 'Error'],
+                'data': [['N/A', 'No cash flow data available']],
+                'table_type': 'error'
+            }
+        
+        headers = [
+            'Year',
+            'Mortgage Payment', 'Property Taxes', 'Insurance', 'Maintenance', 
+            'Subletting Income', 'Property Upgrades', 'Ownership Net Cost',
+            'Rental Cost', 'Moving Costs', 'Rental Tax Benefits', 'Space (m²)', 'Expansion?', 'Rental Net Cost',
+            'Cost Difference'
+        ]
+        
+        data_rows = []
+        
+        # Get the minimum length to avoid index errors
+        max_years = min(len(ownership_flows), len(rental_flows))
+        
+        for i in range(max_years):
+            own_flow = ownership_flows[i]
+            rent_flow = rental_flows[i]
+            
+            year = own_flow.get('year', i + 1)
+            
+            # Ownership components
+            mortgage_payment = own_flow.get('mortgage_payment', 0)
+            property_taxes = own_flow.get('property_taxes', 0) 
+            insurance = own_flow.get('insurance', 0)
+            maintenance = own_flow.get('maintenance', 0)
+            subletting_income = own_flow.get('subletting_income', 0)
+            property_upgrade_cost = own_flow.get('property_upgrade_cost', 0)
+            ownership_net_cost = abs(own_flow.get('net_cash_flow', 0))
+            
+            # Rental components
+            rental_cost = rent_flow.get('annual_rent', 0)
+            moving_costs = rent_flow.get('moving_costs', 0) if year == 1 else 0  # Moving costs only in year 1
+            rental_tax_benefits = rent_flow.get('tax_benefits', 0)
+            space_needed = rent_flow.get('space_needed_this_year', 0)
+            expansion_triggered = rent_flow.get('expansion_triggered', False)
+            rental_net_cost = abs(rent_flow.get('net_cash_flow', 0))
+            
+            # Cost difference (positive = ownership costs more)
+            cost_difference = ownership_net_cost - rental_net_cost
+            
+            data_rows.append([
+                year,
+                f'${mortgage_payment:,.0f}' if mortgage_payment > 0 else '$0',
+                f'${property_taxes:,.0f}',
+                f'${insurance:,.0f}',
+                f'${maintenance:,.0f}',
+                f'${subletting_income:,.0f}' if subletting_income > 0 else '$0',
+                f'${property_upgrade_cost:,.0f}' if property_upgrade_cost > 0 else '$0',
+                f'${ownership_net_cost:,.0f}',
+                f'${rental_cost:,.0f}',
+                f'${moving_costs:,.0f}' if moving_costs > 0 else '$0',
+                f'${rental_tax_benefits:,.0f}' if rental_tax_benefits > 0 else '$0',
+                f'{space_needed:,.0f}',
+                'Yes' if expansion_triggered else 'No',
+                f'${rental_net_cost:,.0f}',
+                f'${cost_difference:,.0f}'
+            ])
+        
+        return {
+            'headers': headers,
+            'data': data_rows,
+            'table_type': 'detailed_cash_flows',
+            'formatting_rules': {
+                'header_style': {
+                    'font_bold': True,
+                    'bg_color': '#4ECDC4',
+                    'font_color': 'white'
+                },
+                'money_columns': [1, 2, 3, 4, 5, 6, 7, 8, 11, 12],  # Currency formatting
+                'highlight_columns': {
+                    5: '#E8F5E8',  # Subletting income (light green)
+                    6: '#FFF2CC',  # Property upgrades (light yellow)
+                    12: '#E1F5FE'  # Cost difference (light blue)
+                }
+            }
+        }
+
     def apply_table_formatting(
         self, 
         ws: Worksheet, 

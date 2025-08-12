@@ -221,6 +221,17 @@ class ExcelGenerator:
         # Format assumptions by category
         assumptions = await self.formatter.format_assumptions_table(session_data)
         excel_data['formatted_tables']['assumptions'] = assumptions
+        
+        # Create detailed cash flow breakdown table with new features
+        ownership_flows = excel_data.get('ownership_flows', [])
+        rental_flows = excel_data.get('rental_flows', [])
+        logger.info(f"Preparing detailed cash flows: ownership={len(ownership_flows) if ownership_flows else 0}, rental={len(rental_flows) if rental_flows else 0}")
+        if ownership_flows and rental_flows:
+            detailed_cash_flows = self.formatter.format_detailed_cash_flow_table(ownership_flows, rental_flows)
+            excel_data['formatted_tables']['detailed_cash_flows'] = detailed_cash_flows
+            logger.info("Detailed cash flow table created and added to excel_data")
+        else:
+            logger.warning("Insufficient data for detailed cash flow table")
     
     async def _create_worksheets(
         self, 
@@ -438,7 +449,17 @@ class ExcelGenerator:
         current_row += rows_used + 2  # Add spacing
         
         # Comparison table
-        await self._insert_data_table(ws, cash_flows['comparison_table'], start_row=current_row, title="Side-by-Side Comparison")
+        rows_used = await self._insert_data_table(ws, cash_flows['comparison_table'], start_row=current_row, title="Side-by-Side Comparison")
+        current_row += rows_used + 2  # Add spacing
+        
+        # Add detailed cash flow breakdown with new features
+        detailed_cash_flows = excel_data['formatted_tables'].get('detailed_cash_flows')
+        logger.info(f"Detailed cash flows data: {detailed_cash_flows is not None}")
+        if detailed_cash_flows:
+            logger.info(f"Adding detailed cash flow table at row {current_row}")
+            await self._insert_data_table(ws, detailed_cash_flows, start_row=current_row, title="Detailed Cash Flow Analysis with Features")
+        else:
+            logger.warning("No detailed cash flows data found for Excel export")
     
     async def _create_charts_sheet(
         self,

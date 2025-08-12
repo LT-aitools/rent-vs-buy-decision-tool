@@ -561,6 +561,9 @@ class ChartEmbedder:
             format: Output format (png, jpeg, svg, pdf)
         """
         try:
+            # Ensure the output directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
             # Calculate pixel dimensions based on DPI
             # Optimized size: 10x6.5 inches for better Excel integration
             width_px = int(10 * resolution)

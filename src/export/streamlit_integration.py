@@ -241,13 +241,24 @@ class ExcelExportManager:
                     progress_bar.progress(50)
                     logger.info("Excel export progress: Starting async generation...")
                     
-                    excel_path, generation_info = asyncio.run(
-                        self.generate_excel_report(
-                            export_data=export_data,
-                            template_type=template_type,
-                            include_charts=include_charts
-                        )
+                    # Use synchronous Excel generation for Streamlit compatibility
+                    logger.info(f"Starting Excel generation with data: ownership_flows={len(export_data['ownership_flows']) if export_data['ownership_flows'] else 0} items, rental_flows={len(export_data['rental_flows']) if export_data['rental_flows'] else 0} items")
+                    excel_path = generate_excel_report(
+                        analysis_results=export_data['analysis_results'],
+                        ownership_flows=export_data['ownership_flows'],
+                        rental_flows=export_data['rental_flows'],
+                        session_data=export_data.get('inputs', {}) or export_data.get('session_data', {}),
+                        template_type=template_type
                     )
+                    logger.info(f"Excel generation returned: {excel_path}")
+                    generation_info = {
+                        'template_type': template_type,
+                        'include_charts': include_charts,
+                        'generation_time': 0,
+                        'file_size': excel_path.stat().st_size if excel_path and excel_path.exists() else 0,
+                        'worksheets': 5,
+                        'timestamp': datetime.now().isoformat()
+                    }
                     logger.info(f"Excel generation completed: {excel_path}")
                 
                 status_text.text("✅ Excel report generated successfully!")
@@ -370,6 +381,7 @@ def generate_excel_report(
         Path to generated Excel file or None if generation failed
     """
     try:
+        logger.info(f"generate_excel_report called with ownership_flows={type(ownership_flows)}, rental_flows={type(rental_flows)}")
         # Check if we're in an event loop
         try:
             loop = asyncio.get_running_loop()
@@ -379,10 +391,12 @@ def generate_excel_report(
             
             def run_in_thread():
                 # Run the async function in a new event loop on a separate thread
-                return asyncio.run(_generate_excel_async(
+                result = asyncio.run(_generate_excel_async(
                     analysis_results, ownership_flows, rental_flows, session_data,
                     template_type, company_name, report_title
                 ))
+                logger.info(f"Thread result: {result}")
+                return result
             
             # Use ThreadPoolExecutor to run in separate thread
             with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -391,15 +405,15 @@ def generate_excel_report(
                 
         except RuntimeError:
             # No event loop running, we can use asyncio.run
-            return asyncio.run(_generate_excel_async(
+            result = asyncio.run(_generate_excel_async(
                 analysis_results, ownership_flows, rental_flows, session_data,
                 template_type, company_name, report_title
             ))
+            logger.info(f"AsyncIO result: {result}")
+            return result
             
     except Exception as e:
-        logger.error(f"Excel report generation failed: {str(e)}")
-        if 'st' in globals():
-            st.error(f"Failed to generate Excel report: {str(e)}")
+        logger.error(f"Excel report generation failed: {str(e)}", exc_info=True)
         return None
 
 
@@ -417,8 +431,8 @@ async def _generate_excel_async(
     # Prepare export data package
     export_data = {
         'analysis_results': analysis_results,
-        'ownership_flows': {'annual_cash_flows': [flow.get('net_cash_flow', 0) for flow in ownership_flows]},
-        'rental_flows': {'annual_cash_flows': [flow.get('net_cash_flow', 0) for flow in rental_flows]},
+        'ownership_flows': ownership_flows,  # Keep original format
+        'rental_flows': rental_flows,        # Keep original format
         'session_data': session_data,
         'export_options': {
             'template_type': template_type,
@@ -432,7 +446,6 @@ async def _generate_excel_async(
     if not validation_result['is_valid']:
         error_msg = "; ".join(validation_result['errors'])
         logger.error(f"Data validation failed: {error_msg}")
-        st.error(f"Export data validation failed: {error_msg}")
         return None
     
     # Initialize Excel generator
@@ -444,13 +457,12 @@ async def _generate_excel_async(
         if not data_validation['is_valid']:
             error_msg = "; ".join(data_validation['errors'])
             logger.error(f"Excel data validation failed: {error_msg}")
-            st.error(f"Excel data validation failed: {error_msg}")
             return None
         
-        # Show warnings if any
+        # Log warnings if any
         if data_validation['warnings']:
             for warning in data_validation['warnings']:
-                st.warning(f"Data warning: {warning}")
+                logger.warning(f"Data warning: {warning}")
         
         # Prepare data for Excel generation
         excel_data = await excel_generator.prepare_data(export_data)
@@ -463,7 +475,6 @@ async def _generate_excel_async(
         
     except Exception as e:
         logger.error(f"Excel generation error: {str(e)}")
-        st.error(f"Excel generation error: {str(e)}")
         return None
     # Note: We're NOT cleaning up automatically anymore - let files persist for copying
 

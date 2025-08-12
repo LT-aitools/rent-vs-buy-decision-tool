@@ -401,12 +401,13 @@ def render_export_tab():
     if has_analysis_results:
         # Professional Export Section
         st.markdown("### 📊 Professional Reports")
-        st.markdown("Generate executive-ready Excel and PDF reports with charts and comprehensive analysis.")
+        st.markdown("Generate executive-ready Excel reports with charts and comprehensive analysis.")
         
         
         # Try to initialize export system
         try:
-            from export.pdf_integration import PDFExportManager, PDF_SYSTEM_AVAILABLE
+            # PDF features hidden - will be re-enabled later if needed
+            # from export.pdf_integration import PDFExportManager, PDF_SYSTEM_AVAILABLE
             from export.streamlit_integration import ExcelExportManager, EXCEL_SYSTEM_AVAILABLE
             
             # Prepare export data with real user data
@@ -436,63 +437,33 @@ def render_export_tab():
                 st.markdown("**Please run the analysis again to generate complete data.**")
                 return
             
-            col1, col2 = st.columns(2)
+            # PDF features hidden - will be re-enabled later if needed
+            # col1, col2 = st.columns(2)
             
-            with col1:
-                st.markdown("#### 📋 PDF Reports")
-                if PDF_SYSTEM_AVAILABLE:
-                    try:
-                        pdf_manager = PDFExportManager()
-                        
-                        # Template selection
-                        template_type = st.selectbox(
-                            "Select PDF Report Template:",
-                            options=['executive', 'detailed', 'investor'],
-                            format_func=lambda x: {
-                                'executive': '📊 Executive Summary (2-3 pages)',
-                                'detailed': '📈 Detailed Analysis (8-12 pages)', 
-                                'investor': '💼 Investor Presentation (6-8 pages)'
-                            }[x],
-                            help="Choose the report template that best fits your audience"
-                        )
-                        
-                        # Call the PDF manager directly (no button wrapper)
-                        pdf_manager.create_streamlit_download_button(
-                            export_data=export_data,
-                            template_type=template_type
-                        )
-                        
-                    except Exception as e:
-                        st.error(f"PDF system error: {str(e)}")
-                        logger.error(f"PDF system error in export tab: {str(e)}", exc_info=True)
-                else:
-                    st.error("PDF generation not available. Missing dependencies.")
-                    st.code("pip install reportlab Pillow pypdf")
-            
-            with col2:
-                st.markdown("#### 📊 Excel Reports")
-                if EXCEL_SYSTEM_AVAILABLE:
-                    try:
-                        excel_manager = ExcelExportManager()
-                        
-                        # Excel options
-                        include_charts = st.checkbox("Include Charts", value=True, help="Embed analysis charts in Excel")
-                        professional_format = st.checkbox("Professional Formatting", value=True, help="Apply corporate styling")
-                        
-                        # Call the Excel manager directly (no button wrapper)
-                        excel_manager.create_streamlit_download_button(
-                            export_data=export_data,
-                            template_type='detailed',  # Use supported template
-                            include_charts=include_charts,
-                            professional_formatting=professional_format
-                        )
-                        
-                    except Exception as e:
-                        st.error(f"Excel system error: {str(e)}")
-                        logger.error(f"Excel system error in export tab: {str(e)}", exc_info=True)
-                else:
-                    st.error("Excel generation not available. Missing dependencies.")
-                    st.code("pip install openpyxl kaleido plotly")
+            # Excel Reports section (full width)
+            st.markdown("#### 📊 Excel Reports")
+            if EXCEL_SYSTEM_AVAILABLE:
+                try:
+                    excel_manager = ExcelExportManager()
+                    
+                    # Excel options
+                    include_charts = st.checkbox("Include Charts", value=True, help="Embed analysis charts in Excel")
+                    professional_format = st.checkbox("Professional Formatting", value=True, help="Apply corporate styling")
+                    
+                    # Call the Excel manager directly (no button wrapper)
+                    excel_manager.create_streamlit_download_button(
+                        export_data=export_data,
+                        template_type='detailed',  # Use supported template
+                        include_charts=include_charts,
+                        professional_formatting=professional_format
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Excel system error: {str(e)}")
+                    logger.error(f"Excel system error in export tab: {str(e)}", exc_info=True)
+            else:
+                st.error("Excel generation not available. Missing dependencies.")
+                st.code("pip install openpyxl kaleido plotly")
                     
         except ImportError:
             st.warning("⚠️ Professional export system not available. Showing basic export options.")
