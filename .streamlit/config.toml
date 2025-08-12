@@ -2,18 +2,14 @@
 developmentMode = false
 
 [server]
-# Server configuration for localhost access
+# Server configuration optimized for Streamlit Cloud
 port = 8501
-address = "127.0.0.1"
-baseUrlPath = ""
-headless = false
+headless = true
 enableCORS = false
 enableXsrfProtection = false
 maxUploadSize = 200
 
 [browser]
-# Automatically open browser when starting
-serverAddress = "localhost"
 gatherUsageStats = false
 
 [theme]
