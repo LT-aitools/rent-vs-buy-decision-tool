@@ -649,14 +649,6 @@ def render_help_tab():
 def main():
     """Main application entry point with comprehensive visualization system"""
     
-    # Initialize page config FIRST (must be first Streamlit command)
-    st.set_page_config(
-        page_title="Real Estate Decision Tool - with Visualizations",
-        page_icon="🏢", 
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
     # Then initialize other components
     initialize_session()
     
