@@ -352,8 +352,6 @@ def calculate_npv_comparison(
     property_tax_deductible: bool = True,
     rent_deductible: bool = True,
     # Initial costs
-    security_deposit: float = 0.0,
-    rental_commission: float = 0.0,
     moving_costs: float = 0.0,
     space_improvement_cost: float = 0.0,
     # Expansion and subletting parameters (added for completeness)
@@ -389,7 +387,7 @@ def calculate_npv_comparison(
         purchase_price, down_payment_pct, interest_rate, loan_term, transaction_costs, space_improvement_cost
     )
     ownership_initial_investment = mortgage_info['total_initial_investment']
-    rental_initial_investment = security_deposit + rental_commission + moving_costs
+    rental_initial_investment = moving_costs
     
     # Calculate ownership cash flows
     ownership_flows = calculate_ownership_cash_flows(
@@ -417,7 +415,7 @@ def calculate_npv_comparison(
     )
     
     rental_terminal = calculate_rental_terminal_value(
-        security_deposit, inflation_rate, analysis_period
+        0.0, inflation_rate, analysis_period
     )
     
     # Calculate NPVs
