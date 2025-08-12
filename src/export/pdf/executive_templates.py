@@ -644,10 +644,41 @@ class ExecutiveTemplateBuilder:
         
         return table
     
+    def _extract_cash_flows(self, flows_data):
+        """
+        Extract cash flow values from either list or dict format
+        
+        Args:
+            flows_data: Either a list of flow dicts or a dict with 'annual_cash_flows' key
+            
+        Returns:
+            List of cash flow values
+        """
+        if isinstance(flows_data, list):
+            # List of flow dictionaries - extract 'net_cash_flow' values
+            return [
+                flow.get('net_cash_flow', 0) if isinstance(flow, dict) else float(flow)
+                for flow in flows_data
+            ]
+        elif isinstance(flows_data, dict):
+            if 'annual_cash_flows' in flows_data:
+                # Dictionary format with 'annual_cash_flows' key
+                annual_flows = flows_data['annual_cash_flows']
+                if isinstance(annual_flows, list):
+                    return annual_flows
+                else:
+                    return [annual_flows] if annual_flows is not None else []
+            else:
+                # If no 'annual_cash_flows' key, try to extract from list format embedded in dict
+                return []
+        else:
+            return []
+
     def _create_detailed_cash_flow_table(self, flows_data: Dict[str, Any], scenario: str) -> Table:
         """Create detailed cash flow projection table"""
         
-        annual_flows = flows_data.get('annual_cash_flows', [])
+        # Use the new extraction method to handle both list and dict formats
+        annual_flows = self._extract_cash_flows(flows_data)
         if not annual_flows:
             return Paragraph(f"No cash flow data available for {scenario} scenario", self.styles['ExecutiveBody'])
         

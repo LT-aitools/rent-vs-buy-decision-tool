@@ -57,23 +57,19 @@ DEFAULT_VALUES: Dict[str, Any] = {
     # 1.4 FINANCIAL PARAMETERS - RENTAL SCENARIO
     "current_annual_rent": None,  # Required, no default
     "rent_increase_rate": 3.0,  # 3%
-    "security_deposit_months": 2,  # 2 months rent
-    "rental_commission_months": 1,  # 1 month rent
-    "lease_break_penalty_months": 6,  # 6 months rent
     "moving_costs": 0,  # $0
     
     # 1.5 OPERATIONAL PARAMETERS
     "analysis_period": 25,  # 25 years
-    "growth_rate": 5.0,  # 5%
     "future_expansion_year": 10,  # Year 10
     "additional_space_needed": 0,  # 0 sq meter
     "subletting_potential": False,  # No
     "subletting_rate": 0,  # $0 per sq meter
     "subletting_space_sqm": 0,  # 0 square meters to sublet
     "cost_of_capital": 8.0,  # 8%
-    "longterm_capex_reserve": 1.5,  # 1.5%
-    "property_upgrade_cycle": 15,  # 15 years
-    "obsolescence_risk_factor": 0.5,  # 0.5%
+    "longterm_capex_reserve": 0.0,  # 0%
+    "property_upgrade_cycle": 30,  # 30 years
+    "obsolescence_risk_factor": 0.0,  # 0%
     
     # 1.6 TAX & ACCOUNTING PARAMETERS
     "corporate_tax_rate": 25.0,  # 25%
@@ -112,13 +108,9 @@ VALIDATION_RANGES: Dict[str, Dict[str, Any]] = {
     
     "current_annual_rent": {"min": 1000, "max": 10000000},
     "rent_increase_rate": {"min": 0.0, "max": 15.0},
-    "security_deposit_months": {"min": 0, "max": 12},
-    "rental_commission_months": {"min": 0, "max": 6},
-    "lease_break_penalty_months": {"min": 0, "max": 24},
     "moving_costs": {"min": 0, "max": 1000000},
     
     "analysis_period": {"min": 0, "max": 100},
-    "growth_rate": {"min": -5.0, "max": 25.0},
     "future_expansion_year": {"min": 1, "max": 100},
     "additional_space_needed": {"min": 0, "max": 100000},
     "subletting_rate": {"min": 0, "max": 1000},
@@ -166,23 +158,19 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     # Rental Parameters
     "current_annual_rent": "Current total annual rental cost",
     "rent_increase_rate": "Expected annual rent escalation percentage",
-    "security_deposit_months": "Upfront rental security deposit in months of rent",
-    "rental_commission_months": "Broker commission for new lease in months of rent",
-    "lease_break_penalty_months": "Penalty for early lease termination in months of rent",
     "moving_costs": "One-time cost to relocate operations",
     
     # Operational Parameters
     "analysis_period": "Time horizon in years for the rent vs buy analysis",
-    "growth_rate": "Expected business growth rate affecting space needs",
     "future_expansion_year": "Year when additional space will be needed",
     "additional_space_needed": "Extra square meters required for future growth",
     "subletting_potential": "Whether excess space can be sublet to generate income",
     "subletting_rate": "Annual income per square meter from subletting",
     "subletting_space_sqm": "Square meters of space you plan to sublet to other tenants",
     "cost_of_capital": "Company's cost of capital/discount rate for NPV calculations",
-    "longterm_capex_reserve": "Annual reserve for major property improvements",
-    "property_upgrade_cycle": "Years between major renovations or upgrades",
-    "obsolescence_risk_factor": "Annual risk of property becoming less suitable",
+    "longterm_capex_reserve": "Annual reserve for major property improvements (optional, set to 0% for basic analysis)",
+    "property_upgrade_cycle": "Years between major renovations or upgrades (Costs are 2% of building value in upgrade years)",
+    "obsolescence_risk_factor": "Annual risk of property becoming less suitable (optional, set to 0% for basic analysis)",
     
     # Tax & Accounting
     "corporate_tax_rate": "Applicable corporate tax rate for tax benefit calculations",

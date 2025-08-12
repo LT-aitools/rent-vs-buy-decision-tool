@@ -2,10 +2,18 @@
 developmentMode = false
 
 [server]
-headless = true
+# Server configuration for localhost access
+port = 8501
+address = "127.0.0.1"
+baseUrlPath = ""
+headless = false
 enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
 
 [browser]
+# Automatically open browser when starting
+serverAddress = "localhost"
 gatherUsageStats = false
 
 [theme]
@@ -14,3 +22,5 @@ primaryColor = "#FF6B6B"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
+
+# Client settings removed as they are not valid in current Streamlit version

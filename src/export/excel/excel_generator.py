@@ -77,8 +77,8 @@ class ExcelGenerator:
             'analysis_results': export_data['analysis_results'],
             'ownership_flows': export_data['ownership_flows'],
             'rental_flows': export_data['rental_flows'],
-            'session_data': export_data['session_data'],
-            'export_options': export_data['export_options'],
+            'session_data': export_data.get('session_data') or export_data.get('inputs', {}),
+            'export_options': export_data.get('export_options', {}),
             
             # Excel-specific formatted data
             'formatted_tables': {},
@@ -624,13 +624,17 @@ class ExcelGenerator:
                 'B': 18,  # Values
                 'C': 20,  # Comparison/Analysis
                 'D': 35,  # Notes/Descriptions
-                'E': 15,  # Additional data
+                'E': 25,  # Additional data (increased for better text visibility)
                 'F': 15   # Additional data
             }
             
-            # Apply optimized column widths
+            # Apply optimized column widths with special handling for assumptions sheet
             for col_letter, width in column_widths.items():
-                ws.column_dimensions[col_letter].width = width
+                # Special handling for Input Assumptions sheet column E
+                if ws.title == 'Input Assumptions' and col_letter == 'E':
+                    ws.column_dimensions[col_letter].width = 40  # Extra wide for descriptions
+                else:
+                    ws.column_dimensions[col_letter].width = width
             
             # Auto-adjust remaining columns intelligently
             for column in ws.columns:
@@ -708,12 +712,17 @@ class ExcelGenerator:
             'warnings': []
         }
         
-        # Check required data keys
-        required_keys = ['analysis_results', 'ownership_flows', 'rental_flows', 'session_data']
+        # Check required data keys (flexible for session_data/inputs)
+        required_keys = ['analysis_results', 'ownership_flows', 'rental_flows']
         for key in required_keys:
             if key not in export_data:
                 validation_results['errors'].append(f"Missing required key: {key}")
                 validation_results['is_valid'] = False
+        
+        # Check for session_data or inputs (either is acceptable)
+        if 'session_data' not in export_data and 'inputs' not in export_data:
+            validation_results['errors'].append("Missing required key: 'session_data' or 'inputs'")
+            validation_results['is_valid'] = False
         
         # Validate analysis results
         if 'analysis_results' in export_data:
@@ -783,24 +792,45 @@ class ExcelGenerator:
         else:
             return []
     
-    def cleanup(self) -> None:
-        """Clean up temporary resources"""
+    def cleanup(self, defer_seconds: int = 0) -> None:
+        """Clean up temporary resources
+        
+        Args:
+            defer_seconds: Defer cleanup for this many seconds (useful for file access)
+        """
         try:
             if self.workbook:
                 self.workbook.close()
             
-            # Clean up temporary directory if it exists and is empty
-            if self.temp_dir.exists():
-                import shutil
-                try:
-                    shutil.rmtree(self.temp_dir)
-                    logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
-                except Exception as e:
-                    logger.warning(f"Could not clean up temp directory: {e}")
+            if defer_seconds > 0:
+                # Schedule cleanup for later
+                import threading
+                import time
+                
+                def deferred_cleanup():
+                    time.sleep(defer_seconds)
+                    self._do_cleanup()
+                
+                cleanup_thread = threading.Thread(target=deferred_cleanup, daemon=True)
+                cleanup_thread.start()
+                logger.debug(f"Scheduled cleanup of {self.temp_dir} in {defer_seconds} seconds")
+            else:
+                self._do_cleanup()
                     
         except Exception as e:
             logger.warning(f"Cleanup error: {e}")
     
+    def _do_cleanup(self):
+        """Actually perform the cleanup"""
+        # Clean up temporary directory if it exists
+        if self.temp_dir.exists():
+            import shutil
+            try:
+                shutil.rmtree(self.temp_dir)
+                logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
+            except Exception as e:
+                logger.warning(f"Could not clean up temp directory: {e}")
+    
     def __del__(self):
-        """Cleanup on destruction"""
-        self.cleanup()
+        """Cleanup on destruction - but defer to allow file access"""
+        self.cleanup(defer_seconds=5)

@@ -162,17 +162,22 @@ class ExcelExportManager:
             template_type=template_type
         )
         
-        # If a result path was returned and it's different from our desired path, move it
-        if result_path and result_path != output_path:
+        # If a result path was returned, copy it to our desired location
+        if result_path and isinstance(result_path, Path) and result_path.exists():
             import shutil
-            if output_path.parent != result_path.parent:
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(result_path), str(output_path))
+            # Create parent directory if needed
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy the file instead of moving to avoid cleanup issues
+            shutil.copy2(str(result_path), str(output_path))
+            logger.info(f"Copied Excel file from {result_path} to {output_path}")
+            
             return output_path
-        elif result_path:
+        elif result_path and isinstance(result_path, Path) and result_path == output_path:
+            # File was already created at the desired path
             return result_path
         else:
-            return output_path
+            raise RuntimeError(f"Excel generation failed - no file created at {result_path}")
     
     def _count_worksheets(self, template_type: str) -> int:
         """Estimate worksheet count for template type"""
@@ -211,16 +216,31 @@ class ExcelExportManager:
         
         # Create download button
         if st.button(button_label, key=f"excel_download_{template_type}"):
+            logger.info(f"Excel export button clicked: {template_type}")
+            
             try:
+                # Validate critical data exists
+                if 'analysis_results' not in export_data:
+                    st.error("❌ Missing analysis results data for export")
+                    return False
+                if not export_data.get('analysis_results'):
+                    st.error("❌ Empty analysis results data for export")
+                    return False
+                
                 # Show progress
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
                 status_text.text("🔄 Initializing Excel export...")
                 progress_bar.progress(10)
+                logger.info("Excel export progress: Initializing...")
                 
                 # Generate Excel file
                 with st.spinner("Generating Excel report..."):
+                    status_text.text("🔄 Generating Excel file...")
+                    progress_bar.progress(50)
+                    logger.info("Excel export progress: Starting async generation...")
+                    
                     excel_path, generation_info = asyncio.run(
                         self.generate_excel_report(
                             export_data=export_data,
@@ -228,13 +248,25 @@ class ExcelExportManager:
                             include_charts=include_charts
                         )
                     )
+                    logger.info(f"Excel generation completed: {excel_path}")
                 
                 status_text.text("✅ Excel report generated successfully!")
                 progress_bar.progress(100)
                 
+                # Verify file exists
+                if not excel_path or not excel_path.exists():
+                    st.error("❌ Excel file generation failed - file not found")
+                    logger.error(f"Excel file missing: {excel_path}")
+                    return False
+                
+                file_size = excel_path.stat().st_size
+                logger.info(f"Excel file verified, size: {file_size:,} bytes")
+                
                 # Read Excel for download
                 with open(excel_path, 'rb') as excel_file:
                     excel_bytes = excel_file.read()
+                
+                logger.info(f"Excel file read into memory: {len(excel_bytes):,} bytes")
                 
                 # Generate filename
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -249,6 +281,8 @@ class ExcelExportManager:
                     key=f"excel_download_final_{template_type}"
                 )
                 
+                logger.info("Excel download button created successfully")
+                
                 # Show generation info
                 st.success(f"✅ Excel report generated successfully!")
                 
@@ -261,8 +295,9 @@ class ExcelExportManager:
                 # Clean up
                 try:
                     excel_path.unlink()
-                except:
-                    pass
+                    logger.info("Temporary Excel file cleaned up")
+                except Exception as cleanup_e:
+                    logger.warning(f"Failed to cleanup Excel file: {cleanup_e}")
                 
                 # Clear progress indicators
                 progress_bar.empty()
@@ -271,8 +306,9 @@ class ExcelExportManager:
                 return True
                 
             except Exception as e:
-                st.error(f"❌ Error generating Excel report: {str(e)}")
-                logger.error(f"Error in Streamlit Excel download: {str(e)}")
+                error_msg = f"Error generating Excel report: {str(e)}"
+                st.error(f"❌ {error_msg}")
+                logger.error(f"Excel export error: {str(e)}", exc_info=True)
                 
                 # Clear progress indicators
                 try:
@@ -334,14 +370,36 @@ def generate_excel_report(
         Path to generated Excel file or None if generation failed
     """
     try:
-        # Run async generation in sync context
-        return asyncio.run(_generate_excel_async(
-            analysis_results, ownership_flows, rental_flows, session_data,
-            template_type, company_name, report_title
-        ))
+        # Check if we're in an event loop
+        try:
+            loop = asyncio.get_running_loop()
+            # We're in an event loop, need to use different approach
+            import concurrent.futures
+            import threading
+            
+            def run_in_thread():
+                # Run the async function in a new event loop on a separate thread
+                return asyncio.run(_generate_excel_async(
+                    analysis_results, ownership_flows, rental_flows, session_data,
+                    template_type, company_name, report_title
+                ))
+            
+            # Use ThreadPoolExecutor to run in separate thread
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                return future.result(timeout=60)  # 60 second timeout
+                
+        except RuntimeError:
+            # No event loop running, we can use asyncio.run
+            return asyncio.run(_generate_excel_async(
+                analysis_results, ownership_flows, rental_flows, session_data,
+                template_type, company_name, report_title
+            ))
+            
     except Exception as e:
         logger.error(f"Excel report generation failed: {str(e)}")
-        st.error(f"Failed to generate Excel report: {str(e)}")
+        if 'st' in globals():
+            st.error(f"Failed to generate Excel report: {str(e)}")
         return None
 
 
@@ -407,9 +465,7 @@ async def _generate_excel_async(
         logger.error(f"Excel generation error: {str(e)}")
         st.error(f"Excel generation error: {str(e)}")
         return None
-    finally:
-        # Cleanup
-        excel_generator.cleanup()
+    # Note: We're NOT cleaning up automatically anymore - let files persist for copying
 
 
 def create_download_button(

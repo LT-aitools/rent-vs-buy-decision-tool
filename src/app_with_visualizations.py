@@ -20,7 +20,11 @@ from datetime import datetime
 import sys
 import os
 import pandas as pd
+import logging
 from typing import Dict, List, Any, Optional
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Add src directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -86,6 +90,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             # Rental scenario parameters  
             'current_annual_rent': session_data.get('current_annual_rent', session_data.get('inputs', {}).get('current_annual_rent')),
             'rent_increase_rate': session_data.get('rent_increase_rate', session_data.get('inputs', {}).get('rent_increase_rate', 3.0)),
+            'moving_costs': session_data.get('moving_costs', session_data.get('inputs', {}).get('moving_costs', 0.0)),
             
             # Common parameters
             'analysis_period': session_data.get('analysis_period', session_data.get('inputs', {}).get('analysis_period', 25)),
@@ -112,7 +117,22 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             'property_tax_deductible': session_data.get('property_tax_deductible', session_data.get('inputs', {}).get('property_tax_deductible', True)),
             
             # Space improvement costs
-            'space_improvement_cost': session_data.get('space_improvement_cost', session_data.get('inputs', {}).get('space_improvement_cost', 0.0))
+            'space_improvement_cost': session_data.get('space_improvement_cost', session_data.get('inputs', {}).get('space_improvement_cost', 0.0)),
+            
+            # Expansion parameters
+            'future_expansion_year': session_data.get('future_expansion_year', session_data.get('inputs', {}).get('future_expansion_year', 'Never')),
+            'additional_space_needed': session_data.get('additional_space_needed', session_data.get('inputs', {}).get('additional_space_needed', 0)),
+            'current_space_needed': session_data.get('current_space_needed', session_data.get('inputs', {}).get('current_space_needed', 0)),
+            'ownership_property_size': session_data.get('ownership_property_size', session_data.get('inputs', {}).get('ownership_property_size', 0)),
+            'rental_property_size': session_data.get('rental_property_size', session_data.get('inputs', {}).get('rental_property_size', 0)),
+            
+            # Subletting parameters
+            'subletting_potential': session_data.get('subletting_potential', session_data.get('inputs', {}).get('subletting_potential', False)),
+            'subletting_rate': session_data.get('subletting_rate', session_data.get('inputs', {}).get('subletting_rate', 0)),
+            'subletting_space_sqm': session_data.get('subletting_space_sqm', session_data.get('inputs', {}).get('subletting_space_sqm', 0)),
+            
+            # Property upgrade parameters
+            'property_upgrade_cycle': session_data.get('property_upgrade_cycle', session_data.get('inputs', {}).get('property_upgrade_cycle', 30))
         }
         
         # Validate critical parameters before analysis
@@ -145,14 +165,29 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             corporate_tax_rate=analysis_params['corporate_tax_rate'],
             interest_deductible=analysis_params['interest_deductible'],
             property_tax_deductible=analysis_params['property_tax_deductible'],
-            transaction_costs=analysis_params['transaction_costs']
+            transaction_costs=analysis_params['transaction_costs'],
+            # New expansion and subletting parameters
+            future_expansion_year=analysis_params['future_expansion_year'],
+            additional_space_needed=analysis_params['additional_space_needed'],
+            current_space_needed=analysis_params['current_space_needed'],
+            ownership_property_size=analysis_params['ownership_property_size'],
+            subletting_potential=analysis_params['subletting_potential'],
+            subletting_rate=analysis_params['subletting_rate'],
+            subletting_space_sqm=analysis_params['subletting_space_sqm'],
+            # Property upgrade parameters
+            property_upgrade_cycle=analysis_params['property_upgrade_cycle']
         )
         
         rental_flows = calculate_rental_cash_flows(
             current_annual_rent=analysis_params['current_annual_rent'],
             rent_increase_rate=analysis_params['rent_increase_rate'],
             analysis_period=analysis_params['analysis_period'],
-            corporate_tax_rate=analysis_params['corporate_tax_rate']
+            corporate_tax_rate=analysis_params['corporate_tax_rate'],
+            # New expansion parameters for rental
+            future_expansion_year=analysis_params['future_expansion_year'],
+            additional_space_needed=analysis_params['additional_space_needed'],
+            current_space_needed=analysis_params['current_space_needed'],
+            rental_property_size=analysis_params['rental_property_size']
         )
         
         return analysis_results, ownership_flows, rental_flows
@@ -228,9 +263,7 @@ def render_dashboard_tab():
                         st.session_state['analysis_results'] = analysis_results
                         st.session_state['ownership_flows'] = ownership_flows
                         st.session_state['rental_flows'] = rental_flows
-                        # Clear demo data flag to ensure we're showing real data
-                        if 'using_demo_data' in st.session_state:
-                            del st.session_state['using_demo_data']
+                        # Analysis completed with real data
                         # Mark that analysis has been run with current inputs
                         session_manager.mark_analysis_run()
                         st.success("✅ Analysis completed successfully!")
@@ -311,81 +344,10 @@ def render_analysis_tab():
         else:
             completion = session_manager.get_completion_percentage()
             st.info(f"📝 **Input Progress: {completion:.0f}%** - Complete all required sections to enable analysis.")
-        
-        # Provide demo data option for visualization testing (less prominent)
-        with st.expander("🧪 **Demo Data for Testing** (Click to expand)"):
-            st.markdown("*This loads sample data for testing the visualization system only.*")
-            if st.button("Load Demo Visualization Data", type="secondary", use_container_width=True):
-                # Create demo analysis results
-                demo_results = {
-                    'ownership_npv': 450000,
-                    'rental_npv': 325000,
-                    'npv_difference': 125000,
-                    'ownership_initial_investment': 175000,
-                    'rental_initial_investment': 5000,
-                    'ownership_terminal_value': 180000,
-                    'rental_terminal_value': 5000,
-                    'recommendation': 'BUY',
-                    'confidence': 'High',
-                    'analysis_period': 25,
-                    'cost_of_capital': 8.0
-                }
-                
-                # Create demo cash flows
-                demo_ownership_flows = []
-                demo_rental_flows = []
-                
-                for year in range(1, 26):
-                    # Demo ownership flow
-                    demo_ownership_flows.append({
-                        'year': year,
-                        'mortgage_payment': 35000 + (year * 100),
-                        'property_taxes': 6000 + (year * 120),
-                        'insurance': 5000 + (year * 150),
-                        'maintenance': 10000 + (year * 300),
-                        'property_management': 0,
-                        'capex_reserve': 3000,
-                        'obsolescence_cost': 1000,
-                        'mortgage_interest': max(25000 - (year * 800), 5000),
-                        'tax_benefits': 15000 - (year * 200),
-                        'net_cash_flow': -(45000 + year * 500),
-                        'remaining_loan_balance': max(350000 - (year * 15000), 0)
-                    })
-                    
-                    # Demo rental flow
-                    demo_rental_flows.append({
-                        'year': year,
-                        'annual_rent': 24000 * (1.03 ** (year-1)),
-                        'tax_benefits': 6000,
-                        'net_cash_flow': -(18000 * (1.03 ** (year-1)))
-                    })
-                
-                st.session_state['analysis_results'] = demo_results
-                st.session_state['ownership_flows'] = demo_ownership_flows
-                st.session_state['rental_flows'] = demo_rental_flows
-                st.session_state['using_demo_data'] = True
-                
-                st.success("✅ Demo data loaded! View the analysis below.")
-                st.rerun()
         return
     
-    # Check if we're using demo data and warn the user
-    if st.session_state.get('using_demo_data', False):
-        st.warning("⚠️ **Currently displaying demo data for testing.** To see real analysis results, complete your inputs in the Dashboard tab and run the analysis.")
-        if st.button("🔄 Clear Demo Data and Use Real Analysis", type="primary"):
-            # Clear demo data flags
-            if 'using_demo_data' in st.session_state:
-                del st.session_state['using_demo_data']
-            if 'analysis_results' in st.session_state:
-                del st.session_state['analysis_results']
-            if 'ownership_flows' in st.session_state:
-                del st.session_state['ownership_flows']
-            if 'rental_flows' in st.session_state:
-                del st.session_state['rental_flows']
-            st.rerun()
-    else:
-        # Display marker for real data
-        st.success("✅ **Displaying Real Analysis Results** based on your input data.")
+    # Analysis results available - show visualizations
+    st.success("✅ **Displaying Analysis Results** based on your input data.")
     
     # Render full analysis results dashboard
     render_analysis_results_tab(
@@ -441,18 +403,38 @@ def render_export_tab():
         st.markdown("### 📊 Professional Reports")
         st.markdown("Generate executive-ready Excel and PDF reports with charts and comprehensive analysis.")
         
+        
         # Try to initialize export system
         try:
             from export.pdf_integration import PDFExportManager, PDF_SYSTEM_AVAILABLE
             from export.streamlit_integration import ExcelExportManager, EXCEL_SYSTEM_AVAILABLE
             
-            # Prepare export data
+            # Prepare export data with real user data
             export_data = {
                 'analysis_results': st.session_state['analysis_results'],
                 'ownership_flows': st.session_state['ownership_flows'],
                 'rental_flows': st.session_state['rental_flows'],
                 'inputs': session_manager.export_session_data()
             }
+            
+            # Validate export data
+            validation_errors = []
+            if not export_data['analysis_results']:
+                validation_errors.append("Analysis results are empty")
+            if not export_data['ownership_flows']:
+                validation_errors.append("Ownership cash flows are missing")
+            if not export_data['rental_flows']:
+                validation_errors.append("Rental cash flows are missing")
+            if not export_data['inputs'].get('inputs'):
+                validation_errors.append("Input parameters are missing")
+            
+            if validation_errors:
+                st.error("❌ **Export Data Validation Failed**")
+                st.markdown("**Issues found:**")
+                for error in validation_errors:
+                    st.markdown(f"• {error}")
+                st.markdown("**Please run the analysis again to generate complete data.**")
+                return
             
             col1, col2 = st.columns(2)
             
@@ -474,14 +456,15 @@ def render_export_tab():
                             help="Choose the report template that best fits your audience"
                         )
                         
-                        # Generate PDF button
-                        if st.button(f"🚀 Generate {template_type.title()} PDF", type="primary"):
-                            pdf_manager.create_streamlit_download_button(
-                                export_data=export_data,
-                                template_type=template_type
-                            )
+                        # Call the PDF manager directly (no button wrapper)
+                        pdf_manager.create_streamlit_download_button(
+                            export_data=export_data,
+                            template_type=template_type
+                        )
+                        
                     except Exception as e:
                         st.error(f"PDF system error: {str(e)}")
+                        logger.error(f"PDF system error in export tab: {str(e)}", exc_info=True)
                 else:
                     st.error("PDF generation not available. Missing dependencies.")
                     st.code("pip install reportlab Pillow pypdf")
@@ -496,15 +479,17 @@ def render_export_tab():
                         include_charts = st.checkbox("Include Charts", value=True, help="Embed analysis charts in Excel")
                         professional_format = st.checkbox("Professional Formatting", value=True, help="Apply corporate styling")
                         
-                        # Generate Excel button
-                        if st.button("🚀 Generate Excel Report", type="primary"):
-                            excel_manager.create_streamlit_download_button(
-                                export_data=export_data,
-                                include_charts=include_charts,
-                                professional_formatting=professional_format
-                            )
+                        # Call the Excel manager directly (no button wrapper)
+                        excel_manager.create_streamlit_download_button(
+                            export_data=export_data,
+                            template_type='detailed',  # Use supported template
+                            include_charts=include_charts,
+                            professional_formatting=professional_format
+                        )
+                        
                     except Exception as e:
                         st.error(f"Excel system error: {str(e)}")
+                        logger.error(f"Excel system error in export tab: {str(e)}", exc_info=True)
                 else:
                     st.error("Excel generation not available. Missing dependencies.")
                     st.code("pip install openpyxl kaleido plotly")

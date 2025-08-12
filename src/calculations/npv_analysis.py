@@ -77,7 +77,17 @@ def calculate_ownership_cash_flows(
     corporate_tax_rate: float = 25.0,
     interest_deductible: bool = True,
     property_tax_deductible: bool = True,
-    transaction_costs: float = 0.0
+    transaction_costs: float = 0.0,
+    # Expansion and subletting parameters
+    future_expansion_year: str = 'Never',
+    additional_space_needed: float = 0.0,
+    current_space_needed: float = 0.0,
+    ownership_property_size: float = 0.0,
+    subletting_potential: bool = False,
+    subletting_rate: float = 0.0,
+    subletting_space_sqm: float = 0.0,
+    # Property upgrade parameters
+    property_upgrade_cycle: int = 30
 ) -> List[Dict[str, float]]:
     """
     Calculate year-by-year cash flows for ownership scenario
@@ -118,6 +128,14 @@ def calculate_ownership_cash_flows(
     building_value = purchase_price * (1 - land_value_pct / 100)
     annual_depreciation = building_value / depreciation_period if depreciation_period > 0 else 0
     
+    # Parse expansion year
+    expansion_year_num = None
+    if future_expansion_year != 'Never' and future_expansion_year.startswith('Year '):
+        try:
+            expansion_year_num = int(future_expansion_year.split(' ')[1])
+        except (ValueError, IndexError):
+            expansion_year_num = None
+    
     cash_flows = []
     
     for year in range(1, analysis_period + 1):
@@ -146,6 +164,42 @@ def calculate_ownership_cash_flows(
             mortgage_interest = 0.0
             remaining_loan_balance = 0.0
         
+        # Calculate property upgrade costs (if applicable)
+        property_upgrade_cost = 0.0
+        if property_upgrade_cycle > 0 and year % property_upgrade_cycle == 0:
+            # Calculate upgrade cost as percentage of building value
+            from .annual_costs import calculate_property_upgrade_costs
+            property_upgrade_cost = calculate_property_upgrade_costs(
+                purchase_price=purchase_price,
+                land_value_pct=land_value_pct,
+                upgrade_cycle_years=property_upgrade_cycle,
+                year=year
+            )
+        
+        # Calculate subletting income (if applicable)
+        subletting_income = 0.0
+        available_space_for_subletting = 0.0
+        actual_subletting_space = 0.0
+        
+        if subletting_potential and ownership_property_size > 0:
+            # Determine current space needed (accounting for expansion)
+            space_needed_this_year = current_space_needed
+            if expansion_year_num and year >= expansion_year_num:
+                space_needed_this_year += additional_space_needed
+            
+            # Calculate subletting income
+            from .annual_costs import calculate_subletting_income
+            subletting_result = calculate_subletting_income(
+                property_size=ownership_property_size,
+                current_space_needed=space_needed_this_year,
+                subletting_rate_per_unit=subletting_rate,
+                subletting_space_sqm=subletting_space_sqm,
+                subletting_enabled=subletting_potential
+            )
+            subletting_income = subletting_result['subletting_income']
+            available_space_for_subletting = subletting_result['available_space']
+            actual_subletting_space = subletting_result['subletting_space']
+        
         # Calculate tax benefits
         interest_deduction = mortgage_interest if interest_deductible else 0.0
         property_tax_deduction = ownership_costs['property_taxes'] if property_tax_deductible else 0.0
@@ -157,10 +211,12 @@ def calculate_ownership_cash_flows(
         # Calculate net cash flow
         total_costs = (
             annual_mortgage_payment +
-            ownership_costs['total_annual_cost']
+            ownership_costs['total_annual_cost'] +
+            property_upgrade_cost
         )
         
-        net_cash_flow = -(total_costs - tax_benefits)  # Negative = outflow
+        # Net cash flow includes subletting income as positive inflow
+        net_cash_flow = -(total_costs - tax_benefits - subletting_income)  # Negative = outflow
         
         cash_flows.append({
             'year': year,
@@ -173,6 +229,10 @@ def calculate_ownership_cash_flows(
             'obsolescence_cost': float(ownership_costs['obsolescence_cost']),
             'mortgage_interest': float(mortgage_interest),
             'tax_benefits': float(tax_benefits),
+            'subletting_income': float(subletting_income),
+            'available_space_for_subletting': float(available_space_for_subletting),
+            'actual_subletting_space': float(actual_subletting_space),
+            'property_upgrade_cost': float(property_upgrade_cost),
             'total_costs': float(total_costs),
             'net_cash_flow': float(net_cash_flow),
             'remaining_loan_balance': float(remaining_loan_balance)
@@ -186,7 +246,12 @@ def calculate_rental_cash_flows(
     rent_increase_rate: float,
     analysis_period: int,
     corporate_tax_rate: float = 25.0,
-    rent_deductible: bool = True
+    rent_deductible: bool = True,
+    # Expansion parameters
+    future_expansion_year: str = 'Never',
+    additional_space_needed: float = 0.0,
+    current_space_needed: float = 0.0,
+    rental_property_size: float = 0.0
 ) -> List[Dict[str, float]]:
     """
     Calculate year-by-year cash flows for rental scenario
@@ -201,13 +266,39 @@ def calculate_rental_cash_flows(
     Returns:
         List of annual cash flow dictionaries
     """
+    # Parse expansion year
+    expansion_year_num = None
+    if future_expansion_year != 'Never' and future_expansion_year.startswith('Year '):
+        try:
+            expansion_year_num = int(future_expansion_year.split(' ')[1])
+        except (ValueError, IndexError):
+            expansion_year_num = None
+    
+    # Calculate rent per unit if space information is available
+    base_rent_per_unit = 0.0
+    if current_space_needed > 0:
+        base_rent_per_unit = current_annual_rent / current_space_needed
+    
     cash_flows = []
     
     for year in range(1, analysis_period + 1):
-        # Calculate annual rent with escalation
-        rental_costs = calculate_annual_rental_costs(
-            current_annual_rent, rent_increase_rate, year
-        )
+        # Determine space needed this year (accounting for expansion)
+        space_needed_this_year = current_space_needed
+        if expansion_year_num and year >= expansion_year_num:
+            space_needed_this_year += additional_space_needed
+        
+        # Calculate rent based on space needed
+        if base_rent_per_unit > 0 and space_needed_this_year > 0:
+            # Calculate rent based on space needed this year
+            base_rent_this_year = base_rent_per_unit * space_needed_this_year
+            rental_costs = calculate_annual_rental_costs(
+                base_rent_this_year, rent_increase_rate, year
+            )
+        else:
+            # Use original rent calculation method
+            rental_costs = calculate_annual_rental_costs(
+                current_annual_rent, rent_increase_rate, year
+            )
         
         annual_rent = rental_costs['annual_rent']
         
@@ -221,6 +312,8 @@ def calculate_rental_cash_flows(
             'year': year,
             'annual_rent': float(annual_rent),
             'tax_benefits': float(tax_benefits),
+            'space_needed_this_year': float(space_needed_this_year),
+            'expansion_triggered': bool(expansion_year_num and year >= expansion_year_num),
             'net_cash_flow': float(net_cash_flow)
         })
     
@@ -262,7 +355,17 @@ def calculate_npv_comparison(
     security_deposit: float = 0.0,
     rental_commission: float = 0.0,
     moving_costs: float = 0.0,
-    space_improvement_cost: float = 0.0
+    space_improvement_cost: float = 0.0,
+    # Expansion and subletting parameters (added for completeness)
+    future_expansion_year: str = 'Never',
+    additional_space_needed: float = 0.0,
+    current_space_needed: float = 0.0,
+    ownership_property_size: float = 0.0,
+    rental_property_size: float = 0.0,
+    subletting_potential: bool = False,
+    subletting_rate: float = 0.0,
+    subletting_space_sqm: float = 0.0,
+    property_upgrade_cycle: int = 30
 ) -> Dict[str, float]:
     """
     Calculate complete NPV comparison between ownership and rental
@@ -294,13 +397,16 @@ def calculate_npv_comparison(
         property_tax_rate, property_tax_escalation, insurance_cost, annual_maintenance,
         property_management, capex_reserve_rate, obsolescence_risk_rate, inflation_rate,
         land_value_pct, market_appreciation_rate, depreciation_period,
-        corporate_tax_rate, interest_deductible, property_tax_deductible, transaction_costs
+        corporate_tax_rate, interest_deductible, property_tax_deductible, transaction_costs,
+        future_expansion_year, additional_space_needed, current_space_needed, ownership_property_size,
+        subletting_potential, subletting_rate, subletting_space_sqm, property_upgrade_cycle
     )
     
     # Calculate rental cash flows
     rental_flows = calculate_rental_cash_flows(
         current_annual_rent, rent_increase_rate, analysis_period,
-        corporate_tax_rate, rent_deductible
+        corporate_tax_rate, rent_deductible,
+        future_expansion_year, additional_space_needed, current_space_needed, rental_property_size
     )
     
     # Calculate terminal values

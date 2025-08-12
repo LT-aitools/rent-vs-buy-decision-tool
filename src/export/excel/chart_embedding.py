@@ -149,11 +149,18 @@ class ChartEmbedder:
             fig.add_trace(go.Bar(
                 x=['Ownership', 'Rental'],
                 y=[ownership_npv, rental_npv],
-                marker_color=['#FF6B6B' if ownership_npv > rental_npv else '#FFA07A', 
-                             '#96CEB4' if rental_npv > ownership_npv else '#FECA57'],
+                marker={
+                    'color': ['#00B894' if ownership_npv > rental_npv else '#E17055', 
+                             '#00B894' if rental_npv > ownership_npv else '#E17055'],
+                    'line': {'color': '#2D3436', 'width': 2},
+                    'opacity': 0.8
+                },
                 text=[f'${ownership_npv:,.0f}', f'${rental_npv:,.0f}'],
-                textposition='auto',
-                name='NPV Comparison'
+                textposition='outside',
+                textfont={'size': 16, 'family': 'Arial', 'color': '#2D3436', 'weight': 'bold'},
+                name='NPV Comparison',
+                width=0.6,
+                hovertemplate='<b>%{x}</b><br>NPV: %{text}<extra></extra>'
             ))
             
             fig.update_layout(
@@ -161,30 +168,51 @@ class ChartEmbedder:
                     'text': 'Net Present Value Comparison',
                     'x': 0.5,
                     'xanchor': 'center',
-                    'font': {'size': 24, 'family': 'Arial, sans-serif'}
+                    'font': {'size': 28, 'family': 'Arial, sans-serif', 'color': '#2D3436'}
                 },
-                xaxis_title='Scenario',
-                yaxis_title='Net Present Value ($)',
-                yaxis_tickformat='$,.0f',
+                xaxis={
+                    'title': {'text': 'Investment Scenario', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 14, 'color': '#2D3436'},
+                    'showgrid': False,
+                    'zeroline': False
+                },
+                yaxis={
+                    'title': {'text': 'Net Present Value ($)', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 14, 'color': '#2D3436'},
+                    'tickformat': '$,.0f',
+                    'showgrid': True,
+                    'gridcolor': '#E5E5E5',
+                    'gridwidth': 1,
+                    'zeroline': True,
+                    'zerolinecolor': '#999999',
+                    'zerolinewidth': 2
+                },
                 font={'size': 14, 'family': 'Arial, sans-serif'},
                 plot_bgcolor='white',
                 paper_bgcolor='white',
                 showlegend=False,
-                margin=dict(l=80, r=80, t=100, b=80)
+                margin=dict(l=100, r=100, t=120, b=100),
+                width=800,
+                height=520
             )
             
-            # Add recommendation annotation
+            # Add recommendation annotation with enhanced styling
             recommendation = analysis_results.get('recommendation', 'UNKNOWN')
             if recommendation != 'UNKNOWN':
                 fig.add_annotation(
-                    text=f"Recommendation: {recommendation}",
+                    text=f"<b>Recommendation: {recommendation}</b>",
                     xref="paper", yref="paper",
-                    x=0.5, y=0.95,
+                    x=0.5, y=0.92,
                     showarrow=False,
-                    font=dict(size=16, color="darkgreen" if recommendation == "BUY" else "darkorange"),
-                    bgcolor="rgba(255,255,255,0.8)",
-                    bordercolor="gray",
-                    borderwidth=1
+                    font=dict(
+                        size=18, 
+                        color="#FFFFFF" if recommendation == "BUY" else "#2D3436",
+                        family="Arial"
+                    ),
+                    bgcolor="#00B894" if recommendation == "BUY" else "#FDCB6E",
+                    bordercolor="#2D3436",
+                    borderwidth=2,
+                    borderpad=8
                 )
             
             # Save chart
@@ -249,16 +277,31 @@ class ChartEmbedder:
                     'text': 'Annual Cash Flow Comparison',
                     'x': 0.5,
                     'xanchor': 'center',
-                    'font': {'size': 20, 'family': 'Arial, sans-serif'}
+                    'font': {'size': 24, 'family': 'Arial, sans-serif', 'color': '#2D3436'}
                 },
-                xaxis_title='Year',
-                yaxis_title='Annual Cash Flow ($)',
-                yaxis_tickformat='$,.0f',
+                xaxis={
+                    'title': {'text': 'Year', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 12, 'color': '#2D3436'},
+                    'showgrid': True,
+                    'gridcolor': '#E5E5E5'
+                },
+                yaxis={
+                    'title': {'text': 'Annual Cash Flow ($)', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 12, 'color': '#2D3436'},
+                    'tickformat': '$,.0f',
+                    'showgrid': True,
+                    'gridcolor': '#E5E5E5',
+                    'zeroline': True,
+                    'zerolinecolor': '#999999',
+                    'zerolinewidth': 1
+                },
                 font={'size': 12, 'family': 'Arial, sans-serif'},
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                legend=dict(x=0.02, y=0.98),
-                margin=dict(l=80, r=80, t=100, b=80)
+                legend=dict(x=0.02, y=0.98, font={'size': 12}),
+                margin=dict(l=100, r=80, t=100, b=80),
+                width=800,
+                height=520
             )
             
             # Save annual cash flows chart
@@ -296,16 +339,31 @@ class ChartEmbedder:
                     'text': 'Cumulative Cash Flow Comparison',
                     'x': 0.5,
                     'xanchor': 'center',
-                    'font': {'size': 20, 'family': 'Arial, sans-serif'}
+                    'font': {'size': 24, 'family': 'Arial, sans-serif', 'color': '#2D3436'}
                 },
-                xaxis_title='Year',
-                yaxis_title='Cumulative Cash Flow ($)',
-                yaxis_tickformat='$,.0f',
+                xaxis={
+                    'title': {'text': 'Year', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 12, 'color': '#2D3436'},
+                    'showgrid': True,
+                    'gridcolor': '#E5E5E5'
+                },
+                yaxis={
+                    'title': {'text': 'Cumulative Cash Flow ($)', 'font': {'size': 16, 'color': '#2D3436'}},
+                    'tickfont': {'size': 12, 'color': '#2D3436'},
+                    'tickformat': '$,.0f',
+                    'showgrid': True,
+                    'gridcolor': '#E5E5E5',
+                    'zeroline': True,
+                    'zerolinecolor': '#999999',
+                    'zerolinewidth': 1
+                },
                 font={'size': 12, 'family': 'Arial, sans-serif'},
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                legend=dict(x=0.02, y=0.98),
-                margin=dict(l=80, r=80, t=100, b=80)
+                legend=dict(x=0.02, y=0.98, font={'size': 12}),
+                margin=dict(l=100, r=80, t=100, b=80),
+                width=800,
+                height=520
             )
             
             # Save cumulative cash flows chart
@@ -504,9 +562,9 @@ class ChartEmbedder:
         """
         try:
             # Calculate pixel dimensions based on DPI
-            # Standard size: 12x8 inches at specified DPI
-            width_px = int(12 * resolution)
-            height_px = int(8 * resolution)
+            # Optimized size: 10x6.5 inches for better Excel integration
+            width_px = int(10 * resolution)
+            height_px = int(6.5 * resolution)
             
             if format.lower() == 'png':
                 fig.write_image(

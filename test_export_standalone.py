@@ -116,7 +116,7 @@ async def test_standalone_exports():
             try:
                 excel_path, info = await excel_manager.generate_excel_report(
                     export_data=sample_export_data,
-                    template_type='comprehensive',
+                    template_type='detailed',
                     include_charts=True
                 )
                 

@@ -235,6 +235,7 @@ class PDFExportManager:
         """
         if not STREAMLIT_AVAILABLE:
             logger.error("Streamlit not available for download button")
+            st.error("❌ DEBUG: Streamlit not available for PDF download button")
             return False
         
         if button_label is None:
@@ -242,7 +243,17 @@ class PDFExportManager:
         
         # Create download button
         if st.button(button_label, key=f"pdf_download_{template_type}"):
+            logger.info(f"PDF export button clicked: {template_type}")
+            
             try:
+                # Validate critical data exists
+                if 'analysis_results' not in export_data:
+                    st.error("❌ Missing analysis results data for PDF export")
+                    return False
+                if not export_data.get('analysis_results'):
+                    st.error("❌ Empty analysis results data for PDF export")
+                    return False
+                
                 # Show progress
                 progress_bar = st.progress(0)
                 status_text = st.empty()
@@ -250,9 +261,14 @@ class PDFExportManager:
                 def update_progress(message: str, progress: float):
                     progress_bar.progress(progress)
                     status_text.text(message)
+                    logger.info(f"PDF progress: {message} ({progress:.1%})")
                 
                 # Generate PDF asynchronously
                 with st.spinner("Generating PDF report..."):
+                    status_text.text("🔄 Starting PDF generation...")
+                    progress_bar.progress(10)
+                    logger.info("PDF export progress: Starting async generation...")
+                    
                     pdf_path, generation_info = asyncio.run(
                         self.generate_pdf_report(
                             export_data=export_data,
@@ -261,10 +277,22 @@ class PDFExportManager:
                             progress_callback=update_progress
                         )
                     )
+                    logger.info(f"PDF generation completed: {pdf_path}")
+                
+                # Verify file exists
+                if not pdf_path or not pdf_path.exists():
+                    st.error("❌ PDF file generation failed - file not found")
+                    logger.error(f"PDF file missing: {pdf_path}")
+                    return False
+                
+                file_size = pdf_path.stat().st_size
+                logger.info(f"PDF file verified, size: {file_size:,} bytes")
                 
                 # Read PDF for download
                 with open(pdf_path, 'rb') as pdf_file:
                     pdf_bytes = pdf_file.read()
+                
+                logger.info(f"PDF file read into memory: {len(pdf_bytes):,} bytes")
                 
                 # Generate filename
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -279,6 +307,8 @@ class PDFExportManager:
                     key=f"pdf_download_final_{template_type}"
                 )
                 
+                logger.info("PDF download button created successfully")
+                
                 # Show generation info
                 st.success(f"✅ PDF report generated successfully!")
                 
@@ -291,8 +321,9 @@ class PDFExportManager:
                 # Clean up
                 try:
                     pdf_path.unlink()
-                except:
-                    pass
+                    logger.info("Temporary PDF file cleaned up")
+                except Exception as cleanup_e:
+                    logger.warning(f"Failed to cleanup PDF file: {cleanup_e}")
                 
                 # Clear progress indicators
                 progress_bar.empty()
@@ -301,8 +332,9 @@ class PDFExportManager:
                 return True
                 
             except Exception as e:
-                st.error(f"❌ Error generating PDF report: {str(e)}")
-                logger.error(f"Error in Streamlit PDF download: {str(e)}")
+                error_msg = f"Error generating PDF report: {str(e)}"
+                st.error(f"❌ {error_msg}")
+                logger.error(f"PDF export error: {str(e)}", exc_info=True)
                 
                 # Clear progress indicators
                 try:

@@ -88,7 +88,13 @@ class ExcelFormatter:
         cumulative_flows = []
         npv_factors = []
         present_values = []
-        cost_of_capital = cash_flows.get('cost_of_capital', 8.0) / 100
+        
+        # Extract cost of capital - handle both dict and list formats
+        if isinstance(cash_flows, dict):
+            cost_of_capital = cash_flows.get('cost_of_capital', 8.0) / 100
+        else:
+            # For list format, use default cost of capital
+            cost_of_capital = 8.0 / 100
         
         cumulative = 0
         for i, annual_flow in enumerate(annual_cash_flows):
@@ -536,51 +542,54 @@ class ExcelFormatter:
         
         data_rows = []
         
+        # Extract actual values from potentially nested structure
+        inputs_data = session_data.get('inputs', session_data) if isinstance(session_data.get('inputs'), dict) else session_data
+        
         # Property Information
         data_rows.extend([
-            ['Property', 'Purchase Price', session_data.get('purchase_price', 500000), '$', 'Property acquisition cost'],
-            ['Property', 'Total Size', session_data.get('total_property_size', 5000), 'sq ft', 'Total building area'],
-            ['Property', 'Space Needed', session_data.get('current_space_needed', 4000), 'sq ft', 'Current space requirements'],
-            ['Property', 'Property Type', session_data.get('property_type', 'Commercial'), '', 'Building classification'],
-            ['Property', 'Location', session_data.get('location', ''), '', 'Property location'],
+            ['Property', 'Purchase Price', inputs_data.get('purchase_price', 500000), '$', 'Property acquisition cost'],
+            ['Property', 'Total Size', inputs_data.get('total_property_size', 5000), 'sq ft', 'Total building area'],
+            ['Property', 'Space Needed', inputs_data.get('current_space_needed', 4000), 'sq ft', 'Current space requirements'],
+            ['Property', 'Property Type', inputs_data.get('property_type', 'Commercial'), '', 'Building classification'],
+            ['Property', 'Location', inputs_data.get('location', ''), '', 'Property location'],
             ['', '', '', '', ''],  # Blank row
         ])
         
         # Financial Parameters
         data_rows.extend([
-            ['Finance', 'Down Payment', session_data.get('down_payment_percent', 30), '%', 'Initial equity percentage'],
-            ['Finance', 'Interest Rate', session_data.get('interest_rate', 5.0), '%', 'Mortgage interest rate'],
-            ['Finance', 'Loan Term', session_data.get('loan_term', 20), 'years', 'Mortgage amortization period'],
-            ['Finance', 'Cost of Capital', session_data.get('cost_of_capital', 8.0), '%', 'Discount rate for NPV'],
-            ['Finance', 'Corporate Tax Rate', session_data.get('corporate_tax_rate', 25), '%', 'Tax rate for deductions'],
+            ['Finance', 'Down Payment', inputs_data.get('down_payment_percent', 30), '%', 'Initial equity percentage'],
+            ['Finance', 'Interest Rate', inputs_data.get('interest_rate', 5.0), '%', 'Mortgage interest rate'],
+            ['Finance', 'Loan Term', inputs_data.get('loan_term', 20), 'years', 'Mortgage amortization period'],
+            ['Finance', 'Cost of Capital', inputs_data.get('cost_of_capital', 8.0), '%', 'Discount rate for NPV'],
+            ['Finance', 'Corporate Tax Rate', inputs_data.get('corporate_tax_rate', 25), '%', 'Tax rate for deductions'],
             ['', '', '', '', ''],  # Blank row
         ])
         
         # Rental Parameters
         data_rows.extend([
-            ['Rental', 'Annual Rent', session_data.get('current_annual_rent', 120000), '$', 'Current rental cost'],
-            ['Rental', 'Rent Increase Rate', session_data.get('rent_increase_rate', 3.0), '%/year', 'Annual rent escalation'],
-            ['Rental', 'Security Deposit', session_data.get('security_deposit_months', 2), 'months', 'Upfront security deposit'],
-            ['Rental', 'Moving Costs', session_data.get('moving_costs', 10000), '$', 'One-time moving expense'],
+            ['Rental', 'Annual Rent', inputs_data.get('current_annual_rent', 120000), '$', 'Current rental cost'],
+            ['Rental', 'Rent Increase Rate', inputs_data.get('rent_increase_rate', 3.0), '%/year', 'Annual rent escalation'],
+            ['Rental', 'Security Deposit', inputs_data.get('security_deposit_months', 2), 'months', 'Upfront security deposit'],
+            ['Rental', 'Moving Costs', inputs_data.get('moving_costs', 10000), '$', 'One-time moving expense'],
             ['', '', '', '', ''],  # Blank row
         ])
         
         # Operating Costs
         data_rows.extend([
-            ['Operations', 'Property Tax Rate', session_data.get('property_tax_rate', 1.2), '%/year', 'Annual property tax rate'],
-            ['Operations', 'Insurance Cost', session_data.get('insurance_cost', 5000), '$/year', 'Annual insurance premium'],
-            ['Operations', 'Maintenance', session_data.get('annual_maintenance_percent', 2.0), '%/year', 'Annual maintenance as % of value'],
-            ['Operations', 'CapEx Reserve', session_data.get('longterm_capex_reserve', 1.5), '%/year', 'Capital expenditure reserve'],
+            ['Operations', 'Property Tax Rate', inputs_data.get('property_tax_rate', 1.2), '%/year', 'Annual property tax rate'],
+            ['Operations', 'Insurance Cost', inputs_data.get('insurance_cost', 5000), '$/year', 'Annual insurance premium'],
+            ['Operations', 'Maintenance', inputs_data.get('annual_maintenance_percent', 2.0), '%/year', 'Annual maintenance as % of value'],
+            ['Operations', 'CapEx Reserve', inputs_data.get('longterm_capex_reserve', 1.5), '%/year', 'Capital expenditure reserve'],
             ['', '', '', '', ''],  # Blank row
         ])
         
         # Analysis Parameters
         data_rows.extend([
-            ['Analysis', 'Analysis Period', session_data.get('analysis_period', 25), 'years', 'Investment holding period'],
-            ['Analysis', 'Inflation Rate', session_data.get('inflation_rate', 3.0), '%/year', 'General inflation assumption'],
-            ['Analysis', 'Market Appreciation', session_data.get('market_appreciation_rate', 3.0), '%/year', 'Property value appreciation'],
-            ['Analysis', 'Currency', session_data.get('currency', 'USD'), '', 'Reporting currency'],
-            ['Analysis', 'Analysis Date', session_data.get('analysis_date', datetime.now().strftime('%m/%d/%Y')), '', 'Date of analysis']
+            ['Analysis', 'Analysis Period', inputs_data.get('analysis_period', 25), 'years', 'Investment holding period'],
+            ['Analysis', 'Inflation Rate', inputs_data.get('inflation_rate', 3.0), '%/year', 'General inflation assumption'],
+            ['Analysis', 'Market Appreciation', inputs_data.get('market_appreciation_rate', 3.0), '%/year', 'Property value appreciation'],
+            ['Analysis', 'Currency', inputs_data.get('currency', 'USD'), '', 'Reporting currency'],
+            ['Analysis', 'Analysis Date', inputs_data.get('analysis_date', datetime.now().strftime('%m/%d/%Y')), '', 'Date of analysis']
         ])
         
         return {
@@ -644,13 +653,23 @@ class ExcelFormatter:
                 cell = ws[f'{col_letter}{excel_row}']
                 cell.value = cell_value
                 
-                # Enhanced font and alignment
+                # Enhanced font and alignment with special handling for description columns
                 cell.font = Font(name='Calibri', size=10, color=self.COLORS['dark'])
-                cell.alignment = Alignment(
-                    horizontal='left' if col_idx == 0 else 'center',
-                    vertical='center',
-                    wrap_text=True
-                )
+                
+                # Special alignment for description columns (column 4 in assumptions table)
+                if col_idx == 4 and table_data.get('table_type') == 'assumptions':
+                    cell.alignment = Alignment(
+                        horizontal='left',
+                        vertical='center',
+                        wrap_text=True,
+                        indent=1
+                    )
+                else:
+                    cell.alignment = Alignment(
+                        horizontal='left' if col_idx == 0 else 'center',
+                        vertical='center',
+                        wrap_text=True
+                    )
                 
                 # Enhanced number formatting
                 if col_idx in formatting_rules.get('currency_columns', []):

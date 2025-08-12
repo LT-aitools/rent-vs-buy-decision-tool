@@ -317,32 +317,8 @@ def render_rental_parameters_section():
         )
     
     with col2:
-        st.number_input(
-            "Security Deposit (months)",
-            key="security_deposit_months",
-            min_value=0,
-            max_value=12,
-            step=1,
-            help=get_field_description("security_deposit_months")
-        )
-        
-        st.number_input(
-            "Rental Commission (months)",
-            key="rental_commission_months",
-            min_value=0,
-            max_value=6,
-            step=1,
-            help=get_field_description("rental_commission_months")
-        )
-        
-        st.number_input(
-            "Lease Break Penalty (months)",
-            key="lease_break_penalty_months",
-            min_value=0,
-            max_value=24,
-            step=1,
-            help=get_field_description("lease_break_penalty_months")
-        )
+        # Moving costs are now implemented in NPV calculation
+        pass
     
     # Display calculated rent per square meter
     current_rent = st.session_state.get("current_annual_rent", 0) or 0
@@ -372,15 +348,6 @@ def render_operational_parameters_section():
                 help=get_field_description("analysis_period")
             )
             
-            st.slider(
-                "Growth Rate (%)*",
-                key="growth_rate",
-                min_value=-5.0,
-                max_value=25.0,
-                step=0.1,
-                format="%.1f%%",
-                help=get_field_description("growth_rate")
-            )
             
             st.number_input(
                 "Cost of Capital (%)*", 

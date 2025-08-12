@@ -62,7 +62,10 @@ class PDFChartRenderer:
             'background_color': 'white',
             'transparent': False,
             'optimize_for_print': True,
-            'enhance_contrast': True
+            'enhance_contrast': True,
+            'chart_width': 800,
+            'chart_height': 520,
+            'dpi_scale_factor': 1.2  # Slightly higher resolution for PDF
         }
         
         logger.info(f"PDF Chart Renderer initialized at {self.resolution} DPI")
@@ -91,10 +94,11 @@ class PDFChartRenderer:
             output_dir = Path(tempfile.mkdtemp()) / "pdf_charts"
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Render base charts using existing system
+        # Render base charts using existing system with PDF optimizations
+        pdf_resolution = int(self.resolution * self.pdf_settings.get('dpi_scale_factor', 1.0))
         base_charts = await self.chart_embedder.render_all_charts(
             export_data=export_data,
-            resolution=self.resolution,
+            resolution=pdf_resolution,
             output_dir=output_dir
         )
         
@@ -157,9 +161,13 @@ class PDFChartRenderer:
                 
                 # Enhance for print quality
                 if self.pdf_settings['enhance_contrast']:
-                    # Slight contrast enhancement for print clarity
-                    enhancer = ImageEnhance.Contrast(img)
-                    img = enhancer.enhance(1.1)  # 10% contrast boost
+                    # Enhanced contrast and sharpness for print clarity
+                    contrast_enhancer = ImageEnhance.Contrast(img)
+                    img = contrast_enhancer.enhance(1.15)  # 15% contrast boost
+                    
+                    # Slight sharpness enhancement for better text readability
+                    sharpness_enhancer = ImageEnhance.Sharpness(img)
+                    img = sharpness_enhancer.enhance(1.1)  # 10% sharpness boost
                 
                 # Save with optimal settings for PDF
                 img.save(
@@ -398,19 +406,19 @@ class PDFChartRenderer:
         Returns:
             Tuple of (width_pixels, height_pixels)
         """
-        # Base dimensions at target resolution
-        base_width_inches = 7.0
-        base_height_inches = 4.5
+        # Enhanced base dimensions optimized for PDF readability
+        base_width_inches = 8.0
+        base_height_inches = 5.2
         
         # Adjust based on template type
         if template_type == 'executive':
-            # Slightly larger for executive presentation
-            width_inches = 7.5
-            height_inches = 4.8
+            # Larger for executive presentation with clear visibility
+            width_inches = 8.5
+            height_inches = 5.5
         elif template_type == 'investor':
-            # Optimized for investor slides
-            width_inches = 8.0
-            height_inches = 5.0
+            # Optimized for investor slides with clear metrics
+            width_inches = 9.0
+            height_inches = 5.8
         else:  # detailed
             # Standard size for detailed analysis
             width_inches = base_width_inches
