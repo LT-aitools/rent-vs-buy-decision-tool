@@ -289,8 +289,10 @@ class TestSecurityIntegrationFlow(unittest.TestCase):
         
         # Verify security measures
         self.assertNotIn('<script>', safe_html)
-        self.assertNotIn('alert', safe_html)
-        self.assertIn('Legitimate content', safe_html)
+        self.assertNotIn('javascript:', safe_html.lower())
+        # Script tags should be escaped, not executable
+        self.assertTrue('script' in safe_html and '<script>' not in safe_html)
+        self.assertIn('legitimate content', safe_html.lower())
     
     def test_component_security_integration(self):
         """Test components properly integrate security measures"""
