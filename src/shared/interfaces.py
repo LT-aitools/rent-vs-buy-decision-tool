@@ -102,8 +102,8 @@ class RiskAssessment:
 class AnalyticsResult:
     """Comprehensive analytics results from Analytics Engine"""
     analysis_timestamp: datetime
-    base_npv_buy: float
-    base_npv_rent: float
+    ownership_npv: float  # Changed from base_npv_buy
+    rental_npv: float     # Changed from base_npv_rent
     base_recommendation: str
     
     # Sensitivity Analysis
@@ -465,8 +465,8 @@ def create_mock_analytics_result() -> AnalyticsResult:
     """Create mock analytics result for testing"""
     return AnalyticsResult(
         analysis_timestamp=datetime.now(),
-        base_npv_buy=125000.0,
-        base_npv_rent=-50000.0,
+        ownership_npv=125000.0,  # Changed from base_npv_buy
+        rental_npv=-50000.0,     # Changed from base_npv_rent
         base_recommendation="Buy",
         sensitivity_results=[],
         sensitivity_summary={},
