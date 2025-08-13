@@ -25,9 +25,16 @@ pypdf>=3.17.0          # PDF manipulation utilities
 # Optional Performance Enhancement
 orjson>=3.9.0  # For faster Plotly rendering
 
+# Data Integration & API Connectivity
+aiohttp>=3.8.0,<4.0.0        # Async HTTP client for API calls
+asyncio-throttle>=1.0.0      # Rate limiting for API calls
+requests>=2.31.0             # Fallback HTTP client
+
 # Development & Testing
 pytest>=7.0.0
 pytest-asyncio>=0.23.0
-psutil>=7.0.0
+pytest-cov>=4.0.0            # Test coverage reporting
+coverage>=7.3.0              # Code coverage measurement
+psutil>=7.0.0                # System and process monitoring
 # black>=23.0.0
 # flake8>=6.0.0
