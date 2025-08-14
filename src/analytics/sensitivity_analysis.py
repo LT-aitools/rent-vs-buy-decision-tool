@@ -25,12 +25,12 @@ import threading
 from functools import lru_cache
 import hashlib
 
-from ..shared.interfaces import (
+from shared.interfaces import (
     AnalyticsEngine, SensitivityVariable, SensitivityResult, 
     AnalyticsResult, RiskAssessment, RiskLevel
 )
-from ..calculations.npv_analysis import calculate_npv_comparison
-from .input_validation import validate_and_sanitize_sensitivity_params, ValidationError, SecurityError
+from calculations.npv_analysis import calculate_npv_comparison
+from analytics.input_validation import validate_and_sanitize_sensitivity_params, ValidationError, SecurityError
 
 logger = logging.getLogger(__name__)
 

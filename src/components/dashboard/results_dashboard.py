@@ -459,8 +459,11 @@ def render_advanced_charts_section(
     ownership_flows: List[Dict[str, float]],
     rental_flows: List[Dict[str, float]]
 ) -> None:
-    """Render advanced analysis charts"""
+    """Render advanced analysis charts including sensitivity analysis"""
     st.subheader("📈 Advanced Financial Analysis")
+    
+    # Sensitivity Analysis Section
+    render_sensitivity_analysis_section(analysis_results)
     
     # Terminal Value Progression
     if analysis_results and ownership_flows:
@@ -538,6 +541,208 @@ def create_results_summary_section(analysis_results: Dict[str, Any]) -> None:
             <h3 style="margin: 0.5rem 0 0 0; color: #262730;">{confidence}</h3>
         </div>
         """, unsafe_allow_html=True)
+
+
+def render_sensitivity_analysis_section(analysis_results: Dict[str, Any]) -> None:
+    """
+    Render sensitivity analysis using the real SensitivityAnalysisEngine
+    
+    Args:
+        analysis_results: Analysis results containing input parameters
+    """
+    st.markdown("#### ⚡ Sensitivity Analysis")
+    st.markdown("*Analysis of how key parameter changes affect NPV*")
+    
+    try:
+        # Import the sensitivity analysis engine
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        from analytics.sensitivity_analysis import SensitivityAnalysisEngine, create_standard_sensitivity_variables
+        from shared.interfaces import SensitivityVariable
+        
+        # Extract base parameters from analysis results
+        base_params = {
+            'purchase_price': analysis_results.get('purchase_price', 500000),
+            'current_annual_rent': analysis_results.get('current_annual_rent', 24000),
+            'down_payment_pct': analysis_results.get('down_payment_pct', 30.0),
+            'interest_rate': analysis_results.get('interest_rate', 5.0),
+            'market_appreciation_rate': analysis_results.get('market_appreciation_rate', 3.0),
+            'rent_increase_rate': analysis_results.get('rent_increase_rate', 3.0),
+            'cost_of_capital': analysis_results.get('cost_of_capital', 8.0),
+            'inflation_rate': analysis_results.get('inflation_rate', 3.0),
+            'property_tax_rate': analysis_results.get('property_tax_rate', 1.2),
+            'analysis_period': analysis_results.get('analysis_period', 25),
+            'loan_term': analysis_results.get('loan_term', 20)
+        }
+        
+        # Check if we have minimum required parameters
+        if not all(base_params[key] for key in ['purchase_price', 'current_annual_rent']):
+            st.warning("⚠️ Sensitivity analysis requires purchase price and annual rent to be set.")
+            return
+        
+        # Control panel for sensitivity analysis
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Variable selection
+            available_variables = ["Interest Rate", "Market Appreciation", "Rent Growth", "Cost of Capital", "Purchase Price", "Annual Rent"]
+            selected_variables = st.multiselect(
+                "Select Variables to Analyze",
+                available_variables,
+                default=["Interest Rate", "Market Appreciation", "Rent Growth"],
+                key="sensitivity_variables"
+            )
+        
+        with col2:
+            # Sensitivity range
+            sensitivity_range = st.slider(
+                "Sensitivity Range (±%)",
+                min_value=10,
+                max_value=50,
+                value=25,
+                step=5,
+                key="sensitivity_range",
+                help="Percentage range to vary each parameter above and below its base value"
+            )
+        
+        if selected_variables:
+            # Create sensitivity variables based on selection
+            sensitivity_vars = []
+            
+            for var_name in selected_variables:
+                if var_name == "Interest Rate":
+                    base_val = base_params['interest_rate']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='interest_rate',
+                        base_value=base_val,
+                        min_value=max(0.5, base_val * (1 - sensitivity_range/100)),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=0.25,
+                        unit='%',
+                        description='Mortgage interest rate'
+                    ))
+                elif var_name == "Market Appreciation":
+                    base_val = base_params['market_appreciation_rate']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='market_appreciation_rate',
+                        base_value=base_val,
+                        min_value=max(0, base_val * (1 - sensitivity_range/100)),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=0.25,
+                        unit='%',
+                        description='Annual property appreciation rate'
+                    ))
+                elif var_name == "Rent Growth":
+                    base_val = base_params['rent_increase_rate']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='rent_increase_rate',
+                        base_value=base_val,
+                        min_value=max(0, base_val * (1 - sensitivity_range/100)),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=0.25,
+                        unit='%',
+                        description='Annual rent escalation rate'
+                    ))
+                elif var_name == "Cost of Capital":
+                    base_val = base_params['cost_of_capital']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='cost_of_capital',
+                        base_value=base_val,
+                        min_value=max(1, base_val * (1 - sensitivity_range/100)),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=0.25,
+                        unit='%',
+                        description='Discount rate for NPV calculations'
+                    ))
+                elif var_name == "Purchase Price":
+                    base_val = base_params['purchase_price']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='purchase_price',
+                        base_value=base_val,
+                        min_value=base_val * (1 - sensitivity_range/100),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=base_val * 0.02,
+                        unit='$',
+                        description='Property purchase price'
+                    ))
+                elif var_name == "Annual Rent":
+                    base_val = base_params['current_annual_rent']
+                    sensitivity_vars.append(SensitivityVariable(
+                        name='current_annual_rent',
+                        base_value=base_val,
+                        min_value=base_val * (1 - sensitivity_range/100),
+                        max_value=base_val * (1 + sensitivity_range/100),
+                        step_size=base_val * 0.02,
+                        unit='$',
+                        description='Current annual rent cost'
+                    ))
+            
+            if sensitivity_vars:
+                # Run sensitivity analysis
+                with st.spinner("Running sensitivity analysis..."):
+                    engine = SensitivityAnalysisEngine()
+                    sensitivity_results = engine.run_sensitivity_analysis(base_params, sensitivity_vars)
+                
+                if sensitivity_results:
+                    # Convert results to format expected by tornado chart
+                    chart_data = {}
+                    for result in sensitivity_results:
+                        var_name = result.variable_name
+                        if result.npv_impacts and len(result.npv_impacts) >= 2:
+                            # Create low and high scenarios
+                            chart_data[var_name] = {
+                                'low': min(result.npv_impacts),
+                                'high': max(result.npv_impacts)
+                            }
+                    
+                    if chart_data:
+                        # Display tornado chart
+                        base_npv = analysis_results.get('npv_difference', 0)
+                        tornado_chart = create_sensitivity_tornado_chart(chart_data, base_npv)
+                        st.plotly_chart(tornado_chart, use_container_width=True, key="sensitivity_tornado")
+                        
+                        # Display insights
+                        st.markdown("#### 🎯 Sensitivity Insights")
+                        
+                        # Find most sensitive variable
+                        max_impact = 0
+                        most_sensitive = None
+                        for result in sensitivity_results:
+                            if result.npv_impacts:
+                                impact_range = max(result.npv_impacts) - min(result.npv_impacts)
+                                if impact_range > max_impact:
+                                    max_impact = impact_range
+                                    most_sensitive = result.variable_name.replace('_', ' ').title()
+                        
+                        if most_sensitive:
+                            st.info(f"🎯 **Most Sensitive Variable**: {most_sensitive} (Impact range: {format_currency(max_impact)})")
+                        
+                        # Display detailed results in expandable section
+                        with st.expander("📊 Detailed Sensitivity Results", expanded=False):
+                            for result in sensitivity_results:
+                                if result.npv_impacts and result.variable_values:
+                                    st.markdown(f"**{result.variable_name.replace('_', ' ').title()}**")
+                                    
+                                    # Create simple DataFrame for display
+                                    import pandas as pd
+                                    df = pd.DataFrame({
+                                        'Parameter Value': [f"{val:.2f}" for val in result.variable_values],
+                                        'NPV Impact': [format_currency(impact) for impact in result.npv_impacts]
+                                    })
+                                    st.dataframe(df, use_container_width=True)
+                                    st.markdown("---")
+                    else:
+                        st.warning("⚠️ Unable to generate sensitivity results with current parameters.")
+                else:
+                    st.error("❌ Sensitivity analysis failed. Please check your input parameters.")
+        else:
+            st.info("👆 Select variables above to run sensitivity analysis")
+            
+    except ImportError as e:
+        st.error(f"❌ Sensitivity analysis engine not available: {str(e)}")
+        st.info("🚧 Sensitivity analysis will be available when all required components are installed.")
+    except Exception as e:
+        st.error(f"❌ Error running sensitivity analysis: {str(e)}")
+        st.info("Please check your analysis parameters and try again.")
 
 
 def render_analysis_results_tab(
