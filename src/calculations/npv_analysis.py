@@ -194,7 +194,10 @@ def calculate_ownership_cash_flows(
                 current_space_needed=space_needed_this_year,
                 subletting_rate_per_unit=subletting_rate,
                 subletting_space_sqm=subletting_space_sqm,
-                subletting_enabled=subletting_potential
+                subletting_enabled=subletting_potential,
+                year=year,
+                rent_increase_rate=rent_increase_rate,
+                inflation_rate=inflation_rate
             )
             subletting_income = subletting_result['subletting_income']
             available_space_for_subletting = subletting_result['available_space']
@@ -251,7 +254,8 @@ def calculate_rental_cash_flows(
     future_expansion_year: str = 'Never',
     additional_space_needed: float = 0.0,
     current_space_needed: float = 0.0,
-    rental_property_size: float = 0.0
+    rental_property_size: float = 0.0,
+    inflation_rate: float = 0.0
 ) -> List[Dict[str, float]]:
     """
     Calculate year-by-year cash flows for rental scenario
@@ -262,6 +266,7 @@ def calculate_rental_cash_flows(
         analysis_period: Analysis time horizon
         corporate_tax_rate: Corporate tax rate (percentage)
         rent_deductible: Is rent expense tax deductible
+        inflation_rate: Annual inflation rate (percentage)
     
     Returns:
         List of annual cash flow dictionaries
@@ -292,12 +297,14 @@ def calculate_rental_cash_flows(
             # Calculate rent based on space needed this year
             base_rent_this_year = base_rent_per_unit * space_needed_this_year
             rental_costs = calculate_annual_rental_costs(
-                base_rent_this_year, rent_increase_rate, year
+                base_rent_this_year, rent_increase_rate, year, 
+                inflation_rate=inflation_rate
             )
         else:
             # Use original rent calculation method
             rental_costs = calculate_annual_rental_costs(
-                current_annual_rent, rent_increase_rate, year
+                current_annual_rent, rent_increase_rate, year,
+                inflation_rate=inflation_rate
             )
         
         annual_rent = rental_costs['annual_rent']
@@ -404,7 +411,8 @@ def calculate_npv_comparison(
     rental_flows = calculate_rental_cash_flows(
         current_annual_rent, rent_increase_rate, analysis_period,
         corporate_tax_rate, rent_deductible,
-        future_expansion_year, additional_space_needed, current_space_needed, rental_property_size
+        future_expansion_year, additional_space_needed, current_space_needed, rental_property_size,
+        inflation_rate
     )
     
     # Calculate terminal values

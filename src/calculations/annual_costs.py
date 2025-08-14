@@ -198,14 +198,15 @@ def calculate_annual_rental_costs(
     rent_increase_rate: float,
     year: int,
     current_space_needed: Optional[float] = None,
-    total_space_rented: Optional[float] = None
+    total_space_rented: Optional[float] = None,
+    inflation_rate: float = 0.0
 ) -> Dict[str, float]:
     """
     Calculate annual rental costs with Year-1 indexing pattern
     
-    Uses the Business PRD formula:
-    - Rent per sq meter (Year 1) = Current Annual Rent ÷ Current Space Needed
-    - For Year N: Rent per sq meter = (Current Annual Rent ÷ Current Space Needed) × (1 + Rent Increase Rate)^(Year-1)
+    CORRECTED FORMULA: Rent goes up by both inflation AND rent increase rate
+    - Combined growth rate = (1 + inflation_rate/100) × (1 + rent_increase_rate/100) - 1
+    - For Year N: Rent = Current Annual Rent × (1 + combined_rate)^(Year-1)
     
     Args:
         current_annual_rent: Current total annual rent cost
@@ -213,6 +214,7 @@ def calculate_annual_rental_costs(
         year: Year number (1, 2, 3, ...)
         current_space_needed: Current space being rented (for per-unit calculations)
         total_space_rented: Total space rented if different from current needs
+        inflation_rate: Annual inflation rate (percentage)
     
     Returns:
         Dictionary containing:
@@ -222,7 +224,7 @@ def calculate_annual_rental_costs(
         - year: Year number
         
     Example:
-        >>> costs = calculate_annual_rental_costs(120000, 3.0, 1)
+        >>> costs = calculate_annual_rental_costs(120000, 3.0, 1, inflation_rate=2.5)
         >>> costs['annual_rent']
         120000.0
         >>> costs = calculate_annual_rental_costs(120000, 3.0, 2)
@@ -232,10 +234,14 @@ def calculate_annual_rental_costs(
     if year < 1:
         raise ValueError("Year must be 1 or greater")
     
-    # Calculate escalated rent using Year-1 indexing
+    # Calculate combined growth rate: (1 + inflation) × (1 + rent_increase) - 1
+    combined_growth_rate = (1 + inflation_rate/100) * (1 + rent_increase_rate/100) - 1
+    combined_growth_percentage = combined_growth_rate * 100
+    
+    # Calculate escalated rent using Year-1 indexing with combined rate
     annual_rent = calculate_cost_escalation(
         current_annual_rent,
-        rent_increase_rate,
+        combined_growth_percentage,
         year
     )
     
@@ -245,7 +251,7 @@ def calculate_annual_rental_costs(
         base_rent_per_unit = current_annual_rent / current_space_needed
         rent_per_unit = calculate_cost_escalation(
             base_rent_per_unit,
-            rent_increase_rate,
+            combined_growth_percentage,
             year
         )
     
@@ -355,22 +361,27 @@ def calculate_subletting_income(
     current_space_needed: float,
     subletting_rate_per_unit: float,
     subletting_space_sqm: float,
-    subletting_enabled: bool = False
+    subletting_enabled: bool = False,
+    year: int = 1,
+    rent_increase_rate: float = 0.0,
+    inflation_rate: float = 0.0
 ) -> Dict[str, float]:
     """
-    Calculate potential subletting income from specified space
+    Calculate potential subletting income from specified space with proper escalation
     
-    Updated to use direct space input instead of occupancy percentage:
-    - Available Space = MAX(0, Property Size - Current Space Needed)  
-    - Subletting Space = MIN(subletting_space_sqm, Available Space)
-    - Subletting Income = Subletting Space × Subletting Rate
+    CORRECTED FORMULA: Subletting income goes up by both inflation AND rent increase rate
+    - Combined growth rate = (1 + inflation_rate/100) × (1 + rent_increase_rate/100) - 1
+    - For Year N: Subletting Rate = Base Rate × (1 + combined_rate)^(Year-1)
     
     Args:
         property_size: Property size in square meters (ownership scenario)
         current_space_needed: Space needed for own operations
-        subletting_rate_per_unit: Annual subletting rate per square meter
+        subletting_rate_per_unit: Annual subletting rate per square meter (base year)
         subletting_space_sqm: Actual square meters user plans to sublet
         subletting_enabled: Whether subletting is allowed/feasible
+        year: Year number (1, 2, 3, ...) for escalation
+        rent_increase_rate: Annual rent escalation rate (percentage)
+        inflation_rate: Annual inflation rate (percentage)
     
     Returns:
         Dictionary with subletting calculations
@@ -389,8 +400,18 @@ def calculate_subletting_income(
     # Use the minimum of what user wants to sublet and what's actually available
     actual_subletting_space = min(subletting_space_sqm, available_space)
     
-    # Calculate subletting income based on actual space to be sublet
-    subletting_income = actual_subletting_space * subletting_rate_per_unit
+    # Calculate escalated subletting rate using combined growth (inflation + rent increase)
+    combined_growth_rate = (1 + inflation_rate/100) * (1 + rent_increase_rate/100) - 1
+    combined_growth_percentage = combined_growth_rate * 100
+    
+    escalated_subletting_rate = calculate_cost_escalation(
+        subletting_rate_per_unit,
+        combined_growth_percentage,
+        year
+    )
+    
+    # Calculate subletting income based on actual space and escalated rate
+    subletting_income = actual_subletting_space * escalated_subletting_rate
     
     return {
         'available_space': float(available_space),
