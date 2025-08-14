@@ -219,13 +219,13 @@ def render_international_coverage():
     # Recognized Unsupported Countries
     with st.expander("🎯 **Recognized Countries - System Defaults (7+)**"):
         unsupported_countries = [
-            {"country": "🇨🇳 China", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🇬🇪 Georgia", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🇦🇷 Argentina", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🇦🇲 Armenia", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🇺🇦 Ukraine", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🇹🇷 Turkey", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
-            {"country": "🌍 Any Other", "behavior": "System defaults", "rate": "7.0%", "status": "No indicators"},
+            {"country": "🇨🇳 China", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🇬🇪 Georgia", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🇦🇷 Argentina", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🇦🇲 Armenia", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🇺🇦 Ukraine", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🇹🇷 Turkey", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
+            {"country": "🌍 Any Other", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
         ]
         
         for country in unsupported_countries:
