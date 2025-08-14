@@ -60,10 +60,9 @@ def render_overall_status():
     # Current comprehensive status as of August 2025
     live_apis = 2  # Brazil BCB + USA FRED
     static_countries = 12  # EU, UK, Canada, Australia, Japan, Singapore, etc.
-    recognized_countries = 7  # China, Georgia, Argentina, Armenia, Ukraine, Turkey, etc.
-    total_coverage = live_apis + static_countries + recognized_countries
+    total_coverage = live_apis + static_countries
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric(
@@ -77,24 +76,16 @@ def render_overall_status():
         st.metric(
             "📅 Static Data", 
             f"{static_countries}",
-            "With dates",
+            "Official rates with dates",
             help="Countries with dated central bank rates"
         )
     
     with col3:
         st.metric(
-            "🎯 Recognized", 
-            f"{recognized_countries}",
-            "Use defaults",
-            help="Recognized countries using system defaults"
-        )
-    
-    with col4:
-        st.metric(
             "🌍 Total Coverage", 
             f"{total_coverage}+",
-            "Countries",
-            help="Total international market coverage"
+            "Countries + Global fallback",
+            help="Total international market coverage with system defaults for any other country"
         )
 
 
@@ -135,7 +126,7 @@ def render_system_overview():
         **🌍 Global Coverage Tiers**
         - **🔴 Live APIs**: Real-time central bank data
         - **📅 Static Data**: Official rates with dates
-        - **🎯 Recognized**: System defaults, no errors
+        - **🌐 Global Fallback**: System defaults for any other country
         """)
 
 
@@ -216,28 +207,6 @@ def render_international_coverage():
             with col4:
                 st.info(country["date"])
     
-    # Recognized Unsupported Countries
-    with st.expander("🎯 **Recognized Countries - System Defaults (7+)**"):
-        unsupported_countries = [
-            {"country": "🇨🇳 China", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🇬🇪 Georgia", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🇦🇷 Argentina", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🇦🇲 Armenia", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🇺🇦 Ukraine", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🇹🇷 Turkey", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-            {"country": "🌍 Any Other", "behavior": "Recognized", "rate": "7.0%", "status": "Clean UI"},
-        ]
-        
-        for country in unsupported_countries:
-            col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
-            with col1:
-                st.write(country["country"])
-            with col2:
-                st.write(country["behavior"])
-            with col3:
-                st.write(country["rate"])
-            with col4:
-                st.success("Clean UI")
 
 
 def render_live_api_tests():
