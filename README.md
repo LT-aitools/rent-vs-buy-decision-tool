@@ -3,7 +3,7 @@
 **Professional Investment Strategy Analysis with Interactive Visualizations**
 
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
-![Coverage](https://img.shields.io/badge/Global%20Coverage-21%2B%20Countries-blue)
+![Coverage](https://img.shields.io/badge/Coverage-Global%20(All%20Countries)-blue)
 ![Features](https://img.shields.io/badge/Features-Comprehensive-orange)
 
 A comprehensive real estate investment analysis platform that helps users make informed rent versus purchase decisions with professional-grade financial modeling, international market data integration, and interactive visualizations. Built with Streamlit and optimized for hold-forever investment strategies.
@@ -73,10 +73,10 @@ rent-vs-buy-decision-tool/
 - **Key Metrics Display** - NPV difference, ROI, break-even analysis
 - **Mobile Responsive** - Works on desktop, tablet, and mobile
 
-### 🌍 International Data Integration (21+ Countries)
+### 🌍 International Data Integration (Global Coverage)
 - **🔴 Live APIs (2)** - Brazil BCB + USA FRED real-time data
 - **📅 Static Data (12)** - EU, UK, Canada, Australia, Japan, Singapore, etc.
-- **🎯 Recognized (7+)** - China, Georgia, Turkey, etc. with clean defaults
+- **🌐 Global Fallback** - Intelligent defaults for any other country
 - **100% Uptime** - Robust fallback system prevents failures
 
 ### ⚡ Advanced Analytics
@@ -247,14 +247,14 @@ For questions or support, please open an issue in this repository or contact the
 - **⚡ Sensitivity Analysis**: Available in Analysis Results → Advanced Analysis
 - **📊 Data Integration**: Real-time status in Data Integration tab
 - **📤 Export Features**: Generate Excel reports with embedded charts
-- **🌍 Global Coverage**: 21+ countries with transparent data sources
+- **🌍 Global Coverage**: All countries with transparent data sources
 
 ## 📈 Performance Metrics
 
 - **Cache Hit Rate**: 85%
 - **System Uptime**: 100% (robust fallbacks)
 - **Analysis Speed**: <2 seconds for sensitivity analysis
-- **Global Coverage**: 21+ countries
+- **Global Coverage**: All countries supported
 - **Data Freshness**: Live + transparently dated
 
 ---

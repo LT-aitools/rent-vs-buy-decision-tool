@@ -17,7 +17,7 @@ def render_api_status_dashboard():
     
     st.markdown("## 🌐 External Data Integration Status")
     st.markdown("*Real-time status of international market data and central bank APIs*")
-    st.markdown("**Last Updated**: August 14, 2025 | **Status**: 🟢 Production Ready | **Coverage**: 21+ Countries")
+    st.markdown("**Last Updated**: August 14, 2025 | **Status**: 🟢 Production Ready | **Coverage**: Global (All Countries)")
     st.markdown("---")
     
     # Overall System Status
@@ -83,9 +83,9 @@ def render_overall_status():
     with col3:
         st.metric(
             "🌍 Total Coverage", 
-            f"{total_coverage}+",
-            "Countries + Global fallback",
-            help="Total international market coverage with system defaults for any other country"
+            "Global",
+            "All countries supported",
+            help="Complete global coverage - specific data for 14 countries, intelligent defaults for all others"
         )
 
 
