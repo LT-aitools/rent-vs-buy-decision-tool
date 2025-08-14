@@ -25,12 +25,12 @@ import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from ..shared.interfaces import (
+from shared.interfaces import (
     AnalyticsEngine, ScenarioDefinition, AnalyticsResult,
     MonteCarloResult, RiskAssessment, RiskLevel, SensitivityResult
 )
-from ..calculations.npv_analysis import calculate_npv_comparison
-from .input_validation import validate_and_sanitize_base_params, ValidationError, SecurityError
+from calculations.npv_analysis import calculate_npv_comparison
+from analytics.input_validation import validate_and_sanitize_base_params, ValidationError, SecurityError
 
 logger = logging.getLogger(__name__)
 

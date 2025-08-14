@@ -87,7 +87,8 @@ class ChartEmbedder:
         
         # Set up output directory
         if output_dir is None:
-            output_dir = Path(tempfile.mkdtemp()) / "charts"
+            temp_base_dir = Path(tempfile.mkdtemp())
+            output_dir = temp_base_dir / "charts"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Extract chart data

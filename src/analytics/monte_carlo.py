@@ -33,12 +33,12 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
-from ..shared.interfaces import (
+from shared.interfaces import (
     AnalyticsEngine, MonteCarloResult, AnalyticsResult, 
     RiskAssessment, RiskLevel, ScenarioDefinition
 )
-from ..calculations.npv_analysis import calculate_npv_comparison
-from .input_validation import validate_and_sanitize_monte_carlo_params, ValidationError, SecurityError
+from calculations.npv_analysis import calculate_npv_comparison
+from analytics.input_validation import validate_and_sanitize_monte_carlo_params, ValidationError, SecurityError
 
 logger = logging.getLogger(__name__)
 warnings.filterwarnings('ignore', category=RuntimeWarning)

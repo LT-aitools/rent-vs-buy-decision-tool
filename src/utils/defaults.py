@@ -27,7 +27,7 @@ PROPERTY_TYPE_OPTIONS = [
 DEFAULT_VALUES: Dict[str, Any] = {
     # 1.1 PROJECT INFORMATION
     "project_name": f"Property Analysis {datetime.now().strftime('%Y-%m-%d')}",
-    "location": "",
+    "country_selection": "United States",  # Default country
     "analysis_date": datetime.now().date(),
     "analyst_name": "",
     "currency": "USD",

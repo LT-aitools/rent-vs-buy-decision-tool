@@ -46,7 +46,12 @@ class ExcelGenerator:
         Args:
             temp_dir: Directory for temporary files during generation
         """
-        self.temp_dir = Path(temp_dir) if temp_dir else Path(tempfile.gettempdir()) / "excel_generation"
+        if temp_dir:
+            self.temp_dir = Path(temp_dir)
+        else:
+            # Create a unique temporary directory for this session
+            temp_base = Path(tempfile.mkdtemp(prefix="excel_generation_"))
+            self.temp_dir = temp_base
         self.temp_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize components

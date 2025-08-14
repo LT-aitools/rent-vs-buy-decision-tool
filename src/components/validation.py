@@ -56,13 +56,72 @@ class InputValidator:
         }
         return symbols.get(currency, currency)
     
+    def validate_field(self, field_name: str, value: Any) -> ValidationResult:
+        """Generic field validation method expected by enhanced components"""
+        result = ValidationResult()
+        
+        # Map field names to display names
+        display_names = {
+            "project_name": "Project Name",
+            "location": "Location",
+            "country": "Country",
+            "analyst_name": "Analyst Name",
+            "purchase_price": "Purchase Price",
+            "current_annual_rent": "Current Annual Rent",
+            "interest_rate": "Interest Rate",
+            "down_payment_percent": "Down Payment Percentage",
+            "analysis_period": "Analysis Period"
+        }
+        
+        display_name = display_names.get(field_name, field_name.replace('_', ' ').title())
+        
+        # Required field validation - updated to use country_selection instead of location
+        if field_name in ["project_name", "country_selection", "analyst_name", "purchase_price", "current_annual_rent"]:
+            if value is None or value == "" or (isinstance(value, (int, float)) and value <= 0):
+                result.add_error(f"{display_name} is required and cannot be empty")
+                return result
+        
+        # Numeric range validation
+        if field_name == "purchase_price" and isinstance(value, (int, float)):
+            if value < 10000:
+                result.add_error("Purchase price must be at least $10,000")
+            elif value > 100000000:
+                result.add_error("Purchase price cannot exceed $100,000,000")
+        
+        elif field_name == "interest_rate" and isinstance(value, (int, float)):
+            if value < 0:
+                result.add_error("Interest rate cannot be negative")
+            elif value > 50:
+                result.add_error("Interest rate cannot exceed 50%")
+        
+        elif field_name == "down_payment_percent" and isinstance(value, (int, float)):
+            if value < 0:
+                result.add_error("Down payment percentage cannot be negative")
+            elif value > 100:
+                result.add_error("Down payment percentage cannot exceed 100%")
+        
+        elif field_name == "analysis_period" and isinstance(value, (int, float)):
+            if value < 1:
+                result.add_error("Analysis period must be at least 1 year")
+            elif value > 50:
+                result.add_error("Analysis period cannot exceed 50 years")
+        
+        return result
+    
     def validate_required_field(self, value: Any, field_name: str, 
                                display_name: str) -> ValidationResult:
         """Validate that a required field has a value"""
         result = ValidationResult()
         
-        if value is None or value == "" or value == 0:
+        # Check for completely missing/empty values
+        if value is None:
             result.add_error(f"{display_name} is required and cannot be empty")
+        elif isinstance(value, str) and value == "":
+            result.add_error(f"{display_name} is required and cannot be empty")
+        elif isinstance(value, (int, float)) and value <= 0:
+            # Only fail for size and price fields that should be > 0
+            if field_name in ["ownership_property_size", "rental_property_size", "current_space_needed", "purchase_price", "current_annual_rent"]:
+                result.add_error(f"{display_name} must be greater than 0 (currently: {value})")
         
         return result
     
@@ -288,7 +347,7 @@ class InputValidator:
         # Required field validations
         required_fields = [
             ("project_name", "Project Name"),
-            ("location", "Location"),
+            ("country_selection", "Country"),
             ("analyst_name", "Analyst Name"),
             ("ownership_property_size", "Ownership Property Size"),
             ("rental_property_size", "Rental Property Size"),

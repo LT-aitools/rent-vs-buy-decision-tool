@@ -11,6 +11,7 @@ import logging
 from dataclasses import asdict
 
 from ..shared.interfaces import MarketData, DataRequest, DataValidationResult, DataProvider
+from .api_config import get_market_data_config
 
 logger = logging.getLogger(__name__)
 
@@ -22,30 +23,30 @@ class MarketDataAPI(DataProvider):
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
-        self.api_keys = self.config.get('api_keys', {})
+        # Use real API configuration
+        self.config = config or get_market_data_config()
         self.timeout = self.config.get('timeout', 30)
         self.max_retries = self.config.get('max_retries', 3)
         self.fallback_enabled = self.config.get('fallback_enabled', True)
         
-        # API endpoints (mock endpoints for development)
-        self.endpoints = {
-            'primary': {
-                'url': self.config.get('primary_api_url', 'https://api.realestate-mock.com/v1'),
-                'key': self.api_keys.get('primary_api_key'),
-                'weight': 1.0
-            },
-            'secondary': {
-                'url': self.config.get('secondary_api_url', 'https://api.zillow-mock.com/v2'),
-                'key': self.api_keys.get('secondary_api_key'),
-                'weight': 0.8
-            },
-            'tertiary': {
-                'url': self.config.get('tertiary_api_url', 'https://api.realtor-mock.com/v1'),
-                'key': self.api_keys.get('tertiary_api_key'),
-                'weight': 0.6
-            }
-        }
+        # Real API endpoints
+        self.endpoints = {}
+        
+        # Alpha Vantage (real estate and economic data)
+        primary_apis = self.config.get('primary_apis', {})
+        if 'alpha_vantage' in primary_apis:
+            av_config = primary_apis['alpha_vantage']
+            if av_config.get('key'):
+                self.endpoints['alpha_vantage'] = av_config
+                logger.info("Alpha Vantage API configured")
+            else:
+                logger.warning("Alpha Vantage API key not found, will use default data")
+        
+        # Free government APIs
+        free_sources = self.config.get('free_sources', {})
+        self.endpoints.update(free_sources)
+        
+        logger.info(f"Configured {len(self.endpoints)} market data endpoints")
         
         self.session: Optional[aiohttp.ClientSession] = None
         self.cache_manager = None  # Will be injected
@@ -227,7 +228,7 @@ class MarketDataAPI(DataProvider):
     ) -> MarketData:
         """Transform API response to MarketData format"""
         
-        # Mock data transformation - in production, this would parse real API responses
+        # Default data transformation - in production, this would parse real API responses
         base_confidence = 0.85 * confidence_weight
         
         return MarketData(

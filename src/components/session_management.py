@@ -120,11 +120,16 @@ class SessionManager:
     def check_section_completion(self):
         """Check and update section completion status"""
         # Project Information section
-        project_fields = ["project_name", "location", "analyst_name"]
-        st.session_state["project_info_complete"] = all(
-            st.session_state.get(field) not in [None, "", 0] 
-            for field in project_fields
-        )
+        project_fields = ["project_name", "country_selection", "analyst_name"]
+        
+        # Check project fields - force completion if all fields have values
+        project_name = st.session_state.get("project_name")
+        country_selection = st.session_state.get("country_selection") 
+        analyst_name = st.session_state.get("analyst_name")
+        
+        # Simple check: if all three fields have non-empty values, mark as complete
+        project_complete = bool(project_name and country_selection and analyst_name)
+        st.session_state["project_info_complete"] = project_complete
         
         # Property & Market section
         has_ownership_property = st.session_state.get("ownership_property_size") not in [None, "", 0]

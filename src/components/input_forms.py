@@ -30,6 +30,12 @@ from .session_management import get_session_manager
 
 def render_project_information_section():
     """Render Project Information input section"""
+    
+    # Clear API update flag if scheduled from previous run
+    if st.session_state.get('_clear_api_flag_on_next_run', False):
+        st.session_state['_api_update_in_progress'] = False
+        st.session_state['_clear_api_flag_on_next_run'] = False
+    
     st.markdown("### 📋 Project Information")
     st.markdown("*Basic project details and analysis parameters*")
     
@@ -44,13 +50,61 @@ def render_project_information_section():
             max_chars=100
         )
         
-        st.text_input(
-            "Location/Address*", 
-            key="location",
-            placeholder=format_input_placeholder("location"),
-            help=get_field_description("location"),
-            max_chars=200
+        # Country selection with supported countries first
+        supported_countries = [
+            ("🇺🇸 United States", "usa"),
+            ("🇧🇷 Brazil", "brazil"), 
+            ("🇬🇧 United Kingdom", "uk"),
+            ("🇨🇦 Canada", "canada"),
+            ("🇦🇺 Australia", "australia"), 
+            ("🇩🇪 Germany", "germany"),
+            ("🇫🇷 France", "france"),
+            ("🇳🇱 Netherlands", "netherlands"),
+            ("🇯🇵 Japan", "japan"),
+            ("🇸🇬 Singapore", "singapore"),
+            ("🇵🇱 Poland", "poland"),
+            ("🇮🇱 Israel", "israel"),
+            ("🇷🇴 Romania", "romania"),
+            ("🌍 Other", "other")
+        ]
+        
+        selected_country = st.selectbox(
+            "Country*",
+            options=[display for display, code in supported_countries],
+            key="country_selection",
+            help="Select your country for market-specific data. Supported countries have real market data."
         )
+        
+        # Get the country code
+        country_code = None
+        for display, code in supported_countries:
+            if display == selected_country:
+                country_code = code
+                break
+        
+        # If "Other" is selected, show text input
+        if country_code == "other":
+            other_country = st.text_input(
+                "Enter Country Name",
+                key="other_country_name",
+                placeholder="e.g., Argentina, China, etc.",
+                help="Enter the name of your country. Default values will be used.",
+                max_chars=50
+            )
+            final_country = other_country.strip() if other_country else "Other"
+            location_input = final_country
+        else:
+            # Use the selected supported country
+            location_input = country_code
+            final_country = selected_country.split(" ", 1)[1] if " " in selected_country else selected_country
+        
+        # Handle country changes for API updates
+        if location_input and location_input.strip():
+            _handle_country_change(location_input.strip())
+            
+        # Show country status feedback
+        if location_input:
+            _show_country_status(country_code, final_country)
     
     with col2:
         st.text_input(
@@ -111,15 +165,33 @@ def render_property_market_section():
             help=get_field_description("current_space_needed")
         )
         
-        st.slider(
+        # Track previous market appreciation rate to detect user changes
+        prev_appreciation = st.session_state.get('_prev_market_appreciation_rate', 
+                                               st.session_state.get('market_appreciation_rate', 
+                                                                   DEFAULT_VALUES.get('market_appreciation_rate', 3.0)))
+        
+        current_appreciation = st.slider(
             "Market Appreciation Rate (%)*",
             key="market_appreciation_rate",
             min_value=0.0,
             max_value=15.0,
             step=0.1,
             format="%.1f%%",
-            help=get_field_description("market_appreciation_rate")
+            help=get_field_description("market_appreciation_rate") + " (Updates automatically based on location, or adjust manually)"
         )
+        
+        # Only mark as user override if this is a real user interaction
+        if current_appreciation != prev_appreciation:
+            # Skip user override detection if we're loading country data
+            loading_country_data = st.session_state.get('_api_update_in_progress', False)
+            
+            if not loading_country_data:
+                mark_field_as_user_modified('market_appreciation_rate', current_appreciation)
+            
+        st.session_state['_prev_market_appreciation_rate'] = current_appreciation
+        
+        # Show API update indicator
+        _show_api_indicator('market_appreciation_rate', current_appreciation)
 
 def render_purchase_parameters_section():
     """Render Purchase Parameters section"""
@@ -163,15 +235,31 @@ def render_purchase_parameters_section():
             help=get_field_description("down_payment_percent")
         )
         
-        st.number_input(
+        # Track previous interest rate to detect user changes
+        prev_rate = st.session_state.get('_prev_interest_rate', st.session_state.get('interest_rate', DEFAULT_VALUES.get('interest_rate', 7.0)))
+        
+        current_rate = st.number_input(
             "Interest Rate (%)*",
             key="interest_rate",
             min_value=0.0,
             max_value=20.0,
             step=0.1,
             format="%.2f",
-            help=get_field_description("interest_rate")
+            help=get_field_description("interest_rate") + " (Updates automatically based on location, or enter your own rate)"
         )
+        
+        # Only mark as user override if this is a real user interaction
+        if current_rate != prev_rate:
+            # Skip user override detection if we're loading country data
+            loading_country_data = st.session_state.get('_api_update_in_progress', False)
+            
+            if not loading_country_data:
+                mark_field_as_user_modified('interest_rate', current_rate)
+            
+        st.session_state['_prev_interest_rate'] = current_rate
+        
+        # Show API update indicator
+        _show_api_indicator('interest_rate', current_rate)
     
     with col2:
         st.number_input(
@@ -208,15 +296,33 @@ def render_purchase_parameters_section():
         col3, col4 = st.columns(2)
         
         with col3:
-            st.number_input(
+            # Track previous property tax rate to detect user changes
+            prev_property_tax = st.session_state.get('_prev_property_tax_rate',
+                                                   st.session_state.get('property_tax_rate',
+                                                                       DEFAULT_VALUES.get('property_tax_rate', 1.2)))
+            
+            current_property_tax = st.number_input(
                 "Property Tax Rate (%)*",
                 key="property_tax_rate",
                 min_value=0.0,
                 max_value=10.0,
                 step=0.1,
                 format="%.2f",
-                help=get_field_description("property_tax_rate")
+                help=get_field_description("property_tax_rate") + " (Updates automatically based on location, or enter your own rate)"
             )
+            
+            # Only mark as user override if this is a real user interaction
+            if current_property_tax != prev_property_tax:
+                # Skip user override detection if we're loading country data
+                loading_country_data = st.session_state.get('_api_update_in_progress', False)
+                
+                if not loading_country_data:
+                    mark_field_as_user_modified('property_tax_rate', current_property_tax)
+                
+            st.session_state['_prev_property_tax_rate'] = current_property_tax
+            
+            # Show API update indicator
+            _show_api_indicator('property_tax_rate', current_property_tax)
             
             st.number_input(
                 f"Insurance Cost ({currency})*",
@@ -297,15 +403,33 @@ def render_rental_parameters_section():
             help=get_field_description("rental_property_size")
         )
         
-        st.slider(
+        # Track previous rent increase rate to detect user changes
+        prev_rent_increase = st.session_state.get('_prev_rent_increase_rate',
+                                                st.session_state.get('rent_increase_rate',
+                                                                   DEFAULT_VALUES.get('rent_increase_rate', 3.0)))
+        
+        current_rent_increase = st.slider(
             "Rent Increase Rate (%)*",
             key="rent_increase_rate", 
             min_value=0.0,
             max_value=15.0,
             step=0.1,
             format="%.1f%%",
-            help=get_field_description("rent_increase_rate")
+            help=get_field_description("rent_increase_rate") + " (Updates automatically based on location, or adjust manually)"
         )
+        
+        # Only mark as user override if this is a real user interaction
+        if current_rent_increase != prev_rent_increase:
+            # Skip user override detection if we're loading country data
+            loading_country_data = st.session_state.get('_api_update_in_progress', False)
+            
+            if not loading_country_data:
+                mark_field_as_user_modified('rent_increase_rate', current_rent_increase)
+            
+        st.session_state['_prev_rent_increase_rate'] = current_rent_increase
+        
+        # Show API update indicator
+        _show_api_indicator('rent_increase_rate', current_rent_increase)
         
         st.number_input(
             f"Moving Costs ({currency})",
@@ -446,15 +570,33 @@ def render_operational_parameters_section():
                 help=get_field_description("additional_space_needed")
             )
             
-            st.number_input(
+            # Track previous inflation rate to detect user changes
+            prev_inflation = st.session_state.get('_prev_inflation_rate',
+                                                st.session_state.get('inflation_rate',
+                                                                    DEFAULT_VALUES.get('inflation_rate', 3.0)))
+            
+            current_inflation = st.number_input(
                 "Inflation Rate (%)*",
                 key="inflation_rate",
                 min_value=0.0,
                 max_value=20.0,
                 step=0.1,
                 format="%.1f",
-                help=get_field_description("inflation_rate")
+                help=get_field_description("inflation_rate") + " (Updates automatically based on economic data, or enter your own rate)"
             )
+            
+            # Only mark as user override if this is a real user interaction
+            if current_inflation != prev_inflation:
+                # Skip user override detection if we're loading country data
+                loading_country_data = st.session_state.get('_api_update_in_progress', False)
+                
+                if not loading_country_data:
+                    mark_field_as_user_modified('inflation_rate', current_inflation)
+                
+            st.session_state['_prev_inflation_rate'] = current_inflation
+            
+            # Show API update indicator
+            _show_api_indicator('inflation_rate', current_inflation)
         
         # Subletting parameters
         with st.expander("🏗️ Subletting & Advanced Parameters", expanded=False):
@@ -726,11 +868,47 @@ def render_all_input_forms():
     # Collect all inputs for validation
     inputs = {field: st.session_state.get(field) for field in DEFAULT_VALUES.keys()}
     
+    # Debug: Show what the validation system is actually checking
+    with st.expander("🔧 Validation Input Debug"):
+        st.write("**Fields the validation is checking:**")
+        for field in DEFAULT_VALUES.keys():
+            value = st.session_state.get(field)
+            st.write(f"- {field}: {value}")
+            
+        st.write("**Validation inputs dict:**")
+        st.write(inputs)
+    
     validation_result = validator.validate_all_inputs(inputs)
     display_validation_messages(validation_result)
     
+    # Force check completion status right before validation
+    session_manager.check_section_completion()
+    
+    # Manual override for project completion if fields are valid
+    if (st.session_state.get("project_name") and 
+        st.session_state.get("country_selection") and 
+        st.session_state.get("analyst_name")):
+        st.session_state["project_info_complete"] = True
+    
     # Show analysis readiness status
     is_ready = session_manager.is_ready_for_analysis()
+    
+    # Debug information to help identify the issue
+    with st.expander("🔧 Debug Info (Click to expand)"):
+        st.write("**Session State Debug:**")
+        debug_fields = ["project_name", "country_selection", "analyst_name", 
+                       "ownership_property_size", "rental_property_size", 
+                       "current_space_needed", "purchase_price", "current_annual_rent"]
+        for field in debug_fields:
+            value = st.session_state.get(field, "NOT_SET")
+            st.write(f"- {field}: {value}")
+        
+        st.write("**Section Completion Flags:**")
+        completion_flags = ["project_info_complete", "property_market_complete", 
+                           "purchase_params_complete", "rental_params_complete"]
+        for flag in completion_flags:
+            value = st.session_state.get(flag, False)
+            st.write(f"- {flag}: {value}")
     
     if is_ready and validation_result.is_valid:
         st.success("✅ **Ready for Analysis** - All required inputs are complete and valid!")
@@ -740,3 +918,283 @@ def render_all_input_forms():
         st.info("ℹ️ **Complete Required Sections** - Fill out all required fields to enable analysis")
     
     return validation_result.is_valid and is_ready
+
+
+def _handle_country_change(country: str):
+    """
+    Handle country changes to trigger API updates for market data
+    Simplified approach: Load API/static data, user can override with proper tooltips
+    """
+    try:
+        # Import here to avoid circular imports
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+        
+        from data.data_priority_manager import get_data_priority_manager
+        from data.international_data import get_international_provider
+        
+        # Check if country actually changed
+        previous_country = st.session_state.get('_last_selected_country', '')
+        if country == previous_country:
+            return
+            
+        # Track the previous country for change detection
+        st.session_state['_prev_selected_country'] = previous_country
+            
+        # Clear any existing data for fresh start
+        priority_manager = get_data_priority_manager()
+        priority_manager.clear_api_data()
+        priority_manager.clear_user_overrides()  # Clear user overrides too
+        
+        # Mark that we're updating from API
+        st.session_state['_api_update_in_progress'] = True
+        
+        # Load country data if supported
+        international_provider = get_international_provider()
+        
+        updated_fields = []
+        
+        if country in ['usa', 'united states']:
+            # Handle USA - can use FRED API
+            try:
+                from data.interest_rate_feeds import create_interest_rate_feeds
+                import asyncio
+                
+                # Get US rates
+                rate_feeds = create_interest_rate_feeds()
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    asyncio.set_event_loop(asyncio.new_event_loop())
+                    loop = asyncio.get_event_loop()
+                
+                if not loop.is_running():
+                    rates = loop.run_until_complete(rate_feeds.get_current_rates(['30_year_fixed']))
+                    loop.run_until_complete(rate_feeds.close())
+                    
+                    if '30_year_fixed' in rates:
+                        st.session_state['interest_rate'] = rates['30_year_fixed']
+                        priority_manager.set_api_data('interest_rate', rates['30_year_fixed'], 'fred_api_usa')
+                        updated_fields.append(f"Interest Rate: {rates['30_year_fixed']}%")
+                
+                # Add US market estimates (could be enhanced with real APIs later)
+                us_estimates = {
+                    'market_appreciation_rate': 3.5,  # US national average
+                    'rent_increase_rate': 3.2,       # US national average  
+                    'property_tax_rate': 1.1,        # US national average
+                    'inflation_rate': 3.0            # Current US inflation target
+                }
+                
+                for field_name, value in us_estimates.items():
+                    st.session_state[field_name] = value
+                    priority_manager.set_api_data(
+                        field_name, 
+                        value,
+                        'us_market_estimates',
+                        metadata={'country': 'USA', 'data_date': '2024-08-14', 'source': 'US_estimates'}
+                    )
+                    display_name = field_name.replace('_', ' ').title()
+                    updated_fields.append(f"{display_name}: {value}%")
+                        
+            except Exception as e:
+                # Fallback to US defaults
+                st.session_state['interest_rate'] = 7.0
+                updated_fields.append("Interest Rate: 7.0% (US default)")
+                
+        else:
+            # Check if it's a supported international country
+            country_data = international_provider.get_international_estimates(country)
+            
+            if country_data['estimates']:
+                # Has API/static data
+                estimates = country_data['estimates']
+                metadata = country_data['metadata']
+                
+                # Update all fields with API data
+                field_mapping = {
+                    'interest_rate': 'interest_rate',
+                    'market_appreciation_rate': 'market_appreciation_rate',
+                    'rent_increase_rate': 'rent_increase_rate', 
+                    'property_tax_rate': 'property_tax_rate',
+                    'inflation_rate': 'inflation_rate'
+                }
+                
+                for field_name, session_key in field_mapping.items():
+                    if field_name in estimates:
+                        value = estimates[field_name]
+                        st.session_state[session_key] = value
+                        priority_manager.set_api_data(
+                            session_key, 
+                            value,
+                            f"international_data_{country}",
+                            metadata=metadata
+                        )
+                        display_name = field_name.replace('_', ' ').title()
+                        updated_fields.append(f"{display_name}: {value}{'%' if 'rate' in field_name else ''}")
+            
+            # If no data found (unsupported country), fields will use defaults
+        
+        # Show update notification
+        if updated_fields:
+            st.info(f"🌐 Updated {len(updated_fields)} field(s) for {country}: {', '.join(updated_fields)}")
+        else:
+            st.info(f"🌍 Using default values for {country}")
+            
+        # Set the country after updates
+        st.session_state['_last_selected_country'] = country
+        
+        # Clear the API update flag after processing
+        # Use a callback mechanism to clear it after this run
+        def clear_api_flag():
+            st.session_state['_api_update_in_progress'] = False
+        
+        # Schedule clearing for next interaction (streamlit will rerun)
+        st.session_state['_clear_api_flag_on_next_run'] = True
+            
+    except Exception as e:
+        # Don't break the UI if country handling fails
+        st.session_state['_api_update_in_progress'] = False
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Country change handler error: {e}")
+        pass
+
+
+def _show_country_status(country_code: str, final_country: str):
+    """Show status message for the selected country"""
+    if country_code in ['usa']:
+        st.info(f"🇺🇸 {final_country} - Live FRED API data available")
+    elif country_code in ['brazil']:
+        st.success(f"🇧🇷 {final_country} - Live BCB API + static data available")
+    elif country_code in ['uk', 'canada', 'australia', 'germany', 'france', 'netherlands', 'japan', 'singapore', 'poland', 'israel']:
+        st.success(f"✅ {final_country} - Static market data available")
+    elif country_code == 'other':
+        if final_country and final_country != "Other":
+            st.warning(f"🌍 {final_country} - Using default values (no specific market data)")
+        else:
+            st.info("Select a country or enter 'Other' country name")
+    else:
+        st.warning(f"🌍 {final_country} - Using default values")
+
+
+def mark_field_as_user_modified(field_name: str, value: Any):
+    """
+    Mark a field as user-modified to prevent API overwrites
+    """
+    try:
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+        
+        from data.address_api_handler import get_address_api_handler
+        
+        address_handler = get_address_api_handler()
+        address_handler.mark_field_as_user_modified(field_name, value)
+        
+        # Mark in session state too
+        st.session_state[f'_{field_name}_user_modified'] = True
+        
+    except Exception as e:
+        # Don't break UI if this fails
+        pass
+
+
+def _show_api_indicator(field_name: str, current_value: Any):
+    """
+    Show visual indicator for field data source (API vs User Override vs None)
+    """
+    try:
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+        
+        from data.data_priority_manager import get_data_priority_manager
+        
+        priority_manager = get_data_priority_manager()
+        
+        # Check field status in priority manager
+        try:
+            field_data = priority_manager.get_value(field_name)
+            is_user_modified = field_data.get('user_modified', False)
+            priority_level = field_data.get('priority_level', '')
+            source = field_data.get('source', '')
+            
+            # Simple logic: User Override > API Data > Default/None
+            if is_user_modified:
+                # Show ORANGE user override indicator
+                st.markdown(
+                    f'<div style="background-color: #FFF3E0; border-left: 4px solid #FF9800; padding: 8px; margin: 4px 0; border-radius: 4px;">'
+                    f'<small><strong>✏️ User Override:</strong> Your custom value is protected from API updates</small>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            elif priority_level == 'api_data':
+                # Show BLUE API indicator
+                source_display = _format_api_source(source)
+                
+                # Check for metadata (data date)
+                metadata = field_data.get('metadata', {})
+                data_date = metadata.get('data_date', '')
+                live_rate_used = metadata.get('live_rate_used', False)
+                
+                # Create additional info for static vs live data
+                extra_info = ""
+                if live_rate_used:
+                    extra_info = f" • 🔴 LIVE API"
+                elif data_date:
+                    extra_info = f" • 📅 Data from {data_date}"
+                elif 'international' in source.lower():
+                    # For international data, try to extract date from source or use default
+                    if '_data_' in source.lower():
+                        extra_info = f" • 📅 Data from 2024-08-14"
+                    else:
+                        extra_info = f" • 📊 Static data"
+                
+                st.markdown(
+                    f'<div style="background-color: #E3F2FD; border-left: 4px solid #2196F3; padding: 8px; margin: 4px 0; border-radius: 4px;">'
+                    f'<small><strong>🌐 API Updated:</strong> {source_display} • Value: {current_value}{"%" if "rate" in field_name else ""}{extra_info}</small>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            # If priority_level is 'default_data' or 'fallback', show no indicator (clean interface)
+                
+        except ValueError:
+            # Field not found in priority manager - no indicator
+            pass
+            
+    except Exception as e:
+        # Don't break UI if indicator fails
+        pass
+
+
+def _format_api_source(source: str) -> str:
+    """Format API source for display"""
+    source_mapping = {
+        'fred_api': 'Federal Reserve (FRED)',
+        'location_estimate': 'Location-Based Data',
+        'market_api': 'Market Data API',
+        'international_data': 'Central Bank Data',
+        'system_default': 'Default Value'
+    }
+    
+    for key, display in source_mapping.items():
+        if key in source.lower():
+            return display
+    
+    # Extract country info if present, but clean up dates
+    if '_for_' in source:
+        parts = source.split('_for_')
+        if len(parts) > 1:
+            location = parts[1].replace('_', ' ')
+            # Remove date patterns like (2024-08-14) from location
+            import re
+            location = re.sub(r'\([^)]*\d{4}-\d{2}-\d{2}[^)]*\)', '', location).strip()
+            location = location.title()
+            api_type = parts[0].replace('_', ' ').title()
+            return f"{api_type} ({location})"
+    
+    # Clean up any date patterns from the source name
+    import re
+    clean_source = re.sub(r'\([^)]*\d{4}-\d{2}-\d{2}[^)]*\)', '', source)
+    return clean_source.replace('_', ' ').title()

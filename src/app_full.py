@@ -62,7 +62,7 @@ except ImportError as e:
 
 def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[List], Optional[List]]:
     """
-    Run the complete financial analysis using session data
+    Run the complete financial analysis using session data with data priority management
     
     Args:
         session_manager: Session manager instance with input data
@@ -78,61 +78,84 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
         # Get all session data for analysis
         session_data = session_manager.export_session_data()
         
-        # Extract all required parameters from session_data
+        # Initialize data priority manager with user inputs, API data, and defaults
+        from data.data_priority_manager import get_data_priority_manager
+        priority_manager = get_data_priority_manager()
+        
+        # Update with user inputs (highest priority)
+        priority_manager.bulk_update_from_session(session_data)
+        
+        # Fetch and apply API data (if available) - will not override user inputs
+        try:
+            from data.interest_rate_feeds import create_interest_rate_feeds
+            import asyncio
+            
+            # Get current rates from API
+            rate_feeds = create_interest_rate_feeds()
+            current_rates = asyncio.run(rate_feeds.get_current_rates(['30_year_fixed', '15_year_fixed', 'federal_funds_rate']))
+            priority_manager.apply_api_rates(current_rates)
+            
+        except Exception as e:
+            logger.warning(f"Could not fetch API rates: {e}")
+            # API failure - will fall back to defaults via priority manager
+        
+        # Extract all required parameters using priority manager (User > API > Default)
+        inputs = session_data.get('inputs', {})
+        
         analysis_params = {
-            # Purchase scenario parameters
-            'purchase_price': session_data.get('purchase_price', session_data.get('inputs', {}).get('purchase_price')),
-            'down_payment_pct': session_data.get('down_payment_percent', session_data.get('inputs', {}).get('down_payment_percent', 30.0)),
-            'interest_rate': session_data.get('interest_rate', session_data.get('inputs', {}).get('interest_rate', 5.0)),
-            'loan_term': session_data.get('loan_term', session_data.get('inputs', {}).get('loan_term', 20)),
-            'transaction_costs': session_data.get('transaction_costs_percent', session_data.get('inputs', {}).get('transaction_costs_percent', 5.0)) * session_data.get('purchase_price', session_data.get('inputs', {}).get('purchase_price', 0)) / 100,
+            # Purchase scenario parameters - use user inputs directly for main parameters
+            'purchase_price': inputs.get('purchase_price'),
+            'down_payment_pct': inputs.get('down_payment_percent', 30.0),
+            'interest_rate': priority_manager.get_value_only('interest_rate', inputs.get('interest_rate', 7.0)),
+            'loan_term': inputs.get('loan_term', 20),
+            'transaction_costs': inputs.get('transaction_costs_percent', 5.0) * inputs.get('purchase_price', 0) / 100,
             
             # Rental scenario parameters  
-            'current_annual_rent': session_data.get('current_annual_rent', session_data.get('inputs', {}).get('current_annual_rent')),
-            'rent_increase_rate': session_data.get('rent_increase_rate', session_data.get('inputs', {}).get('rent_increase_rate', 3.0)),
-            'moving_costs': session_data.get('moving_costs', session_data.get('inputs', {}).get('moving_costs', 0.0)),
+            'current_annual_rent': inputs.get('current_annual_rent'),
+            'rent_increase_rate': priority_manager.get_value_only('rent_increase_rate', inputs.get('rent_increase_rate', 3.0)),
+            'moving_costs': inputs.get('moving_costs', 0.0),
             
             # Common parameters
-            'analysis_period': session_data.get('analysis_period', session_data.get('inputs', {}).get('analysis_period', 25)),
-            'cost_of_capital': session_data.get('cost_of_capital', session_data.get('inputs', {}).get('cost_of_capital', 8.0)),
+            'analysis_period': inputs.get('analysis_period', 25),
+            'cost_of_capital': priority_manager.get_value_only('cost_of_capital', inputs.get('cost_of_capital', 8.0)),
             
             # Property parameters
-            'property_tax_rate': session_data.get('property_tax_rate', session_data.get('inputs', {}).get('property_tax_rate', 1.2)),
-            'property_tax_escalation': session_data.get('property_tax_escalation_rate', session_data.get('inputs', {}).get('property_tax_escalation_rate', 2.0)),
-            'insurance_cost': session_data.get('insurance_cost', session_data.get('inputs', {}).get('insurance_cost', 5000)),
-            'annual_maintenance': session_data.get('annual_maintenance_percent', session_data.get('inputs', {}).get('annual_maintenance_percent', 2.0)) * session_data.get('purchase_price', session_data.get('inputs', {}).get('purchase_price', 0)) / 100,
-            'property_management': session_data.get('property_management', session_data.get('inputs', {}).get('property_management', 0)),
+            'property_tax_rate': priority_manager.get_value_only('property_tax_rate', inputs.get('property_tax_rate', 1.2)),
+            'property_tax_escalation': inputs.get('property_tax_escalation_rate', 2.0),
+            'insurance_cost': inputs.get('insurance_cost', 5000),
+            'annual_maintenance': inputs.get('annual_maintenance_percent', 2.0) * inputs.get('purchase_price', 0) / 100,
+            'property_management': inputs.get('property_management', 0),
             
             # Advanced parameters
-            'capex_reserve_rate': session_data.get('longterm_capex_reserve', session_data.get('inputs', {}).get('longterm_capex_reserve', 1.5)),
-            'obsolescence_risk_rate': session_data.get('obsolescence_risk_factor', session_data.get('inputs', {}).get('obsolescence_risk_factor', 0.5)),
-            'inflation_rate': session_data.get('inflation_rate', session_data.get('inputs', {}).get('inflation_rate', 3.0)),
-            'land_value_pct': session_data.get('land_value_percent', session_data.get('inputs', {}).get('land_value_percent', 25.0)),
-            'market_appreciation_rate': session_data.get('market_appreciation_rate', session_data.get('inputs', {}).get('market_appreciation_rate', 3.0)),
-            'depreciation_period': session_data.get('depreciation_period', session_data.get('inputs', {}).get('depreciation_period', 39)),
+            'capex_reserve_rate': inputs.get('longterm_capex_reserve', 1.5),
+            'obsolescence_risk_rate': inputs.get('obsolescence_risk_factor', 0.5),
+            'inflation_rate': priority_manager.get_value_only('inflation_rate', inputs.get('inflation_rate', 3.0)),
+            'land_value_pct': inputs.get('land_value_percent', 25.0),
+            'market_appreciation_rate': priority_manager.get_value_only('market_appreciation_rate', inputs.get('market_appreciation_rate', 3.0)),
+            'depreciation_period': inputs.get('depreciation_period', 39),
             
             # Tax parameters
-            'corporate_tax_rate': session_data.get('corporate_tax_rate', session_data.get('inputs', {}).get('corporate_tax_rate', 25.0)),
-            'interest_deductible': session_data.get('interest_deductible', session_data.get('inputs', {}).get('interest_deductible', True)),
-            'property_tax_deductible': session_data.get('property_tax_deductible', session_data.get('inputs', {}).get('property_tax_deductible', True)),
+            'corporate_tax_rate': inputs.get('corporate_tax_rate', 25.0),
+            'interest_deductible': inputs.get('interest_deductible', True),
+            'property_tax_deductible': inputs.get('property_tax_deductible', True),
             
             # Space improvement costs
-            'space_improvement_cost': session_data.get('space_improvement_cost', session_data.get('inputs', {}).get('space_improvement_cost', 0.0)),
+            'space_improvement_cost': inputs.get('space_improvement_cost', 0.0),
             
             # Expansion parameters
-            'future_expansion_year': session_data.get('future_expansion_year', session_data.get('inputs', {}).get('future_expansion_year', 'Never')),
-            'additional_space_needed': session_data.get('additional_space_needed', session_data.get('inputs', {}).get('additional_space_needed', 0)),
-            'current_space_needed': session_data.get('current_space_needed', session_data.get('inputs', {}).get('current_space_needed', 0)),
-            'ownership_property_size': session_data.get('ownership_property_size', session_data.get('inputs', {}).get('ownership_property_size', 0)),
-            'rental_property_size': session_data.get('rental_property_size', session_data.get('inputs', {}).get('rental_property_size', 0)),
+            'future_expansion_year': inputs.get('future_expansion_year', 'Never'),
+            'additional_space_needed': inputs.get('additional_space_needed', 0),
+            'current_space_needed': inputs.get('current_space_needed', 0),
+            'ownership_property_size': inputs.get('ownership_property_size', 0),
+            'rental_property_size': inputs.get('rental_property_size', 0),
             
             # Subletting parameters
-            'subletting_potential': session_data.get('subletting_potential', session_data.get('inputs', {}).get('subletting_potential', False)),
-            'subletting_rate': session_data.get('subletting_rate', session_data.get('inputs', {}).get('subletting_rate', 0)),
-            'subletting_space_sqm': session_data.get('subletting_space_sqm', session_data.get('inputs', {}).get('subletting_space_sqm', 0)),
+            'subletting_potential': inputs.get('subletting_potential', False),
+            'subletting_rate': inputs.get('subletting_rate', 0),
+            'subletting_space_sqm': inputs.get('subletting_space_sqm', 0),
             
             # Property upgrade parameters
-            'property_upgrade_cycle': session_data.get('property_upgrade_cycle', session_data.get('inputs', {}).get('property_upgrade_cycle', 30))
+            'property_upgrade_cycle': inputs.get('property_upgrade_cycle', 30)
         }
         
         # Validate critical parameters before analysis
@@ -563,6 +586,16 @@ def _render_basic_export_options(session_manager):
             )
 
 
+def render_data_integration_tab():
+    """Render data integration and API status"""
+    try:
+        from components.api_status_dashboard import render_api_status_dashboard
+        render_api_status_dashboard()
+    except ImportError:
+        st.error("❌ **API Status Dashboard not available**")
+        st.info("The data integration dashboard requires additional components.")
+
+
 def render_help_tab():
     """Render help and documentation"""
     st.markdown("## ❓ Help & Documentation")
@@ -728,12 +761,13 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Enhanced Tab navigation with new analysis tab
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    # Enhanced Tab navigation with new analysis tab and API status
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Analysis Dashboard", 
         "📈 Analysis Results", 
         "📋 Detailed Comparison",
         "📤 Export & Share", 
+        "🌐 Data Integration",
         "❓ Help & Documentation"
     ])
     
@@ -750,6 +784,9 @@ def main():
         render_export_tab()
     
     with tab5:
+        render_data_integration_tab()
+    
+    with tab6:
         render_help_tab()
     
     # Professional footer

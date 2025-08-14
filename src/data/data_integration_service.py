@@ -11,6 +11,7 @@ from dataclasses import asdict
 
 from ..shared.interfaces import DataProvider, DataRequest, DataValidationResult, MarketData
 
+from .api_config import get_api_config, validate_api_configuration
 from .market_data_api import MarketDataAPI, create_market_data_api
 from .interest_rate_feeds import InterestRateFeeds, create_interest_rate_feeds
 from .location_data import LocationDataService, create_location_data_service, LocationInfo

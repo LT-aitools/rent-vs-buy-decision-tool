@@ -12,6 +12,8 @@ import xml.etree.ElementTree as ET
 import json
 import re
 
+from .api_config import get_interest_rate_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,8 @@ class InterestRateFeeds:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
+        # Use real API configuration
+        self.config = config or get_interest_rate_config()
         self.timeout = self.config.get('timeout', 30)
         self.max_retries = self.config.get('max_retries', 3)
         
@@ -35,29 +38,30 @@ class InterestRateFeeds:
         self.fred_api_key = self.config.get('fred_api_key')
         self.fred_base_url = 'https://api.stlouisfed.org/fred'
         
-        # Additional rate sources
+        # Log API status
+        if self.fred_api_key:
+            logger.info("FRED API key configured - will use real interest rate data")
+        else:
+            logger.warning("FRED API key not configured - will use default interest rate data")
+        
+        # Rate sources from configuration
         self.rate_sources = {
             'fred': {
                 'url': self.fred_base_url,
                 'weight': 1.0,
-                'series_ids': {
+                'series_ids': self.config.get('fred_series', {
                     '30_year_fixed': 'MORTGAGE30US',
                     '15_year_fixed': 'MORTGAGE15US',
                     'federal_funds_rate': 'FEDFUNDS',
                     '10_year_treasury': 'GS10'
-                }
-            },
-            'freddie_mac': {
-                'url': 'http://www.freddiemac.com/pmms/pmms_archives.html',
-                'weight': 0.9,
-                'parser': 'html'
-            },
-            'bankrate': {
-                'url': 'https://api.bankrate-mock.com/v1/rates',
-                'weight': 0.7,
-                'parser': 'json'
+                })
             }
         }
+        
+        # Add backup sources from configuration
+        backup_sources = self.config.get('backup_sources', [])
+        for source in backup_sources:
+            self.rate_sources[source['name']] = source
         
         self.session: Optional[aiohttp.ClientSession] = None
         self.cache = {}
@@ -153,8 +157,8 @@ class InterestRateFeeds:
     async def _fetch_from_fred(self, config: Dict, rate_types: List[str]) -> Dict[str, float]:
         """Fetch rates from Federal Reserve Economic Data (FRED)"""
         if not self.fred_api_key:
-            logger.warning("FRED API key not configured, using mock data")
-            return self._get_mock_fred_data(rate_types)
+            logger.warning("FRED API key not configured, using default data")
+            return self._get_default_fred_data(rate_types)
         
         session = await self._get_session()
         rates = {}
@@ -194,41 +198,41 @@ class InterestRateFeeds:
         return rates
     
     async def _fetch_from_freddie_mac(self, config: Dict, rate_types: List[str]) -> Dict[str, float]:
-        """Fetch rates from Freddie Mac (mock implementation)"""
+        """Fetch rates from Freddie Mac (default implementation)"""
         # In production, this would parse Freddie Mac's Primary Mortgage Market Survey
-        logger.info("Fetching rates from Freddie Mac (mock)")
+        logger.info("Fetching rates from Freddie Mac (default)")
         
-        mock_rates = {
+        default_rates = {
             '30_year_fixed': 6.81,
             '15_year_fixed': 6.24
         }
         
-        return {rate_type: rate for rate_type, rate in mock_rates.items() 
+        return {rate_type: rate for rate_type, rate in default_rates.items() 
                 if rate_type in rate_types}
     
     async def _fetch_from_bankrate(self, config: Dict, rate_types: List[str]) -> Dict[str, float]:
-        """Fetch rates from Bankrate or similar service (mock implementation)"""
-        logger.info("Fetching rates from Bankrate (mock)")
+        """Fetch rates from Bankrate or similar service (default implementation)"""
+        logger.info("Fetching rates from Bankrate (default)")
         
-        mock_rates = {
+        default_rates = {
             '30_year_fixed': 6.85,
             '15_year_fixed': 6.30,
             'jumbo_30': 7.15
         }
         
-        return {rate_type: rate for rate_type, rate in mock_rates.items() 
+        return {rate_type: rate for rate_type, rate in default_rates.items() 
                 if rate_type in rate_types}
     
-    def _get_mock_fred_data(self, rate_types: List[str]) -> Dict[str, float]:
-        """Get mock FRED data when API key is not available"""
-        mock_data = {
+    def _get_default_fred_data(self, rate_types: List[str]) -> Dict[str, float]:
+        """Get default FRED data when API key is not available"""
+        default_data = {
             '30_year_fixed': 6.78,
             '15_year_fixed': 6.21,
             'federal_funds_rate': 5.25,
             '10_year_treasury': 4.45
         }
         
-        return {rate_type: rate for rate_type, rate in mock_data.items() 
+        return {rate_type: rate for rate_type, rate in default_data.items() 
                 if rate_type in rate_types}
     
     def _add_fallback_rates(self, rates: Dict[str, float], requested_types: List[str]) -> Dict[str, float]:
@@ -265,7 +269,7 @@ class InterestRateFeeds:
         # For now, return mock trend analysis
         current_rate = (await self.get_current_rates([rate_type]))[rate_type]
         
-        # Mock historical data points (would be real API calls in production)
+        # Default historical data points (would be real API calls in production)
         historical_rates = [
             current_rate + 0.15,  # 30 days ago
             current_rate + 0.08,  # 20 days ago
@@ -347,8 +351,8 @@ class InterestRateFeeds:
         if lender_types is None:
             lender_types = ['banks', 'credit_unions', 'online_lenders']
         
-        # Mock implementation - in production would query lender APIs
-        mock_lender_rates = {
+        # Default implementation - in production would query lender APIs
+        default_lender_rates = {
             'banks': {
                 '30_year_fixed': 6.85,
                 '15_year_fixed': 6.32,
@@ -366,7 +370,7 @@ class InterestRateFeeds:
             }
         }
         
-        return {lender_type: rates for lender_type, rates in mock_lender_rates.items() 
+        return {lender_type: rates for lender_type, rates in default_lender_rates.items() 
                 if lender_type in lender_types}
     
     async def close(self):
