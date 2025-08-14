@@ -554,9 +554,13 @@ def render_sensitivity_analysis_section(analysis_results: Dict[str, Any]) -> Non
     st.markdown("*Analysis of how key parameter changes affect NPV*")
     
     try:
-        # Import the sensitivity analysis engine
+        # Import the sensitivity analysis engine directly
+        import sys
+        import os
         sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        from analytics.sensitivity_analysis import SensitivityAnalysisEngine, create_standard_sensitivity_variables
+        
+        # Import components directly to avoid __init__.py import issues
+        from analytics.sensitivity_analysis import SensitivityAnalysisEngine
         from shared.interfaces import SensitivityVariable
         
         # Extract base parameters from analysis results

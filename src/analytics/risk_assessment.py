@@ -25,12 +25,12 @@ import logging
 import threading
 import math
 
-from ..shared.interfaces import (
+from shared.interfaces import (
     AnalyticsEngine, RiskAssessment, RiskLevel, MarketData,
     MonteCarloResult, AnalyticsResult
 )
-from ..calculations.npv_analysis import calculate_npv_comparison
-from .input_validation import validate_and_sanitize_base_params, ValidationError, SecurityError
+from calculations.npv_analysis import calculate_npv_comparison
+from analytics.input_validation import validate_and_sanitize_base_params, ValidationError, SecurityError
 
 logger = logging.getLogger(__name__)
 
