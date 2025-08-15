@@ -416,6 +416,13 @@ def render_export_tab():
     
     session_manager = get_session_manager()
     
+    # Check for input changes and clear stale analysis
+    cleared_stale = session_manager.clear_stale_analysis()
+    
+    # Show notification if stale results were just cleared
+    if cleared_stale:
+        st.warning("🔄 **Analysis results have been refreshed** because your inputs have changed. Please re-run the analysis to see updated results.")
+    
     if not session_manager.is_ready_for_analysis():
         create_info_box(
             "Complete all required input sections to enable export functionality.",
@@ -429,6 +436,13 @@ def render_export_tab():
                             'rental_flows' in st.session_state)
     
     if has_analysis_results:
+        # Check if analysis results are current (not stale)
+        if session_manager.analysis_is_stale():
+            st.error("❌ **Export Not Available - Analysis Results Are Outdated**")
+            st.markdown("Your input parameters have changed since the last analysis was run. The current analysis results may not reflect your latest inputs.")
+            st.markdown("**Please re-run the financial analysis to ensure your export contains the latest data.**")
+            return
+        
         # Professional Export Section
         st.markdown("### 📊 Professional Reports")
         st.markdown("Generate executive-ready Excel reports with charts and comprehensive analysis.")
@@ -440,12 +454,18 @@ def render_export_tab():
             # from export.pdf_integration import PDFExportManager, PDF_SYSTEM_AVAILABLE
             from export.streamlit_integration import ExcelExportManager, EXCEL_SYSTEM_AVAILABLE
             
-            # Prepare export data with real user data
+            # Prepare export data with real user data and metadata
+            from datetime import datetime
             export_data = {
                 'analysis_results': st.session_state['analysis_results'],
                 'ownership_flows': st.session_state['ownership_flows'],
                 'rental_flows': st.session_state['rental_flows'],
-                'inputs': session_manager.export_session_data()
+                'inputs': session_manager.export_session_data(),
+                'export_metadata': {
+                    'export_timestamp': datetime.now().isoformat(),
+                    'analysis_hash': st.session_state.get("analysis_input_hash", "unknown"),
+                    'data_freshness': 'current' if not session_manager.analysis_is_stale() else 'stale'
+                }
             }
             
             # Validate export data
@@ -458,6 +478,12 @@ def render_export_tab():
                 validation_errors.append("Rental cash flows are missing")
             if not export_data['inputs'].get('inputs'):
                 validation_errors.append("Input parameters are missing")
+            
+            # Additional validation for data consistency
+            analysis_hash = st.session_state.get("analysis_input_hash", "")
+            current_hash = session_manager.get_analysis_input_hash()
+            if analysis_hash != current_hash:
+                validation_errors.append("Data synchronization issue detected - input hash mismatch")
             
             if validation_errors:
                 st.error("❌ **Export Data Validation Failed**")
