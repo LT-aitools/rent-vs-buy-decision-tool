@@ -5,8 +5,11 @@
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Coverage](https://img.shields.io/badge/Coverage-Global%20(All%20Countries)-blue)
 ![Features](https://img.shields.io/badge/Features-Comprehensive-orange)
+![App](https://img.shields.io/badge/Live%20App-Streamlit%20Cloud-ff6b6b)
 
 A comprehensive real estate investment analysis platform that helps users make informed rent versus purchase decisions with professional-grade financial modeling, international market data integration, and interactive visualizations. Built with Streamlit and optimized for hold-forever investment strategies.
+
+**🌐 Live App**: https://rent-vs-buy-decision-tool-app.streamlit.app/
 
 ## 🎯 Project Overview
 
@@ -69,9 +72,10 @@ rent-vs-buy-decision-tool/
 
 ### 📊 Executive Dashboard
 - **Professional Analysis** - Executive-grade decision recommendations
-- **Interactive Visualizations** - Real-time charts and analytics
-- **Key Metrics Display** - NPV difference, ROI, break-even analysis
+- **Clean Interface** - Streamlined UI with essential metrics only
+- **Key Metrics Display** - NPV difference, break-even analysis, wealth comparison
 - **Mobile Responsive** - Works on desktop, tablet, and mobile
+- **Performance Optimized** - Removed chart rendering overhead for faster analysis
 
 ### 🌍 International Data Integration (Global Coverage)
 - **🔴 Live APIs (2)** - Brazil BCB + USA FRED real-time data
@@ -92,8 +96,9 @@ rent-vs-buy-decision-tool/
 - **Tax Benefits** - Mortgage interest and property tax deductions
 
 ### 📤 Professional Exports
-- **Excel Reports** - Executive-ready with embedded charts
+- **Excel Reports** - Executive-ready with data analysis (charts removed for performance)
 - **JSON Data Export** - Complete analysis data
+- **Synchronized Data** - Export reliability improvements prevent stale data
 - **Audit Trail** - Transparent calculation methodology
 
 ### Input Categories (30+ Fields)
@@ -148,10 +153,17 @@ This tool is specifically designed for companies that intend to hold warehouse p
 
 ### ✅ Latest Features (August 2025)
 
+#### 🚀 Performance & UI Improvements
+- **Streamlined Interface** - Removed debug sections and input validation UI
+- **Performance Optimization** - Removed chart rendering overhead for faster analysis
+- **Clean Dashboard** - Focused on essential metrics and analysis
+- **Excel Export Reliability** - Synchronized data prevents stale exports
+- **Charts Removed** - Terminal value and ROI graphs removed for better performance
+
 #### ⚡ Sensitivity Analysis Integration
-- **Dashboard Integration** - Now available directly in Analysis Results tab
+- **Dashboard Integration** - Available directly in Analysis Results tab
 - **Interactive Controls** - Select variables and adjust sensitivity ranges
-- **Real-time Charts** - Tornado diagrams showing NPV impacts
+- **Real-time Analysis** - Tornado diagrams showing NPV impacts
 - **Performance** - Sub-2-second analysis with caching
 - **Six Key Variables** - Interest Rate, Market Appreciation, Rent Growth, Cost of Capital, Purchase Price, Annual Rent
 
@@ -167,11 +179,11 @@ This tool is specifically designed for companies that intend to hold warehouse p
 - **Impact** - More realistic long-term projections
 - **Comprehensive** - Applied across all calculation modules
 
-#### 📊 Enhanced Visualizations
-- **Executive Dashboard** - Professional-grade charts and metrics
-- **Interactive Charts** - Real-time data exploration
-- **Mobile Responsive** - Optimized for all device sizes
-- **Export Ready** - Professional Excel reports with embedded charts
+#### 📊 Enhanced Data Export
+- **Excel Reports** - Executive-ready data analysis
+- **Synchronized Export** - Prevents stale data with input validation
+- **Performance Focus** - Charts removed for faster processing
+- **Audit Trail** - Complete transparency in calculations
 
 ## 🔧 Development
 
@@ -243,10 +255,11 @@ For questions or support, please open an issue in this repository or contact the
 
 ## 🔗 Quick Access
 
-- **🌐 Local Application**: http://localhost:8501 (after running `streamlit run src/app.py`)
+- **🌐 Live Application**: https://rent-vs-buy-decision-tool-app.streamlit.app/
+- **💻 Local Development**: http://localhost:8501 (after running `streamlit run src/app.py`)
 - **⚡ Sensitivity Analysis**: Available in Analysis Results → Advanced Analysis
 - **📊 Data Integration**: Real-time status in Data Integration tab
-- **📤 Export Features**: Generate Excel reports with embedded charts
+- **📤 Export Features**: Generate Excel reports with synchronized data
 - **🌍 Global Coverage**: All countries with transparent data sources
 
 ## 📈 Performance Metrics
@@ -262,4 +275,4 @@ For questions or support, please open an issue in this repository or contact the
 **Built with ❤️ for informed real estate investment decisions**
 
 *Professional Investment Strategy Analysis with Interactive Visualizations*  
-*Last Updated: August 14, 2025*
+*Last Updated: August 15, 2025*

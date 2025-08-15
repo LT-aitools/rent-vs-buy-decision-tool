@@ -2,21 +2,27 @@
 
 ## 🚀 Quick Start
 
-### Running the Application
+### Accessing the Application
+
+#### **🌐 Live Production App**
+**Recommended**: Use the live application at:
+https://rent-vs-buy-decision-tool-app.streamlit.app/
+
+#### **💻 Local Development**
 ```bash
-cd /Users/Amos/wt-ui-components
+cd rent-vs-buy-decision-tool
 streamlit run src/app.py
 ```
-
 The application will start at `http://localhost:8501`
 
 ## 📱 User Interface Overview
 
 ### **Main Navigation**
-The application has three main tabs:
-1. **📊 Analysis Dashboard** - Primary input interface
-2. **📤 Export & Share** - Data management
-3. **❓ Help & Documentation** - User guidance
+The application has four main tabs:
+1. **📝 Input Forms** - Data entry and configuration
+2. **📊 Analysis Results** - Dashboard with analysis output and visualizations
+3. **🔗 Data Integration** - Real-time market data status and configuration
+4. **📤 Export & Sharing** - Professional reports and data export
 
 ### **Sidebar Input Sections**
 All input forms are organized in the sidebar with expandable sections:
@@ -54,22 +60,25 @@ Fill out all fields marked with (*) asterisk:
 - Total Property Size, Current Space Needed
 - Purchase Price, Current Annual Rent
 
-### **Step 2: Review Validation**
-- ✅ Green checkmarks = Section complete
-- ⏳ Clock icons = Section pending
-- Error messages appear in red
-- Warnings appear in yellow
-- Info messages appear in blue
+### **Step 2: Run Financial Analysis**
+Navigate to the **Analysis Results** tab and click **"Run Financial Analysis"** to:
+- Generate NPV calculations and decision recommendations
+- Create interactive visualizations and charts  
+- Perform sensitivity analysis with tornado diagrams
+- Compare rent vs. buy scenarios comprehensively
 
-### **Step 3: Monitor Progress**
-- Progress bar shows completion percentage
-- Section completion indicators in sidebar navigation
-- Input summary updates in real-time
+### **Step 3: Review Results**
+In the **Analysis Results** tab you'll find:
+- **Executive Summary** with clear buy/rent recommendation
+- **Key Financial Metrics** including NPV difference and ROI
+- **Advanced Analysis** with sensitivity analysis and scenario comparisons
+- **Detailed Comparisons** with comprehensive financial breakdowns
 
-### **Step 4: Export & Share**
-- Download input data as JSON for backup
-- Reset all inputs to start over
-- Import previously saved analysis
+### **Step 4: Export Professional Reports**
+Navigate to **Export & Sharing** tab to:
+- Generate executive-ready Excel reports with comprehensive data
+- Download complete analysis as JSON for backup and sharing
+- Access synchronized data that matches your current analysis inputs
 
 ## 🔧 Professional Features
 
@@ -78,13 +87,11 @@ Fill out all fields marked with (*) asterisk:
 - Defaults based on Business PRD specifications
 - Currency-specific formatting
 
-### **Input Validation**
-```
-✅ Valid input accepted
-⚠️ Warning: Unusual but acceptable value
-❌ Error: Invalid input, must be corrected
-ℹ️ Info: Helpful context or calculation
-```
+### **Analysis Features**
+- **Sensitivity Analysis**: Interactive tornado diagrams showing NPV impact of key variables
+- **Global Data Integration**: Real-time market data from 21+ countries
+- **Professional Reporting**: Executive-grade analysis and recommendations
+- **Performance Optimized**: Streamlined interface focused on essential metrics
 
 ### **Professional Styling**
 - Executive-grade appearance
@@ -108,11 +115,11 @@ Fill out all fields marked with (*) asterisk:
 5. Configure **Operational Parameters** - business assumptions
 6. Set **Tax & Accounting** - financial implications
 
-### **Validation Best Practices**
-- Address red error messages first
-- Consider yellow warnings carefully  
-- Use info messages for context
-- Check cross-field relationships
+### **Analysis Best Practices**
+- Complete all required input fields before running analysis
+- Review sensitivity analysis to understand key risk factors
+- Use the Data Integration tab to verify market data sources
+- Export results to Excel for professional presentations
 
 ### **Professional Usage**
 - Use descriptive project names
@@ -136,31 +143,31 @@ Fill out all fields marked with (*) asterisk:
 
 ## 📊 Data Export Options
 
+### **Excel Export**
+- Executive-ready reports with comprehensive financial analysis
+- Multiple worksheets with organized data
+- Synchronized with current analysis inputs (stale data prevention)
+- Professional formatting suitable for presentations
+
 ### **JSON Export**
 - Complete input parameter backup
-- Shareable with colleagues
+- Shareable with colleagues  
 - Importable for future analysis
-- Timestamp included for tracking
-
-### **Coming Soon**
-- Excel reports with full calculations
-- PDF executive summaries  
-- Detailed analysis charts
-- Sensitivity analysis results
+- Timestamp and metadata included for tracking
 
 ## 🆘 Troubleshooting
 
 ### **Common Issues**
-- **Validation Errors**: Check all required fields are filled
-- **Import Failures**: Verify JSON file format is correct
-- **Performance**: Refresh browser if updates are slow
+- **Analysis Won't Run**: Ensure all required fields are completed
+- **Export Shows Warning**: Re-run analysis if inputs have changed since last analysis
+- **Performance**: App optimized for speed - contact support if issues persist
 - **Mobile Issues**: Use landscape mode for best experience
 
 ### **Getting Help**
-- Hover over ❓ icons for field explanations
-- Review validation messages for specific guidance
-- Check the Help & Documentation tab
-- Refer to Business PRD for methodology details
+- Use the **Data Integration** tab to verify market data status
+- Check export data synchronization warnings in Export & Sharing tab
+- Refer to sensitivity analysis for understanding key decision factors
+- Contact support for technical issues with the live application
 
 ---
 
