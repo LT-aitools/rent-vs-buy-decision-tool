@@ -884,9 +884,6 @@ def render_sensitivity_analysis_section(analysis_results: Dict[str, Any], sessio
                             st.markdown("• **Values in Table**: Show how NPV difference changes from the base case")
                             st.markdown("• **Green Values**: Favorable changes that improve the recommended option")
                             st.markdown("• **Red Values**: Unfavorable changes that worsen the recommended option")
-                            st.markdown("")
-                            st.markdown("**Example Interpretation:**")
-                            st.markdown(f'If your base case recommends "BUY" and you see a value of "+$50K" at the intersection of "+1% {y_metric_display}" and "+1% {x_metric_display}", this means that if both parameters increase by 1 percentage point, the NPV advantage of buying increases by $50K.')
                         
                         # Store results in session state for potential export
                         st.session_state['sensitivity_2d_results'] = {
