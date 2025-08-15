@@ -858,28 +858,13 @@ def render_all_input_forms():
         """)
         return False
     
-    # Validation section
-    st.markdown("---")
-    st.markdown("### ✅ Input Validation")
-    
-    # Run validation
+    # Run validation silently (no UI display)
     validator = InputValidator(st.session_state.get("currency", "USD"))
     
     # Collect all inputs for validation
     inputs = {field: st.session_state.get(field) for field in DEFAULT_VALUES.keys()}
     
-    # Debug: Show what the validation system is actually checking
-    with st.expander("🔧 Validation Input Debug"):
-        st.write("**Fields the validation is checking:**")
-        for field in DEFAULT_VALUES.keys():
-            value = st.session_state.get(field)
-            st.write(f"- {field}: {value}")
-            
-        st.write("**Validation inputs dict:**")
-        st.write(inputs)
-    
     validation_result = validator.validate_all_inputs(inputs)
-    display_validation_messages(validation_result)
     
     # Force check completion status right before validation
     session_manager.check_section_completion()
@@ -892,23 +877,6 @@ def render_all_input_forms():
     
     # Show analysis readiness status
     is_ready = session_manager.is_ready_for_analysis()
-    
-    # Debug information to help identify the issue
-    with st.expander("🔧 Debug Info (Click to expand)"):
-        st.write("**Session State Debug:**")
-        debug_fields = ["project_name", "country_selection", "analyst_name", 
-                       "ownership_property_size", "rental_property_size", 
-                       "current_space_needed", "purchase_price", "current_annual_rent"]
-        for field in debug_fields:
-            value = st.session_state.get(field, "NOT_SET")
-            st.write(f"- {field}: {value}")
-        
-        st.write("**Section Completion Flags:**")
-        completion_flags = ["project_info_complete", "property_market_complete", 
-                           "purchase_params_complete", "rental_params_complete"]
-        for flag in completion_flags:
-            value = st.session_state.get(flag, False)
-            st.write(f"- {flag}: {value}")
     
     if is_ready and validation_result.is_valid:
         st.success("✅ **Ready for Analysis** - All required inputs are complete and valid!")
