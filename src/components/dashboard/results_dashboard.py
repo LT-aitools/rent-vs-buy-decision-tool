@@ -485,8 +485,6 @@ def render_comparison_charts_section(
         except Exception as e:
             st.error(f"Error creating annual costs comparison chart: {str(e)}")
     
-    # Break-even Analysis (if data available)
-    st.info("🚧 Break-even analysis and sensitivity charts will be displayed when calculation data is available")
 
 
 def create_results_summary_section(analysis_results: Dict[str, Any]) -> None:
