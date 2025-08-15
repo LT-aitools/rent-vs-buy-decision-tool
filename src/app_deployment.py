@@ -116,10 +116,16 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
         }
         
         # Validate critical parameters before analysis
-        critical_params = ['purchase_price', 'current_annual_rent']
+        critical_params = ['purchase_price', 'current_annual_rent', 'rent_increase_rate']
         for param in critical_params:
-            if not analysis_params.get(param):
-                raise ValueError(f"Critical parameter '{param}' is missing or zero. Please complete all required inputs.")
+            value = analysis_params.get(param)
+            if value is None or (isinstance(value, (int, float)) and value < 0):
+                # Provide specific fallbacks for mobile compatibility
+                if param == 'rent_increase_rate':
+                    analysis_params[param] = 3.0
+                    logger.warning(f"Parameter '{param}' was invalid ({value}), using default: 3.0")
+                else:
+                    raise ValueError(f"Critical parameter '{param}' is missing or zero. Please complete all required inputs.")
         
         # Run NPV analysis
         analysis_results = calculate_npv_comparison(**analysis_params)
