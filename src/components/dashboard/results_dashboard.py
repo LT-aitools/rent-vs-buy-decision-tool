@@ -92,7 +92,7 @@ def render_executive_summary_dashboard(
     st.markdown("---")
     
     # Chart sections
-    render_chart_sections(analysis_results, ownership_flows, rental_flows)
+    render_chart_sections(analysis_results, ownership_flows, rental_flows, session_manager)
 
 
 def create_decision_recommendation_card(analysis_results: Dict[str, Any]) -> None:
@@ -389,7 +389,8 @@ def create_investment_comparison_section(analysis_results: Dict[str, Any]) -> No
 def render_chart_sections(
     analysis_results: Dict[str, Any],
     ownership_flows: List[Dict[str, float]],
-    rental_flows: List[Dict[str, float]]
+    rental_flows: List[Dict[str, float]],
+    session_manager: Any = None
 ) -> None:
     """
     Render all chart sections
@@ -398,6 +399,7 @@ def render_chart_sections(
         analysis_results: Analysis results
         ownership_flows: Ownership cash flows
         rental_flows: Rental cash flows
+        session_manager: Session manager for accessing original input parameters
     """
     # Create tabs for different chart categories
     chart_tab1, chart_tab2, chart_tab3 = st.tabs([
@@ -410,7 +412,7 @@ def render_chart_sections(
         render_core_charts_section(analysis_results, ownership_flows, rental_flows)
     
     with chart_tab2:
-        render_advanced_charts_section(analysis_results, ownership_flows, rental_flows)
+        render_advanced_charts_section(analysis_results, ownership_flows, rental_flows, session_manager)
     
     with chart_tab3:
         render_comparison_charts_section(analysis_results, ownership_flows, rental_flows)
@@ -457,13 +459,14 @@ def render_core_charts_section(
 def render_advanced_charts_section(
     analysis_results: Dict[str, Any],
     ownership_flows: List[Dict[str, float]],
-    rental_flows: List[Dict[str, float]]
+    rental_flows: List[Dict[str, float]],
+    session_manager: Any = None
 ) -> None:
     """Render advanced analysis charts including sensitivity analysis"""
     st.subheader("📈 Advanced Financial Analysis")
     
     # Sensitivity Analysis Section
-    render_sensitivity_analysis_section(analysis_results)
+    render_sensitivity_analysis_section(analysis_results, session_manager)
     
     # Terminal Value Progression
     if analysis_results and ownership_flows:
@@ -543,209 +546,423 @@ def create_results_summary_section(analysis_results: Dict[str, Any]) -> None:
         """, unsafe_allow_html=True)
 
 
-def render_sensitivity_analysis_section(analysis_results: Dict[str, Any]) -> None:
+def render_sensitivity_analysis_section(analysis_results: Dict[str, Any], session_manager: Any = None) -> None:
     """
-    Render sensitivity analysis using the real SensitivityAnalysisEngine
+    Render two-dimensional sensitivity analysis with interactive metric selection
     
     Args:
         analysis_results: Analysis results containing input parameters
+        session_manager: Session manager to access original input parameters
     """
-    st.markdown("#### ⚡ Sensitivity Analysis")
-    st.markdown("*Analysis of how key parameter changes affect NPV*")
+    st.markdown("#### ⚡ Two-Dimensional Sensitivity Analysis")
+    st.markdown("*Interactive analysis of how two key parameters simultaneously affect NPV*")
     
     try:
-        # Import the sensitivity analysis engine directly
+        # Import the new 2D sensitivity analysis functions
         import sys
         import os
         sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         
-        # Import components directly to avoid __init__.py import issues
-        from analytics.sensitivity_analysis import SensitivityAnalysisEngine
-        from shared.interfaces import SensitivityVariable
+        from calculations.two_dimensional_sensitivity import (
+            calculate_2d_sensitivity_analysis,
+            format_2d_sensitivity_for_streamlit,
+            get_available_sensitivity_metrics
+        )
         
-        # Extract base parameters from analysis results
-        base_params = {
-            'purchase_price': analysis_results.get('purchase_price', 500000),
-            'current_annual_rent': analysis_results.get('current_annual_rent', 24000),
-            'down_payment_pct': analysis_results.get('down_payment_pct', 30.0),
-            'interest_rate': analysis_results.get('interest_rate', 5.0),
-            'market_appreciation_rate': analysis_results.get('market_appreciation_rate', 3.0),
-            'rent_increase_rate': analysis_results.get('rent_increase_rate', 3.0),
-            'cost_of_capital': analysis_results.get('cost_of_capital', 8.0),
-            'inflation_rate': analysis_results.get('inflation_rate', 3.0),
-            'property_tax_rate': analysis_results.get('property_tax_rate', 1.2),
-            'analysis_period': analysis_results.get('analysis_period', 25),
-            'loan_term': analysis_results.get('loan_term', 20)
-        }
+        # Extract base parameters - use same logic as main analysis to ensure consistency
+        if session_manager and session_manager.is_ready_for_analysis():
+            # Use session manager to get the exact same parameters used for main analysis
+            session_data = session_manager.export_session_data()
+            inputs = session_data.get('inputs', {})
+            
+            # Use same parameter extraction logic as run_financial_analysis()
+            try:
+                from data.data_priority_manager import get_data_priority_manager
+                priority_manager = get_data_priority_manager()
+                priority_manager.bulk_update_from_session(session_data)
+            except:
+                priority_manager = None
+            
+            def get_priority_value(key, default):
+                if priority_manager:
+                    return priority_manager.get_value_only(key, inputs.get(key, default))
+                return inputs.get(key, default)
+            
+            base_params = {
+                # Purchase scenario parameters
+                'purchase_price': inputs.get('purchase_price', 500000),
+                'down_payment_pct': inputs.get('down_payment_percent', 30.0),
+                'interest_rate': get_priority_value('interest_rate', 7.0),
+                'loan_term': inputs.get('loan_term', 20),
+                'transaction_costs': inputs.get('transaction_costs_percent', 5.0) * inputs.get('purchase_price', 0) / 100,
+                
+                # Rental scenario parameters  
+                'current_annual_rent': inputs.get('current_annual_rent', 24000),
+                'rent_increase_rate': get_priority_value('rent_increase_rate', 3.0),
+                'moving_costs': inputs.get('moving_costs', 0.0),
+                
+                # Common parameters
+                'analysis_period': inputs.get('analysis_period', 25),
+                'cost_of_capital': get_priority_value('cost_of_capital', 8.0),
+                
+                # Property parameters
+                'property_tax_rate': get_priority_value('property_tax_rate', 1.2),
+                'property_tax_escalation': inputs.get('property_tax_escalation_rate', 2.0),
+                'insurance_cost': inputs.get('insurance_cost', 5000),
+                'annual_maintenance': inputs.get('annual_maintenance_percent', 2.0) * inputs.get('purchase_price', 0) / 100,
+                'property_management': inputs.get('property_management', 0),
+                
+                # Advanced parameters
+                'capex_reserve_rate': inputs.get('longterm_capex_reserve', 1.5),
+                'obsolescence_risk_rate': inputs.get('obsolescence_risk_factor', 0.5),
+                'inflation_rate': get_priority_value('inflation_rate', 3.0),
+                'land_value_pct': inputs.get('land_value_percent', 25.0),
+                'market_appreciation_rate': get_priority_value('market_appreciation_rate', 3.0),
+                'depreciation_period': inputs.get('depreciation_period', 39),
+                
+                # Tax parameters
+                'corporate_tax_rate': inputs.get('corporate_tax_rate', 25.0),
+                'interest_deductible': inputs.get('interest_deductible', True),
+                'property_tax_deductible': inputs.get('property_tax_deductible', True),
+                'rent_deductible': inputs.get('rent_deductible', True),
+                
+                # Space improvement costs
+                'space_improvement_cost': inputs.get('space_improvement_cost', 0.0),
+                
+                # Expansion parameters
+                'future_expansion_year': inputs.get('future_expansion_year', 'Never'),
+                'additional_space_needed': inputs.get('additional_space_needed', 0),
+                'current_space_needed': inputs.get('current_space_needed', 0),
+                'ownership_property_size': inputs.get('ownership_property_size', 0),
+                'rental_property_size': inputs.get('rental_property_size', 0),
+                
+                # Subletting parameters
+                'subletting_potential': inputs.get('subletting_potential', False),
+                'subletting_rate': inputs.get('subletting_rate', 0),
+                'subletting_space_sqm': inputs.get('subletting_space_sqm', 0),
+                
+                # Property upgrade parameters
+                'property_upgrade_cycle': inputs.get('property_upgrade_cycle', 30)
+            }
+        else:
+            # Fallback to analysis_results if session manager not available
+            base_params = {
+                'purchase_price': analysis_results.get('purchase_price', 500000),
+                'current_annual_rent': analysis_results.get('current_annual_rent', 24000),
+                'down_payment_pct': analysis_results.get('down_payment_pct', 30.0),
+                'interest_rate': analysis_results.get('interest_rate', 5.0),
+                'loan_term': analysis_results.get('loan_term', 20),
+                'transaction_costs': analysis_results.get('transaction_costs', 25000),
+                'rent_increase_rate': analysis_results.get('rent_increase_rate', 3.0),
+                'analysis_period': analysis_results.get('analysis_period', 25),
+                'cost_of_capital': analysis_results.get('cost_of_capital', 8.0),
+                'property_tax_rate': analysis_results.get('property_tax_rate', 1.2),
+                'property_tax_escalation': analysis_results.get('property_tax_escalation', 2.0),
+                'insurance_cost': analysis_results.get('insurance_cost', 5000),
+                'annual_maintenance': analysis_results.get('annual_maintenance', 10000),
+                'property_management': analysis_results.get('property_management', 0),
+                'capex_reserve_rate': analysis_results.get('capex_reserve_rate', 1.5),
+                'obsolescence_risk_rate': analysis_results.get('obsolescence_risk_rate', 0.5),
+                'inflation_rate': analysis_results.get('inflation_rate', 3.0),
+                'land_value_pct': analysis_results.get('land_value_pct', 25.0),
+                'market_appreciation_rate': analysis_results.get('market_appreciation_rate', 3.0),
+                'depreciation_period': analysis_results.get('depreciation_period', 39),
+                'corporate_tax_rate': analysis_results.get('corporate_tax_rate', 25.0),
+                'interest_deductible': analysis_results.get('interest_deductible', True),
+                'property_tax_deductible': analysis_results.get('property_tax_deductible', True),
+                'rent_deductible': analysis_results.get('rent_deductible', True),
+                'moving_costs': analysis_results.get('moving_costs', 0.0),
+                'space_improvement_cost': analysis_results.get('space_improvement_cost', 0.0),
+                'future_expansion_year': analysis_results.get('future_expansion_year', 'Never'),
+                'additional_space_needed': analysis_results.get('additional_space_needed', 0),
+                'current_space_needed': analysis_results.get('current_space_needed', 0),
+                'ownership_property_size': analysis_results.get('ownership_property_size', 0),
+                'rental_property_size': analysis_results.get('rental_property_size', 0),
+                'subletting_potential': analysis_results.get('subletting_potential', False),
+                'subletting_rate': analysis_results.get('subletting_rate', 0),
+                'subletting_space_sqm': analysis_results.get('subletting_space_sqm', 0),
+                'property_upgrade_cycle': analysis_results.get('property_upgrade_cycle', 30)
+            }
         
         # Check if we have minimum required parameters
         if not all(base_params[key] for key in ['purchase_price', 'current_annual_rent']):
             st.warning("⚠️ Sensitivity analysis requires purchase price and annual rent to be set.")
             return
         
-        # Control panel for sensitivity analysis
+        # Get available metrics for selection
+        available_metrics = get_available_sensitivity_metrics()
+        metric_options = list(available_metrics.values())
+        metric_keys = list(available_metrics.keys())
+        
+        # Interactive controls for 2D sensitivity analysis
         col1, col2 = st.columns(2)
         
         with col1:
-            # Variable selection
-            available_variables = ["Interest Rate", "Market Appreciation", "Rent Growth", "Cost of Capital", "Purchase Price", "Annual Rent"]
-            selected_variables = st.multiselect(
-                "Select Variables to Analyze",
-                available_variables,
-                default=["Interest Rate", "Market Appreciation", "Rent Growth"],
-                key="sensitivity_variables"
+            # X-axis metric selection
+            x_metric_display = st.selectbox(
+                "X-Axis (Column Headers)",
+                options=metric_options,
+                index=1,  # Default to Interest Rate
+                key="x_metric_selection",
+                help="Choose the metric to vary along the table columns"
             )
+            x_metric = metric_keys[metric_options.index(x_metric_display)]
         
         with col2:
-            # Sensitivity range
-            sensitivity_range = st.slider(
-                "Sensitivity Range (±%)",
-                min_value=10,
-                max_value=50,
-                value=25,
-                step=5,
-                key="sensitivity_range",
-                help="Percentage range to vary each parameter above and below its base value"
+            # Y-axis metric selection
+            y_metric_display = st.selectbox(
+                "Y-Axis (Row Headers)",
+                options=metric_options,
+                index=3,  # Default to Market Appreciation Rate
+                key="y_metric_selection",
+                help="Choose the metric to vary along the table rows"
             )
+            y_metric = metric_keys[metric_options.index(y_metric_display)]
         
-        if selected_variables:
-            # Create sensitivity variables based on selection
-            sensitivity_vars = []
+        # Validate metric selection
+        if x_metric == y_metric:
+            st.error("❌ Please select different metrics for X and Y axes")
+            return
+        
+        # Range configuration
+        st.markdown("**Analysis Ranges**")
+        col3, col4 = st.columns(2)
+        
+        with col3:
+            st.markdown(f"*{x_metric_display} range: -1.5% to +1.5%*")
             
-            for var_name in selected_variables:
-                if var_name == "Interest Rate":
-                    base_val = base_params['interest_rate']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='interest_rate',
-                        base_value=base_val,
-                        min_value=max(0.5, base_val * (1 - sensitivity_range/100)),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=0.25,
-                        unit='%',
-                        description='Mortgage interest rate'
-                    ))
-                elif var_name == "Market Appreciation":
-                    base_val = base_params['market_appreciation_rate']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='market_appreciation_rate',
-                        base_value=base_val,
-                        min_value=max(0, base_val * (1 - sensitivity_range/100)),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=0.25,
-                        unit='%',
-                        description='Annual property appreciation rate'
-                    ))
-                elif var_name == "Rent Growth":
-                    base_val = base_params['rent_increase_rate']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='rent_increase_rate',
-                        base_value=base_val,
-                        min_value=max(0, base_val * (1 - sensitivity_range/100)),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=0.25,
-                        unit='%',
-                        description='Annual rent escalation rate'
-                    ))
-                elif var_name == "Cost of Capital":
-                    base_val = base_params['cost_of_capital']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='cost_of_capital',
-                        base_value=base_val,
-                        min_value=max(1, base_val * (1 - sensitivity_range/100)),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=0.25,
-                        unit='%',
-                        description='Discount rate for NPV calculations'
-                    ))
-                elif var_name == "Purchase Price":
-                    base_val = base_params['purchase_price']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='purchase_price',
-                        base_value=base_val,
-                        min_value=base_val * (1 - sensitivity_range/100),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=base_val * 0.02,
-                        unit='$',
-                        description='Property purchase price'
-                    ))
-                elif var_name == "Annual Rent":
-                    base_val = base_params['current_annual_rent']
-                    sensitivity_vars.append(SensitivityVariable(
-                        name='current_annual_rent',
-                        base_value=base_val,
-                        min_value=base_val * (1 - sensitivity_range/100),
-                        max_value=base_val * (1 + sensitivity_range/100),
-                        step_size=base_val * 0.02,
-                        unit='$',
-                        description='Current annual rent cost'
-                    ))
-            
-            if sensitivity_vars:
-                # Run sensitivity analysis
-                with st.spinner("Running sensitivity analysis..."):
-                    engine = SensitivityAnalysisEngine()
-                    sensitivity_results = engine.run_sensitivity_analysis(base_params, sensitivity_vars)
-                
-                if sensitivity_results:
-                    # Convert results to format expected by tornado chart
-                    chart_data = {}
-                    for result in sensitivity_results:
-                        var_name = result.variable_name
-                        if result.npv_impacts and len(result.npv_impacts) >= 2:
-                            # Create low and high scenarios
-                            chart_data[var_name] = {
-                                'low': min(result.npv_impacts),
-                                'high': max(result.npv_impacts)
-                            }
+        with col4:
+            st.markdown(f"*{y_metric_display} range: -1.5% to +1.5%*")
+        
+        # Run 2D sensitivity analysis
+        if st.button("🔍 Run 2D Sensitivity Analysis", type="primary", key="run_2d_sensitivity"):
+            with st.spinner("Calculating two-dimensional sensitivity table..."):
+                try:
+                    # Calculate 2D sensitivity analysis
+                    sensitivity_result = calculate_2d_sensitivity_analysis(
+                        base_params=base_params,
+                        x_metric=x_metric,
+                        y_metric=y_metric,
+                        x_range=[-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5],
+                        y_range=[-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+                    )
                     
-                    if chart_data:
-                        # Display tornado chart
-                        base_npv = analysis_results.get('npv_difference', 0)
-                        tornado_chart = create_sensitivity_tornado_chart(chart_data, base_npv)
-                        st.plotly_chart(tornado_chart, use_container_width=True, key="sensitivity_tornado")
+                    if sensitivity_result:
+                        # Format for Streamlit display
+                        formatted_result = format_2d_sensitivity_for_streamlit(sensitivity_result)
                         
-                        # Display insights
-                        st.markdown("#### 🎯 Sensitivity Insights")
+                        # Display the table
+                        st.markdown("### 📊 NPV Sensitivity Table")
+                        st.markdown(f"**{formatted_result['y_metric_display']} vs {formatted_result['x_metric_display']}**")
                         
-                        # Find most sensitive variable
-                        max_impact = 0
-                        most_sensitive = None
-                        for result in sensitivity_results:
-                            if result.npv_impacts:
-                                impact_range = max(result.npv_impacts) - min(result.npv_impacts)
-                                if impact_range > max_impact:
-                                    max_impact = impact_range
-                                    most_sensitive = result.variable_name.replace('_', ' ').title()
+                        # Create column configuration
+                        column_config = {'y_label': f"{formatted_result['y_metric_display']}", 'y_change': 'Change'}
+                        for i in range(formatted_result['num_columns']):
+                            column_config[f'col_{i}'] = formatted_result['x_headers'][i]
                         
-                        if most_sensitive:
-                            st.info(f"🎯 **Most Sensitive Variable**: {most_sensitive} (Impact range: {format_currency(max_impact)})")
+                        # Prepare dataframe for display
+                        import pandas as pd
+                        display_data = []
                         
-                        # Display detailed results in expandable section
-                        with st.expander("📊 Detailed Sensitivity Results", expanded=False):
-                            for result in sensitivity_results:
-                                if result.npv_impacts and result.variable_values:
-                                    st.markdown(f"**{result.variable_name.replace('_', ' ').title()}**")
+                        for row in formatted_result['table_data']:
+                            display_row = {
+                                f"{formatted_result['y_metric_display']}": f"{row['y_label']} {row['y_change']}",
+                            }
+                            for i in range(formatted_result['num_columns']):
+                                header = f"{formatted_result['x_headers'][i]}"
+                                if i < len(formatted_result['x_change_indicators']):
+                                    header += f" {formatted_result['x_change_indicators'][i]}"
+                                display_row[header] = row[f'col_{i}']
+                            display_data.append(display_row)
+                        
+                        df = pd.DataFrame(display_data)
+                        
+                        # Create styling function for color coding based on NPV values
+                        def style_npv_values(val, raw_values, col_name):
+                            """Apply color styling based on NPV values"""
+                            if col_name in raw_values:
+                                raw_val = raw_values[col_name]
+                                if raw_val > 0:
+                                    # Positive NPV (ownership advantage) - green background
+                                    return 'background-color: #D5F4E6; color: #00B894; font-weight: bold;'
+                                elif raw_val < 0:
+                                    # Negative NPV (rental advantage) - light red background  
+                                    return 'background-color: #FADBD8; color: #E74C3C; font-weight: bold;'
+                                else:
+                                    # Zero NPV - neutral
+                                    return 'color: #2D3436; font-weight: bold;'
+                            return ''
+                        
+                        # Create a styled dataframe
+                        styled_df = df.copy()
+                        
+                        # Apply styling using st.dataframe with custom CSS
+                        try:
+                            # Create styling for each row based on raw NPV values
+                            def highlight_cells(row):
+                                styles = [''] * len(row)
+                                
+                                # Find the corresponding raw data for this row
+                                row_index = styled_df.index[styled_df[f"{formatted_result['y_metric_display']}"] == row[f"{formatted_result['y_metric_display']}"]].tolist()
+                                if row_index:
+                                    raw_row_data = formatted_result['table_data'][row_index[0]]
                                     
-                                    # Create simple DataFrame for display
-                                    import pandas as pd
-                                    df = pd.DataFrame({
-                                        'Parameter Value': [f"{val:.2f}" for val in result.variable_values],
-                                        'NPV Impact': [format_currency(impact) for impact in result.npv_impacts]
-                                    })
-                                    st.dataframe(df, use_container_width=True)
-                                    st.markdown("---")
+                                    # Style NPV value columns
+                                    for i in range(formatted_result['num_columns']):
+                                        col_header = f"{formatted_result['x_headers'][i]}"
+                                        if i < len(formatted_result['x_change_indicators']):
+                                            col_header += f" {formatted_result['x_change_indicators'][i]}"
+                                        
+                                        if col_header in row.index:
+                                            col_idx = row.index.get_loc(col_header)
+                                            raw_val = raw_row_data[f'col_{i}_raw']
+                                            
+                                            if raw_val > 0:
+                                                # Positive NPV (ownership advantage) - green
+                                                styles[col_idx] = 'background-color: #D5F4E6; color: #00B894; font-weight: bold;'
+                                            elif raw_val < 0:
+                                                # Negative NPV (rental advantage) - light red
+                                                styles[col_idx] = 'background-color: #FADBD8; color: #E74C3C; font-weight: bold;'
+                                            else:
+                                                # Zero NPV - neutral
+                                                styles[col_idx] = 'color: #2D3436; font-weight: bold;'
+                                
+                                return styles
+                            
+                            # Apply the styling
+                            styled_dataframe = styled_df.style.apply(highlight_cells, axis=1)
+                            
+                            # Display the styled table
+                            st.dataframe(
+                                styled_dataframe,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+                            
+                        except Exception as e:
+                            # Fallback to regular table if styling fails
+                            st.dataframe(
+                                df,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+                            st.info("💡 **Color Legend**: Green values favor ownership, red values favor rental")
+                        
+                        # Color legend
+                        st.markdown("### 🎨 Color Legend")
+                        col_legend1, col_legend2 = st.columns(2)
+                        
+                        with col_legend1:
+                            st.markdown("""
+                            <div style="background-color: #D5F4E6; color: #00B894; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; margin-bottom: 8px;">
+                                🟢 Positive NPV - Ownership Advantage
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_legend2:
+                            st.markdown("""
+                            <div style="background-color: #FADBD8; color: #E74C3C; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; margin-bottom: 8px;">
+                                🔴 Negative NPV - Rental Advantage
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Analysis insights
+                        st.markdown("### 🎯 Sensitivity Insights")
+                        
+                        col5, col6, col7 = st.columns(3)
+                        
+                        with col5:
+                            st.metric(
+                                "Base Case NPV",
+                                formatted_result['base_npv'],
+                                help="NPV difference with current parameter values"
+                            )
+                        
+                        with col6:
+                            st.metric(
+                                "Table Size",
+                                formatted_result['table_size'],
+                                help="Number of parameter combinations analyzed"
+                            )
+                        
+                        with col7:
+                            st.metric(
+                                "Calculation Time",
+                                formatted_result['calculation_time'],
+                                help="Time taken to compute all combinations"
+                            )
+                        
+                        # Interpretation guide
+                        with st.expander("📖 How to Read This Table", expanded=False):
+                            st.markdown(f"""
+                            **Understanding the Sensitivity Table:**
+                            
+                            • **0% Column/Row**: Shows actual parameter values used in your analysis
+                            • **Positive Changes**: Parameter increases (e.g., +1% = 1 percentage point higher)
+                            • **Negative Changes**: Parameter decreases (e.g., -1% = 1 percentage point lower)
+                            • **Values in Table**: Show how NPV difference changes from the base case
+                            • **Green Values**: Favorable changes that improve the recommended option
+                            • **Red Values**: Unfavorable changes that worsen the recommended option
+                            
+                            **Example Interpretation:**
+                            If your base case recommends "BUY" and you see a value of "+$50K" at the intersection 
+                            of "+1% {y_metric_display}" and "+1% {x_metric_display}", this means that if both 
+                            parameters increase by 1 percentage point, the NPV advantage of buying increases by $50K.
+                            """)
+                        
+                        # Store results in session state for potential export
+                        st.session_state['sensitivity_2d_results'] = {
+                            'raw_result': sensitivity_result,
+                            'formatted_result': formatted_result,
+                            'x_metric': x_metric,
+                            'y_metric': y_metric
+                        }
+                        
+                        st.success("✅ Two-dimensional sensitivity analysis completed successfully!")
+                    
                     else:
-                        st.warning("⚠️ Unable to generate sensitivity results with current parameters.")
+                        st.error("❌ Failed to calculate sensitivity analysis. Please check your parameters.")
+                        
+                except Exception as e:
+                    st.error(f"❌ Error calculating sensitivity analysis: {str(e)}")
+                    st.info("Please check your input parameters and try again.")
+        
+        # Show current selection summary
+        st.markdown("---")
+        st.markdown("**Current Selection:**")
+        col8, col9 = st.columns(2)
+        
+        with col8:
+            st.info(f"**X-Axis**: {x_metric_display}")
+            if x_metric in base_params:
+                current_x_value = base_params[x_metric]
+                if x_metric in ['interest_rate', 'rent_increase_rate', 'market_appreciation_rate', 'inflation_rate']:
+                    st.write(f"Current value: {current_x_value:.1f}%")
                 else:
-                    st.error("❌ Sensitivity analysis failed. Please check your input parameters.")
-        else:
-            st.info("👆 Select variables above to run sensitivity analysis")
-            
+                    st.write(f"Current value: ${current_x_value:,.0f}")
+        
+        with col9:
+            st.info(f"**Y-Axis**: {y_metric_display}")
+            if y_metric in base_params:
+                current_y_value = base_params[y_metric]
+                if y_metric in ['interest_rate', 'rent_increase_rate', 'market_appreciation_rate', 'inflation_rate']:
+                    st.write(f"Current value: {current_y_value:.1f}%")
+                else:
+                    st.write(f"Current value: ${current_y_value:,.0f}")
+        
+        # Show previously calculated results if available
+        if 'sensitivity_2d_results' in st.session_state:
+            prev_results = st.session_state['sensitivity_2d_results']
+            if (prev_results['x_metric'] == x_metric and prev_results['y_metric'] == y_metric):
+                st.info("📊 Results shown above are current. Click 'Run 2D Sensitivity Analysis' to recalculate if you've changed inputs.")
+            else:
+                st.info("📊 Results from a previous analysis are stored. Click 'Run 2D Sensitivity Analysis' to analyze the newly selected metrics.")
+        
     except ImportError as e:
-        st.error(f"❌ Sensitivity analysis engine not available: {str(e)}")
-        st.info("🚧 Sensitivity analysis will be available when all required components are installed.")
+        st.error(f"❌ Two-dimensional sensitivity analysis not available: {str(e)}")
+        st.info("🚧 2D sensitivity analysis requires the updated calculation modules.")
     except Exception as e:
-        st.error(f"❌ Error running sensitivity analysis: {str(e)}")
+        st.error(f"❌ Error loading sensitivity analysis: {str(e)}")
         st.info("Please check your analysis parameters and try again.")
 
 

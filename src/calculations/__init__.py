@@ -48,8 +48,14 @@ from .npv_analysis import (
     calculate_cash_flow_analysis,
     calculate_break_even_analysis,
     calculate_ownership_cash_flows,
-    calculate_rental_cash_flows,
-    calculate_sensitivity_analysis
+    calculate_rental_cash_flows
+)
+
+from .two_dimensional_sensitivity import (
+    calculate_sensitivity_analysis,  # Backward compatibility function
+    calculate_2d_sensitivity_analysis,
+    format_2d_sensitivity_for_streamlit,
+    get_available_sensitivity_metrics
 )
 
 __version__ = "1.0.0"
@@ -81,5 +87,10 @@ __all__ = [
     'calculate_break_even_analysis',
     'calculate_ownership_cash_flows',
     'calculate_rental_cash_flows',
-    'calculate_sensitivity_analysis'
+    'calculate_sensitivity_analysis',
+    
+    # New 2D sensitivity analysis
+    'calculate_2d_sensitivity_analysis',
+    'format_2d_sensitivity_for_streamlit',
+    'get_available_sensitivity_metrics'
 ]

@@ -55,6 +55,13 @@ try:
         calculate_sensitivity_analysis
     )
     
+    # Import new 2D sensitivity analysis
+    from calculations.two_dimensional_sensitivity import (
+        calculate_2d_sensitivity_analysis,
+        format_2d_sensitivity_for_streamlit,
+        get_available_sensitivity_metrics
+    )
+    
 except ImportError as e:
     st.error(f"Error importing components: {e}")
     st.stop()

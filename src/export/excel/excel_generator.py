@@ -97,6 +97,7 @@ class ExcelGenerator:
         await self._prepare_cash_flow_data(excel_data) 
         await self._prepare_calculations_data(excel_data)
         await self._prepare_assumptions_data(excel_data)
+        await self._prepare_sensitivity_data(excel_data)
         
         logger.info("Excel data preparation completed")
         return excel_data
@@ -277,6 +278,8 @@ class ExcelGenerator:
             await self._create_calculations_sheet(ws, excel_data, config)
         elif worksheet_type == "assumptions":
             await self._create_assumptions_sheet(ws, excel_data, config)
+        elif worksheet_type == "sensitivity":
+            await self._create_sensitivity_sheet(ws, excel_data, config)
         else:
             logger.warning(f"Unknown worksheet type: {worksheet_type}")
     
@@ -608,6 +611,256 @@ class ExcelGenerator:
         ws.row_dimensions[2].height = 16
         
         await self._insert_data_table(ws, assumptions, start_row=3, title="All Input Parameters")
+    
+    async def _prepare_sensitivity_data(self, excel_data: Dict[str, Any]) -> None:
+        """Prepare 2D sensitivity analysis data for all metric combinations"""
+        try:
+            # Import 2D sensitivity analysis functions
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            
+            from calculations.two_dimensional_sensitivity import (
+                calculate_2d_sensitivity_analysis,
+                format_2d_sensitivity_for_streamlit,
+                get_available_sensitivity_metrics
+            )
+            
+            # Extract base parameters from session data (same logic as dashboard)
+            session_data = excel_data['session_data']
+            if hasattr(session_data, 'get'):
+                inputs = session_data.get('inputs', {})
+            else:
+                inputs = session_data  # Direct inputs dict
+            
+            # Build base parameters
+            base_params = {
+                'purchase_price': inputs.get('purchase_price', 500000),
+                'current_annual_rent': inputs.get('current_annual_rent', 24000),
+                'down_payment_pct': inputs.get('down_payment_percent', 30.0),
+                'interest_rate': inputs.get('interest_rate', 5.0),
+                'loan_term': inputs.get('loan_term', 20),
+                'transaction_costs': inputs.get('transaction_costs_percent', 5.0) * inputs.get('purchase_price', 0) / 100,
+                'rent_increase_rate': inputs.get('rent_increase_rate', 3.0),
+                'analysis_period': inputs.get('analysis_period', 25),
+                'cost_of_capital': inputs.get('cost_of_capital', 8.0),
+                'property_tax_rate': inputs.get('property_tax_rate', 1.2),
+                'property_tax_escalation': inputs.get('property_tax_escalation_rate', 2.0),
+                'insurance_cost': inputs.get('insurance_cost', 5000),
+                'annual_maintenance': inputs.get('annual_maintenance_percent', 2.0) * inputs.get('purchase_price', 0) / 100,
+                'property_management': inputs.get('property_management', 0),
+                'capex_reserve_rate': inputs.get('longterm_capex_reserve', 1.5),
+                'obsolescence_risk_rate': inputs.get('obsolescence_risk_factor', 0.5),
+                'inflation_rate': inputs.get('inflation_rate', 3.0),
+                'land_value_pct': inputs.get('land_value_percent', 25.0),
+                'market_appreciation_rate': inputs.get('market_appreciation_rate', 3.0),
+                'depreciation_period': inputs.get('depreciation_period', 39),
+                'corporate_tax_rate': inputs.get('corporate_tax_rate', 25.0),
+                'interest_deductible': inputs.get('interest_deductible', True),
+                'property_tax_deductible': inputs.get('property_tax_deductible', True),
+                'rent_deductible': inputs.get('rent_deductible', True),
+                'moving_costs': inputs.get('moving_costs', 0.0),
+                'space_improvement_cost': inputs.get('space_improvement_cost', 0.0),
+                'future_expansion_year': inputs.get('future_expansion_year', 'Never'),
+                'additional_space_needed': inputs.get('additional_space_needed', 0),
+                'current_space_needed': inputs.get('current_space_needed', 0),
+                'ownership_property_size': inputs.get('ownership_property_size', 0),
+                'rental_property_size': inputs.get('rental_property_size', 0),
+                'subletting_potential': inputs.get('subletting_potential', False),
+                'subletting_rate': inputs.get('subletting_rate', 0),
+                'subletting_space_sqm': inputs.get('subletting_space_sqm', 0),
+                'property_upgrade_cycle': inputs.get('property_upgrade_cycle', 30)
+            }
+            
+            # Get available metrics
+            available_metrics = get_available_sensitivity_metrics()
+            metric_keys = list(available_metrics.keys())
+            
+            # Generate all permutations (each metric vs each other metric)
+            sensitivity_tables = {}
+            
+            for i, x_metric in enumerate(metric_keys):
+                for j, y_metric in enumerate(metric_keys):
+                    if x_metric != y_metric:  # Don't compare metric with itself
+                        try:
+                            result = calculate_2d_sensitivity_analysis(
+                                base_params=base_params,
+                                x_metric=x_metric,
+                                y_metric=y_metric,
+                                x_range=[-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5],
+                                y_range=[-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+                            )
+                            
+                            if result:
+                                # Format for Excel display
+                                formatted = format_2d_sensitivity_for_streamlit(result)
+                                table_name = f"{available_metrics[y_metric]} vs {available_metrics[x_metric]}"
+                                sensitivity_tables[table_name] = {
+                                    'raw_result': result,
+                                    'formatted_result': formatted,
+                                    'x_metric': x_metric,
+                                    'y_metric': y_metric
+                                }
+                                logger.info(f"Generated sensitivity table: {table_name}")
+                        except Exception as e:
+                            logger.warning(f"Failed to generate sensitivity table {y_metric} vs {x_metric}: {e}")
+            
+            excel_data['formatted_tables']['sensitivity_analysis'] = sensitivity_tables
+            logger.info(f"Generated {len(sensitivity_tables)} sensitivity analysis tables for Excel export")
+            
+        except Exception as e:
+            logger.error(f"Failed to prepare sensitivity data: {e}")
+            excel_data['formatted_tables']['sensitivity_analysis'] = {}
+    
+    async def _create_sensitivity_sheet(
+        self,
+        ws: Worksheet,
+        excel_data: Dict[str, Any],
+        config: Dict[str, Any]
+    ) -> None:
+        """Create comprehensive 2D sensitivity analysis worksheet"""
+        sensitivity_data = excel_data['formatted_tables'].get('sensitivity_analysis', {})
+        
+        # Enhanced title
+        ws['A1'] = "TWO-DIMENSIONAL SENSITIVITY ANALYSIS"
+        ws['A1'].font = Font(name='Calibri', size=16, bold=True, color='FF6B6B')
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A1:H1')
+        ws.row_dimensions[1].height = 25
+        
+        # Subtitle with explanation
+        ws['A2'] = "Impact Analysis: How Changes in Two Key Parameters Simultaneously Affect NPV Difference"
+        ws['A2'].font = Font(name='Calibri', size=11, italic=True, color='636E72')
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A2:H2')
+        ws.row_dimensions[2].height = 18
+        
+        # Instructions
+        ws['A3'] = "Each table shows NPV difference ($) when both parameters change from their base values"
+        ws['A3'].font = Font(name='Calibri', size=10, italic=True, color='636E72')
+        ws['A3'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells('A3:H3')
+        ws.row_dimensions[3].height = 16
+        
+        current_row = 5
+        
+        if not sensitivity_data:
+            ws[f'A{current_row}'] = "No sensitivity analysis data available"
+            ws[f'A{current_row}'].font = Font(name='Calibri', size=12, italic=True, color='E74C3C')
+            return
+        
+        # Create each sensitivity table
+        for table_name, table_info in sensitivity_data.items():
+            formatted_result = table_info['formatted_result']
+            
+            # Table title
+            ws[f'A{current_row}'] = table_name
+            ws[f'A{current_row}'].font = Font(name='Calibri', size=14, bold=True, color='2D3436')
+            ws[f'A{current_row}'].fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+            ws.merge_cells(f'A{current_row}:H{current_row}')
+            ws.row_dimensions[current_row].height = 22
+            current_row += 1
+            
+            # Create header row with X-axis metric name
+            ws[f'B{current_row}'] = f"{formatted_result['x_metric_display']} →"
+            ws[f'B{current_row}'].font = Font(name='Calibri', size=11, bold=True, color='2D3436')
+            ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            # X-axis headers (column headers)
+            for i, header in enumerate(formatted_result['x_headers']):
+                col_letter = get_column_letter(i + 3)  # Start from column C
+                change_indicator = formatted_result['x_change_indicators'][i] if i < len(formatted_result['x_change_indicators']) else ""
+                
+                ws[f'{col_letter}{current_row}'] = f"{header}"
+                ws[f'{col_letter}{current_row}'].font = Font(name='Calibri', size=10, bold=True, color='FFFFFF')
+                ws[f'{col_letter}{current_row}'].fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+                ws[f'{col_letter}{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Add change indicator in the row below
+                ws[f'{col_letter}{current_row + 1}'] = change_indicator
+                ws[f'{col_letter}{current_row + 1}'].font = Font(name='Calibri', size=8, italic=True, color='636E72')
+                ws[f'{col_letter}{current_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            current_row += 2
+            
+            # Y-axis label
+            ws[f'A{current_row}'] = f"{formatted_result['y_metric_display']} ↓"
+            ws[f'A{current_row}'].font = Font(name='Calibri', size=11, bold=True, color='2D3436')
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Data rows
+            for row_idx, row_data in enumerate(formatted_result['table_data']):
+                current_row += 1
+                
+                # Y-axis header (row label)
+                ws[f'A{current_row}'] = row_data['y_label']
+                ws[f'A{current_row}'].font = Font(name='Calibri', size=10, bold=True, color='FFFFFF')
+                ws[f'A{current_row}'].fill = PatternFill(start_color="4ECDC4", end_color="4ECDC4", fill_type="solid")
+                ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Y-axis change indicator
+                ws[f'B{current_row}'] = row_data['y_change']
+                ws[f'B{current_row}'].font = Font(name='Calibri', size=8, italic=True, color='636E72')
+                ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                
+                # NPV values
+                for col_idx in range(formatted_result['num_columns']):
+                    col_letter = get_column_letter(col_idx + 3)  # Start from column C
+                    npv_value = row_data[f'col_{col_idx}']
+                    npv_raw = row_data[f'col_{col_idx}_raw']
+                    
+                    ws[f'{col_letter}{current_row}'] = npv_value
+                    
+                    # Color coding based on NPV value
+                    if npv_raw > 0:
+                        # Positive NPV - green background
+                        ws[f'{col_letter}{current_row}'].fill = PatternFill(start_color="D5F4E6", end_color="D5F4E6", fill_type="solid")
+                        ws[f'{col_letter}{current_row}'].font = Font(name='Calibri', size=10, color='00B894', bold=True)
+                    elif npv_raw < 0:
+                        # Negative NPV - light red background
+                        ws[f'{col_letter}{current_row}'].fill = PatternFill(start_color="FADBD8", end_color="FADBD8", fill_type="solid")
+                        ws[f'{col_letter}{current_row}'].font = Font(name='Calibri', size=10, color='E74C3C', bold=True)
+                    else:
+                        # Zero NPV - neutral
+                        ws[f'{col_letter}{current_row}'].font = Font(name='Calibri', size=10, color='2D3436')
+                    
+                    ws[f'{col_letter}{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                    
+                    # Add border
+                    thin_border = Border(
+                        left=Side(style='thin', color='D3D3D3'),
+                        right=Side(style='thin', color='D3D3D3'),
+                        top=Side(style='thin', color='D3D3D3'),
+                        bottom=Side(style='thin', color='D3D3D3')
+                    )
+                    ws[f'{col_letter}{current_row}'].border = thin_border
+            
+            # Add spacing and summary for this table
+            current_row += 2
+            ws[f'A{current_row}'] = f"Base Case NPV: {formatted_result['base_npv']} | Table Size: {formatted_result['table_size']} | Calc Time: {formatted_result['calculation_time']}"
+            ws[f'A{current_row}'].font = Font(name='Calibri', size=9, italic=True, color='636E72')
+            ws.merge_cells(f'A{current_row}:H{current_row}')
+            current_row += 3  # Extra spacing between tables
+        
+        # Add legend at the bottom
+        current_row += 2
+        ws[f'A{current_row}'] = "LEGEND & INTERPRETATION"
+        ws[f'A{current_row}'].font = Font(name='Calibri', size=12, bold=True, color='2D3436')
+        current_row += 1
+        
+        legend_items = [
+            "• Green cells: Positive NPV difference (ownership advantage)",
+            "• Red cells: Negative NPV difference (rental advantage)", 
+            "• 0% row/column: Shows actual parameter values from your analysis",
+            "• Other values: Show NPV when parameters change by the indicated percentage",
+            "• All values represent actual NPV difference (not changes from base case)"
+        ]
+        
+        for item in legend_items:
+            ws[f'A{current_row}'] = item
+            ws[f'A{current_row}'].font = Font(name='Calibri', size=10, color='636E72')
+            ws.merge_cells(f'A{current_row}:H{current_row}')
+            current_row += 1
     
     async def _insert_data_table(
         self,

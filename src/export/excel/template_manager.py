@@ -138,9 +138,16 @@ class ExcelTemplateManager:
                         ]
                     },
                     {
+                        'name': 'Sensitivity Analysis',
+                        'type': 'sensitivity',
+                        'order': 5,
+                        'include_charts': False,
+                        'sections': ['2d_sensitivity_tables', 'interpretation_guide']
+                    },
+                    {
                         'name': 'Input Assumptions',
                         'type': 'assumptions',
-                        'order': 5,
+                        'order': 6,
                         'include_charts': False,
                         'sections': ['all_assumptions']
                     }
