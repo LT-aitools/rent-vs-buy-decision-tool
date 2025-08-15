@@ -877,21 +877,16 @@ def render_sensitivity_analysis_section(analysis_results: Dict[str, Any], sessio
                         
                         # Interpretation guide
                         with st.expander("📖 How to Read This Table", expanded=False):
-                            st.markdown(f"""
-                            **Understanding the Sensitivity Table:**
-                            
-                            • **0% Column/Row**: Shows actual parameter values used in your analysis
-                            • **Positive Changes**: Parameter increases (e.g., +1% = 1 percentage point higher)
-                            • **Negative Changes**: Parameter decreases (e.g., -1% = 1 percentage point lower)
-                            • **Values in Table**: Show how NPV difference changes from the base case
-                            • **Green Values**: Favorable changes that improve the recommended option
-                            • **Red Values**: Unfavorable changes that worsen the recommended option
-                            
-                            **Example Interpretation:**
-                            If your base case recommends "BUY" and you see a value of "+$50K" at the intersection 
-                            of "+1% {y_metric_display}" and "+1% {x_metric_display}", this means that if both 
-                            parameters increase by 1 percentage point, the NPV advantage of buying increases by $50K.
-                            """)
+                            st.markdown("**Understanding the Sensitivity Table:**")
+                            st.markdown("• **0% Column/Row**: Shows actual parameter values used in your analysis")
+                            st.markdown("• **Positive Changes**: Parameter increases (e.g., +1% = 1 percentage point higher)")
+                            st.markdown("• **Negative Changes**: Parameter decreases (e.g., -1% = 1 percentage point lower)")
+                            st.markdown("• **Values in Table**: Show how NPV difference changes from the base case")
+                            st.markdown("• **Green Values**: Favorable changes that improve the recommended option")
+                            st.markdown("• **Red Values**: Unfavorable changes that worsen the recommended option")
+                            st.markdown("")
+                            st.markdown("**Example Interpretation:**")
+                            st.markdown(f'If your base case recommends "BUY" and you see a value of "+$50K" at the intersection of "+1% {y_metric_display}" and "+1% {x_metric_display}", this means that if both parameters increase by 1 percentage point, the NPV advantage of buying increases by $50K.')
                         
                         # Store results in session state for potential export
                         st.session_state['sensitivity_2d_results'] = {
