@@ -118,17 +118,9 @@ class ExcelTemplateManager:
                         ]
                     },
                     {
-                        'name': 'Charts & Data',
-                        'type': 'charts',
-                        'order': 3,
-                        'include_charts': True,
-                        'chart_types': ['all_charts'],
-                        'sections': ['embedded_charts']
-                    },
-                    {
                         'name': 'Detailed Calculations',
                         'type': 'calculations',
-                        'order': 4,
+                        'order': 3,
                         'include_charts': False,
                         'sections': [
                             'mortgage_schedule',
@@ -140,14 +132,14 @@ class ExcelTemplateManager:
                     {
                         'name': 'Sensitivity Analysis',
                         'type': 'sensitivity',
-                        'order': 5,
+                        'order': 4,
                         'include_charts': False,
                         'sections': ['2d_sensitivity_tables', 'interpretation_guide']
                     },
                     {
                         'name': 'Input Assumptions',
                         'type': 'assumptions',
-                        'order': 6,
+                        'order': 5,
                         'include_charts': False,
                         'sections': ['all_assumptions']
                     }
@@ -254,31 +246,23 @@ class ExcelTemplateManager:
                         'sections': ['complete_cash_flows']
                     },
                     {
-                        'name': 'Charts & Visualizations',
-                        'type': 'charts',
-                        'order': 3,
-                        'include_charts': True,
-                        'chart_types': ['all_charts'],
-                        'sections': ['all_visualizations']
-                    },
-                    {
                         'name': 'Detailed Calculations',
                         'type': 'calculations',
-                        'order': 4,
+                        'order': 3,
                         'include_charts': False,
                         'sections': ['all_calculations']
                     },
                     {
                         'name': 'Input Assumptions',
                         'type': 'assumptions',
-                        'order': 5,
+                        'order': 4,
                         'include_charts': False,
                         'sections': ['all_assumptions']
                     },
                     {
                         'name': 'Sensitivity Analysis',
                         'type': 'sensitivity',
-                        'order': 6,
+                        'order': 5,
                         'include_charts': True,
                         'chart_types': ['sensitivity_charts'],
                         'sections': ['sensitivity_tables']
@@ -286,7 +270,7 @@ class ExcelTemplateManager:
                     {
                         'name': 'Raw Data',
                         'type': 'raw_data',
-                        'order': 7,
+                        'order': 6,
                         'include_charts': False,
                         'sections': ['session_data', 'calculation_intermediates']
                     }

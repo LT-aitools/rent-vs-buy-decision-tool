@@ -475,87 +475,17 @@ class ExcelGenerator:
         excel_data: Dict[str, Any],
         config: Dict[str, Any]
     ) -> None:
-        """Create charts and visualizations worksheet"""
-        # Render charts if not already done
-        chart_images = excel_data.get('chart_images', {})
-        if not chart_images:
-            logger.info("Rendering charts for Excel embedding")
-            chart_images = await self.render_charts(excel_data, resolution=300)
-            excel_data['chart_images'] = chart_images
+        """Create charts and visualizations worksheet - DEPRECATED"""
+        # Charts worksheets have been removed from templates for better performance
+        # This fallback handles any legacy template configurations
         
-        ws['A1'] = "Charts & Visualizations"
+        ws['A1'] = "Charts Feature Removed"
         ws['A1'].font = Font(size=16, bold=True)
         
-        # Enhanced chart embedding with professional layout
-        row = 3
-        col = 1
-        charts_per_page = 2  # Two charts per page for better organization
-        charts_added = 0
+        ws['A3'] = "The dedicated Charts worksheet has been removed to improve export performance."
+        ws['A4'] = "All essential charts are now embedded within the relevant analysis sections."
+        ws['A5'] = "Please refer to the Executive Summary and Cash Flow Analysis worksheets for visualizations."
         
-        for chart_name, image_path in chart_images.items():
-            if Path(image_path).exists():
-                try:
-                    img = Image(str(image_path))
-                    
-                    # Professional chart sizing for Excel
-                    img.width = 650  # Optimized width for readability
-                    img.height = 400  # Optimal height for screen viewing
-                    
-                    # Add professional chart title with styling
-                    chart_title = chart_name.replace('_', ' ').title().replace('Npv', 'NPV')
-                    title_cell = ws[f'{get_column_letter(col)}{row}']
-                    title_cell.value = chart_title
-                    title_cell.font = Font(name='Calibri', size=13, bold=True, color='2D3436')
-                    title_cell.alignment = Alignment(horizontal='center', vertical='center')
-                    
-                    # Add subtle background for title
-                    title_cell.fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
-                    ws.merge_cells(f'{get_column_letter(col)}{row}:{get_column_letter(col+8)}{row}')
-                    ws.row_dimensions[row].height = 22
-                    
-                    # Add image with proper positioning
-                    ws.add_image(img, f'{get_column_letter(col)}{row + 1}')
-                    
-                    # Add chart description/context
-                    context_row = row + 25  # Below the chart
-                    context_cell = ws[f'{get_column_letter(col)}{context_row}']
-                    
-                    # Create contextual descriptions
-                    descriptions = {
-                        'NPV Comparison': 'Comparative analysis of Net Present Value between ownership and rental scenarios',
-                        'Annual Cash Flows': 'Year-over-year cash flow projections for both investment scenarios', 
-                        'Cumulative Cash Flows': 'Cumulative cash position over the analysis period',
-                        'Financial Metrics': 'Key financial performance indicators and ratios',
-                        'Sensitivity Analysis': 'Impact of key variables on investment outcomes'
-                    }
-                    
-                    description = descriptions.get(chart_title, f'Analysis chart: {chart_title}')
-                    context_cell.value = description
-                    context_cell.font = Font(name='Calibri', size=9, italic=True, color='636E72')
-                    context_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-                    ws.merge_cells(f'{get_column_letter(col)}{context_row}:{get_column_letter(col+8)}{context_row}')
-                    ws.row_dimensions[context_row].height = 16
-                    
-                    row += 32  # Space for next chart (title + image + description + spacing)
-                    charts_added += 1
-                    
-                except Exception as e:
-                    logger.warning(f"Failed to embed chart {chart_name}: {str(e)}")
-                    # Add a styled placeholder instead
-                    placeholder_cell = ws[f'A{row}']
-                    placeholder_cell.value = f"Chart: {chart_name} (Unable to display)"
-                    placeholder_cell.font = Font(name='Calibri', size=10, italic=True, color='E74C3C')
-                    placeholder_cell.fill = PatternFill(start_color="FADBD8", end_color="FADBD8", fill_type="solid")
-                    row += 3
-            else:
-                logger.warning(f"Chart image not found: {image_path}")
-                # Styled placeholder for missing images
-                missing_cell = ws[f'A{row}']
-                missing_cell.value = f"Chart: {chart_name} (File not found)"
-                missing_cell.font = Font(name='Calibri', size=10, italic=True, color='E67E22')
-                missing_cell.fill = PatternFill(start_color="FEF9E7", end_color="FEF9E7", fill_type="solid")
-                row += 3
-    
     async def _create_calculations_sheet(
         self,
         ws: Worksheet,
