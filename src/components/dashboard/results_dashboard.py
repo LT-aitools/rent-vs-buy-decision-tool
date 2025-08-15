@@ -27,14 +27,12 @@ from ..charts.core_charts import (
     create_npv_comparison_chart,
     create_cash_flow_timeline_chart,
     create_cost_breakdown_chart,
-    create_terminal_value_chart,
     create_annual_costs_comparison_chart,
     format_currency
 )
 from ..charts.advanced_charts import (
     create_sensitivity_tornado_chart,
-    create_break_even_chart,
-    create_roi_progression_chart
+    create_break_even_chart
 )
 import sys
 import os
@@ -468,22 +466,7 @@ def render_advanced_charts_section(
     # Sensitivity Analysis Section
     render_sensitivity_analysis_section(analysis_results, session_manager)
     
-    # Terminal Value Progression
-    if analysis_results and ownership_flows:
-        try:
-            terminal_chart = create_terminal_value_chart(analysis_results, ownership_flows)
-            st.plotly_chart(terminal_chart, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error creating terminal value chart: {str(e)}")
-    
-    # ROI Progression
-    if analysis_results and ownership_flows:
-        try:
-            roi_chart = create_roi_progression_chart(analysis_results, ownership_flows)
-            st.plotly_chart(roi_chart, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error creating ROI progression chart: {str(e)}")
-            st.info("ROI chart requires valid ownership cash flows and analysis results.")
+    # Terminal Value and ROI charts removed for better performance
 
 
 def render_comparison_charts_section(
