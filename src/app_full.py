@@ -277,6 +277,8 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             subletting_potential=analysis_params['subletting_potential'],
             subletting_rate=analysis_params['subletting_rate'],
             subletting_space_sqm=analysis_params['subletting_space_sqm'],
+            # Rental rate parameters for subletting calculations
+            rent_increase_rate=analysis_params['rent_increase_rate'],
             # Property upgrade parameters
             property_upgrade_cycle=analysis_params['property_upgrade_cycle']
         )
