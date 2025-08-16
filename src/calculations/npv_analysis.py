@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 
 from .mortgage import calculate_mortgage_payment, calculate_loan_amount
-from .annual_costs import calculate_annual_ownership_costs, calculate_annual_rental_costs
+from .annual_costs import calculate_annual_ownership_costs, calculate_annual_rental_costs, calculate_subletting_income
 from .terminal_value import calculate_terminal_value, calculate_rental_terminal_value
 from .amortization import calculate_remaining_balance, calculate_payment_breakdown
 
@@ -188,7 +188,6 @@ def calculate_ownership_cash_flows(
                 space_needed_this_year += additional_space_needed
             
             # Calculate subletting income
-            from .annual_costs import calculate_subletting_income
             subletting_result = calculate_subletting_income(
                 property_size=ownership_property_size,
                 current_space_needed=space_needed_this_year,
