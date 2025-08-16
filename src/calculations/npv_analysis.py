@@ -86,6 +86,8 @@ def calculate_ownership_cash_flows(
     subletting_potential: bool = False,
     subletting_rate: float = 0.0,
     subletting_space_sqm: float = 0.0,
+    # Rental rate parameters for subletting calculations
+    rent_increase_rate: float = 3.0,
     # Property upgrade parameters
     property_upgrade_cycle: int = 30
 ) -> List[Dict[str, float]]:
@@ -403,7 +405,7 @@ def calculate_npv_comparison(
         land_value_pct, market_appreciation_rate, depreciation_period,
         corporate_tax_rate, interest_deductible, property_tax_deductible, transaction_costs,
         future_expansion_year, additional_space_needed, current_space_needed, ownership_property_size,
-        subletting_potential, subletting_rate, subletting_space_sqm, property_upgrade_cycle
+        subletting_potential, subletting_rate, subletting_space_sqm, rent_increase_rate, property_upgrade_cycle
     )
     
     # Calculate rental cash flows
