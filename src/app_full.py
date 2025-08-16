@@ -174,8 +174,16 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
                 if param == 'rent_increase_rate':
                     analysis_params[param] = 3.0
                     logger.warning(f"Parameter '{param}' was invalid ({value}), using default: 3.0")
+                    # Also show user-friendly message in production
+                    st.info(f"ℹ️ Using default {param.replace('_', ' ').title()}: 3.0%")
                 else:
                     raise ValueError(f"Critical parameter '{param}' is missing or zero. Please complete all required inputs.")
+        
+        # Debug info for production troubleshooting
+        if st.checkbox("🔧 Show Debug Info", value=False):
+            st.write("**Analysis Parameters Debug:**")
+            debug_params = {k: v for k, v in analysis_params.items() if k in critical_params}
+            st.json(debug_params)
         
         # Run NPV analysis
         analysis_results = calculate_npv_comparison(**analysis_params)

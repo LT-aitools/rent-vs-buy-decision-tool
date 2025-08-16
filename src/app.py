@@ -25,10 +25,17 @@ sys.path.insert(0, current_dir)
 try:
     # Import the full app components
     exec(open(os.path.join(current_dir, 'app_full.py')).read())
+    # If we get here, the full app loaded successfully
+    st.sidebar.success("✅ Full app loaded (v2.1.1 - Mobile Fix)")
 except Exception as e:
     # Fallback to simple version if full app fails
     st.title("🏢 Real Estate Rent vs. Buy Decision Tool")
     st.error(f"⚠️ Full application temporarily unavailable: {e}")
+    
+    # Show more detailed error for debugging
+    import traceback
+    with st.expander("🔧 Technical Details (for debugging)"):
+        st.code(traceback.format_exc())
     
     st.info("🔧 **Fallback Mode** - Basic functionality available")
     
