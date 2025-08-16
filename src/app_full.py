@@ -223,8 +223,29 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             debug_params = {k: v for k, v in analysis_params.items() if k in critical_params}
             st.json(debug_params)
         
-        # Run NPV analysis
-        analysis_results = calculate_npv_comparison(**analysis_params)
+        # Run NPV analysis with comprehensive error handling
+        try:
+            # Debug: Show what we're about to pass to NPV function
+            if 'rent_increase_rate' not in analysis_params:
+                st.error("🚨 CRITICAL: rent_increase_rate missing from analysis_params!")
+                st.json(analysis_params)
+                return None, None, None
+            
+            st.info(f"🔍 Running NPV analysis with rent_increase_rate: {analysis_params['rent_increase_rate']}")
+            
+            analysis_results = calculate_npv_comparison(**analysis_params)
+            
+            st.success("✅ NPV analysis completed successfully")
+            
+        except NameError as ne:
+            st.error(f"🚨 NameError in NPV analysis: {ne}")
+            if "rent_increase_rate" in str(ne):
+                st.error("This is the rent_increase_rate error! Parameters passed:")
+                st.json({k: v for k, v in analysis_params.items() if 'rent' in k.lower()})
+            raise ne
+        except Exception as e:
+            st.error(f"🚨 Unexpected error in NPV analysis: {e}")
+            raise e
         
         # Calculate detailed cash flows
         ownership_flows = calculate_ownership_cash_flows(
