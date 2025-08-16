@@ -67,6 +67,44 @@ except ImportError as e:
     st.stop()
 
 
+def _safe_get_rent_increase_rate(priority_manager, inputs):
+    """
+    Safely extract rent_increase_rate with extensive error handling
+    """
+    try:
+        # Method 1: Try priority manager first
+        if priority_manager:
+            try:
+                rent_rate = priority_manager.get_value_only('rent_increase_rate', None)
+                if rent_rate is not None and isinstance(rent_rate, (int, float)) and rent_rate >= 0:
+                    return rent_rate
+            except Exception as e:
+                logger.warning(f"Priority manager failed for rent_increase_rate: {e}")
+        
+        # Method 2: Try direct session input
+        rent_rate = inputs.get('rent_increase_rate', None)
+        if rent_rate is not None and isinstance(rent_rate, (int, float)) and rent_rate >= 0:
+            return rent_rate
+        
+        # Method 3: Try string conversion (in case it's stored as string)
+        rent_rate_str = inputs.get('rent_increase_rate', '3.0')
+        if isinstance(rent_rate_str, str) and rent_rate_str.strip():
+            try:
+                rent_rate = float(rent_rate_str.strip())
+                if rent_rate >= 0:
+                    return rent_rate
+            except (ValueError, TypeError):
+                pass
+        
+        # Method 4: Final fallback
+        logger.warning("All rent_increase_rate extraction methods failed, using default: 3.0")
+        return 3.0
+        
+    except Exception as e:
+        logger.error(f"Critical error in _safe_get_rent_increase_rate: {e}")
+        return 3.0
+
+
 def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[List], Optional[List]]:
     """
     Run the complete financial analysis using session data with data priority management
@@ -119,7 +157,7 @@ def run_financial_analysis(session_manager) -> tuple[Optional[Dict], Optional[Li
             
             # Rental scenario parameters  
             'current_annual_rent': inputs.get('current_annual_rent'),
-            'rent_increase_rate': priority_manager.get_value_only('rent_increase_rate', inputs.get('rent_increase_rate', 3.0)) or 3.0,
+            'rent_increase_rate': _safe_get_rent_increase_rate(priority_manager, inputs),
             'moving_costs': inputs.get('moving_costs', 0.0),
             
             # Common parameters
