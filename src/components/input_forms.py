@@ -1140,7 +1140,7 @@ def _show_api_indicator(field_name: str, current_value: Any):
                         extra_info = f" • 📊 Static (rent/market data)"
                 elif 'boi' in source.lower() or (country == 'Israel' and 'api' in source.lower()):
                     if field_name == 'interest_rate':
-                        extra_info = f" • 🔴 LIVE (Bank of Israel API)"
+                        extra_info = f" • 📊 Static (Israel BOI API not yet implemented)"
                     else:
                         extra_info = f" • 📊 Static (rent/market data)"
                 
@@ -1152,8 +1152,10 @@ def _show_api_indicator(field_name: str, current_value: Any):
                         extra_info = f" • 📊 Static estimates with inflation adjustment"
                 elif 'international_data' in source.lower():
                     if country:
-                        if country in ['Brazil', 'Israel']:
+                        if country == 'Brazil':
                             extra_info = f" • 📊 Static (rent/market), 🔴 LIVE (interest) available"
+                        elif country == 'Israel':
+                            extra_info = f" • 📊 Static market data (BOI API pending)"
                         else:
                             extra_info = f" • 📊 Static market data ({country})"
                     else:

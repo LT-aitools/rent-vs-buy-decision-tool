@@ -436,7 +436,7 @@ class InternationalDataProvider:
         Get live interest rates from central bank APIs
         
         Args:
-            country: Country code ('brazil', 'israel')
+            country: Country code ('brazil') - only Brazil currently implemented
             
         Returns:
             Dict with live rates or None if unavailable
@@ -541,7 +541,7 @@ class InternationalDataProvider:
         # Try to get live rates for supported countries
         city, state, country = self.parse_location(location)
         
-        if country in ['brazil', 'israel'] and self.live_api_enabled:
+        if country in ['brazil'] and self.live_api_enabled:  # Only Brazil has working live API
             try:
                 live_rates = await self.get_live_rates(country)
                 
