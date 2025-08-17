@@ -481,12 +481,19 @@ class InternationalDataProvider:
         
         if country_data:
             # Start with static data
+            raw_rent_rate = country_data['market_data']['rent_increase_rate']
+            inflation_rate = country_data['market_data']['inflation_rate']
+            
+            # Calculate real (inflation-adjusted) rent increase rate
+            # This prevents double-counting inflation in our calculations
+            real_rent_rate = raw_rent_rate - inflation_rate
+            
             estimates = {
                 'interest_rate': country_data['interest_rates']['mortgage_rate'],
                 'market_appreciation_rate': country_data['market_data']['property_appreciation_rate'],
-                'rent_increase_rate': country_data['market_data']['rent_increase_rate'],
+                'rent_increase_rate': real_rent_rate,  # Use inflation-adjusted rate
                 'property_tax_rate': country_data['market_data']['property_tax_rate'],
-                'inflation_rate': country_data['market_data']['inflation_rate'],
+                'inflation_rate': inflation_rate,
                 'corporate_tax_rate': country_data['tax_data']['corporate_tax_rate'],
             }
             
@@ -501,6 +508,12 @@ class InternationalDataProvider:
                 'tax_info': {
                     'corporate_tax_source': country_data['tax_data']['source'],
                     'corporate_tax_notes': country_data['tax_data']['notes']
+                },
+                'rent_adjustment': {
+                    'raw_rent_rate': raw_rent_rate,
+                    'inflation_rate': inflation_rate,
+                    'real_rent_rate': real_rent_rate,
+                    'adjustment_note': f'Rent rate adjusted from {raw_rent_rate:.1f}% to {real_rent_rate:.1f}% (inflation-adjusted) to prevent double-counting inflation in calculations.'
                 }
             }
             

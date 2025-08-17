@@ -98,9 +98,9 @@ ANNUAL_COST_TOOLTIPS = {
     
     "annual_rent": {
         "title": "Annual Rent",
-        "formula": "(Base Rent + Expansion Rent) × Rent Escalation Factor",
-        "explanation": "Annual rental payments with year-over-year increases. Includes expansion space rent when business growth occurs.",
-        "calculation": "Year 1: Current Annual Rent for current space. Year N: Year 1 Amount × (1 + Rent Increase Rate)^(N-1). Additional rent added when expansion year is reached."
+        "formula": "(Base Rent + Expansion Rent) × Real Rent Escalation Factor",
+        "explanation": "Annual rental payments with year-over-year increases. Uses real (inflation-adjusted) rent increase rate to avoid double-counting inflation. Includes expansion space rent when business growth occurs.",
+        "calculation": "Year 1: Current Annual Rent for current space. Year N: Year 1 Amount × (1 + Real Rent Increase Rate)^(N-1). Real rate = Nominal rate - Inflation rate. Additional rent added when expansion year is reached."
     },
     
     "rental_cost_comparison": {
