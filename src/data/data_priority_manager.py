@@ -239,7 +239,8 @@ class DataPriorityManager:
             'rent_increase_rate': 'rent_increase_rate', 
             'property_tax_rate': 'property_tax_rate',
             'inflation_rate': 'inflation_rate',
-            'cost_of_capital': 'cost_of_capital'
+            'cost_of_capital': 'cost_of_capital',
+            'corporate_tax_rate': 'corporate_tax_rate'
         }
         
         inputs = session_data.get('inputs', {})

@@ -679,7 +679,12 @@ def render_tax_accounting_section():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.number_input(
+        # Track previous corporate tax rate to detect user changes
+        prev_corporate_tax = st.session_state.get('_prev_corporate_tax_rate',
+                                               st.session_state.get('corporate_tax_rate',
+                                                                   DEFAULT_VALUES.get('corporate_tax_rate', 25.0)))
+        
+        current_corporate_tax = st.number_input(
             "Corporate Tax Rate (%)",
             key="corporate_tax_rate",
             min_value=0.0,
@@ -689,8 +694,17 @@ def render_tax_accounting_section():
             help=get_field_description("corporate_tax_rate")
         )
         
+        # Detect user changes and mark as user override
+        if current_corporate_tax != prev_corporate_tax:
+            loading_country_data = st.session_state.get('_api_update_in_progress', False)
+            
+            if not loading_country_data:
+                mark_field_as_user_modified('corporate_tax_rate', current_corporate_tax)
+            
+        st.session_state['_prev_corporate_tax_rate'] = current_corporate_tax
+        
         # Show API update indicator for corporate tax rate
-        _show_api_indicator('corporate_tax_rate', st.session_state.get('corporate_tax_rate', DEFAULT_VALUES.get('corporate_tax_rate', 25.0)))
+        _show_api_indicator('corporate_tax_rate', current_corporate_tax)
         
         st.number_input(
             "Depreciation Period (years)",
