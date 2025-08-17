@@ -399,6 +399,7 @@ class DataPriorityManager:
         real_rent_rate = round(nominal_rent_rate - us_inflation_rate, 1)  # Round to 1 decimal place
         estimates['rent_increase_rate'] = real_rent_rate
         estimates['inflation_rate'] = us_inflation_rate
+        estimates['corporate_tax_rate'] = 25.0  # US federal corporate tax rate (21%) + average state (4%)
             
         # Property tax rate estimates by state
         state_tax_rates = {
