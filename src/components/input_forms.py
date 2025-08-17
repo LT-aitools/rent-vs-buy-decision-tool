@@ -1151,17 +1151,23 @@ def _show_api_indicator(field_name: str, current_value: Any):
                     if field_name == 'interest_rate':
                         extra_info = f" • 📊 Fallback (FRED API unavailable)"
                     else:
-                        extra_info = f" • 📊 Static estimates with inflation adjustment"
+                        extra_info = f" • 📊 Static estimates with inflation adjustment • 📅 Data from 2024-08-14"
                 elif 'international_data' in source.lower():
                     if country:
                         if country == 'Brazil':
-                            extra_info = f" • 📊 Static (rent/market), 🔴 LIVE (interest) available"
+                            if field_name == 'interest_rate':
+                                if live_rate_used:
+                                    extra_info = f" • 🔴 LIVE (Brazil Central Bank API)"
+                                else:
+                                    extra_info = f" • 📊 Static fallback (BCB API unavailable) • 📅 Data from 2024-08-14"
+                            else:
+                                extra_info = f" • 📊 Static market data • 📅 Data from 2024-08-14"
                         elif country == 'Israel':
-                            extra_info = f" • 📊 Static market data (BOI API pending)"
+                            extra_info = f" • 📊 Static market data (BOI API pending) • 📅 Data from 2024-08-14"
                         else:
-                            extra_info = f" • 📊 Static market data ({country})"
+                            extra_info = f" • 📊 Static market data ({country}) • 📅 Data from 2024-08-14"
                     else:
-                        extra_info = f" • 📊 Static international data"
+                        extra_info = f" • 📊 Static international data • 📅 Data from 2024-08-14"
                 elif data_date:
                     extra_info = f" • 📅 Data from {data_date}"
                 else:
