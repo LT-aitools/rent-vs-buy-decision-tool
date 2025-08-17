@@ -963,13 +963,15 @@ def _handle_country_change(country: str):
                         priority_manager.set_api_data('interest_rate', rates['30_year_fixed'], 'fred_api_usa')
                         updated_fields.append(f"Interest Rate: {rates['30_year_fixed']}%")
                 
-                # Add US market estimates (could be enhanced with real APIs later)
-                # These are now redundant since data_priority_manager handles US estimates with inflation adjustment
+                # Add US market estimates using data_priority_manager logic
+                us_location_estimates = priority_manager._get_location_based_estimates('United States')
+                
+                # Combine with basic US estimates  
                 us_estimates = {
                     'market_appreciation_rate': 3.5,  # US national average
                     'property_tax_rate': 1.1,        # US national average
-                    # Note: rent_increase_rate and inflation_rate now handled by data_priority_manager with proper adjustment
                 }
+                us_estimates.update(us_location_estimates)  # Add rent_increase_rate and inflation_rate with inflation adjustment
                 
                 for field_name, value in us_estimates.items():
                     st.session_state[field_name] = value

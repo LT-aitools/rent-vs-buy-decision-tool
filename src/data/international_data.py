@@ -486,7 +486,7 @@ class InternationalDataProvider:
             
             # Calculate real (inflation-adjusted) rent increase rate
             # This prevents double-counting inflation in our calculations
-            real_rent_rate = raw_rent_rate - inflation_rate
+            real_rent_rate = round(raw_rent_rate - inflation_rate, 1)  # Round to 1 decimal place
             
             estimates = {
                 'interest_rate': country_data['interest_rates']['mortgage_rate'],
