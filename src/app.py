@@ -26,7 +26,7 @@ try:
     # Import the full app components
     exec(open(os.path.join(current_dir, 'app_full.py')).read())
     # If we get here, the full app loaded successfully
-    st.sidebar.success("✅ App Updated! (v2.1.11 - Enhanced Data Tooltips)")
+    st.sidebar.success("✅ App Updated! (v2.1.12 - Data Integration Dashboard)")
 except Exception as e:
     # Fallback to simple version if full app fails
     st.title("🏢 Real Estate Rent vs. Buy Decision Tool")
