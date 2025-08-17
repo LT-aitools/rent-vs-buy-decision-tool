@@ -41,6 +41,11 @@ class InternationalDataProvider:
                     'property_tax_rate': 0.0,  # No property tax, but council tax exists
                     'stamp_duty_rate': 3.0,  # UK equivalent
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 25.0,  # UK Corporation Tax main rate
+                    'source': 'HMRC_2024',
+                    'notes': 'Main rate for companies with profits over £250,000. Small profits rate is 19%.'
+                },
                 'confidence': 0.85,
                 'source': 'BOE_ONS_data',
                 'data_date': '2024-08-14',
@@ -59,6 +64,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 3.8,
                     'inflation_rate': 3.4,
                     'property_tax_rate': 1.1,  # Average across provinces
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 26.7,  # Combined federal (15%) + average provincial (11.7%)
+                    'source': 'CRA_PwC_2024',
+                    'notes': 'Combined federal and provincial rates. Varies by province (Ontario: 26.5%, BC: 27%, Quebec: 26.5%).'
                 },
                 'confidence': 0.8,
                 'source': 'BOC_StatsCan_data',
@@ -79,6 +89,11 @@ class InternationalDataProvider:
                     'inflation_rate': 4.1,
                     'property_tax_rate': 0.7,  # Land tax varies by state
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 30.0,  # Federal 30% for companies
+                    'source': 'ATO_2024',
+                    'notes': 'Standard company tax rate. Small business rate is 25% for eligible companies.'
+                },
                 'confidence': 0.8,
                 'source': 'RBA_ABS_data',
                 'data_date': '2024-08-14',
@@ -97,6 +112,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 2.8,
                     'inflation_rate': 3.2,
                     'property_tax_rate': 0.35,  # Grundsteuer
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 29.9,  # Combined federal + solidarity surcharge + trade tax
+                    'source': 'BMF_OECD_2024',
+                    'notes': 'Includes corporate income tax (15%), solidarity surcharge (5.5%), and average trade tax (14.4%).'
                 },
                 'confidence': 0.75,
                 'source': 'ECB_Destatis_data',
@@ -117,6 +137,11 @@ class InternationalDataProvider:
                     'inflation_rate': 3.1,
                     'property_tax_rate': 1.2,  # Taxe foncière
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 25.8,  # Standard corporate income tax rate
+                    'source': 'DGFiP_2024',
+                    'notes': 'Standard rate. Reduced rate of 15% applies to SMEs on profits up to €42,500.'
+                },
                 'confidence': 0.75,
                 'source': 'ECB_INSEE_data',
                 'data_date': '2024-08-14',
@@ -135,6 +160,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 3.2,
                     'inflation_rate': 2.8,
                     'property_tax_rate': 0.0,  # No property tax, but OZB exists
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 25.8,  # Standard corporate income tax rate
+                    'source': 'Belastingdienst_2024',
+                    'notes': 'Rate of 25.8% on profits above €200,000. Rate of 19% on profits up to €200,000.'
                 },
                 'confidence': 0.75,
                 'source': 'ECB_CBS_data',
@@ -155,6 +185,11 @@ class InternationalDataProvider:
                     'inflation_rate': 2.6,
                     'property_tax_rate': 1.4,  # Fixed asset tax
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 29.7,  # Combined corporate tax rates
+                    'source': 'NTA_METI_2024',
+                    'notes': 'Combined national corporate tax (23.2%) and local inhabitants tax (varies by municipality).'
+                },
                 'confidence': 0.7,
                 'source': 'BOJ_MLIT_data',
                 'data_date': '2024-08-14',
@@ -174,6 +209,11 @@ class InternationalDataProvider:
                     'inflation_rate': 2.4,
                     'property_tax_rate': 0.16,  # Based on annual value
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 17.0,  # Standard corporate income tax rate
+                    'source': 'IRAS_2024',
+                    'notes': 'Standard rate of 17%. Partial tax exemption available for qualifying companies.'
+                },
                 'confidence': 0.85,
                 'source': 'MAS_URA_data',
                 'data_date': '2024-08-14',
@@ -192,6 +232,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 7.2,
                     'inflation_rate': 4.8,
                     'property_tax_rate': 1.2,  # IPTU varies by municipality
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 34.0,  # Combined IRPJ + CSLL
+                    'source': 'RFB_2024',
+                    'notes': 'Combined Corporate Income Tax (IRPJ, 15%) and Social Contribution (CSLL, 9%) plus additional rates on higher profits.'
                 },
                 'confidence': 0.7,
                 'source': 'BCB_IBGE_data',
@@ -213,6 +258,11 @@ class InternationalDataProvider:
                     'inflation_rate': 3.7,
                     'property_tax_rate': 0.8,  # Local property tax
                 },
+                'tax_data': {
+                    'corporate_tax_rate': 19.0,  # Standard corporate income tax rate
+                    'source': 'MF_Poland_2024',
+                    'notes': 'Standard CIT rate of 19%. Reduced rate of 9% for small taxpayers.'
+                },
                 'confidence': 0.75,
                 'source': 'NBP_GUS_data',
                 'data_date': '2024-08-14',  # Date when rates were sourced
@@ -231,6 +281,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 5.8,
                     'inflation_rate': 3.1,
                     'property_tax_rate': 0.6,  # Arnona (municipal tax)
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 23.0,  # Standard corporate tax rate
+                    'source': 'ITA_Israel_2024',
+                    'notes': 'Standard corporate tax rate of 23%. Reduced rates available for specific industries and zones.'
                 },
                 'confidence': 0.8,
                 'source': 'BOI_CBS_data',
@@ -251,6 +306,11 @@ class InternationalDataProvider:
                     'rent_increase_rate': 7.5,         # High rental growth in major cities
                     'inflation_rate': 5.2,             # Current Romanian inflation
                     'property_tax_rate': 0.2,          # Local property tax (varies by city)
+                },
+                'tax_data': {
+                    'corporate_tax_rate': 16.0,  # Standard corporate income tax rate
+                    'source': 'ANAF_Romania_2024',
+                    'notes': 'Standard rate of 16%. Reduced rates available for micro-enterprises and specific activities.'
                 },
                 'confidence': 0.75,
                 'source': 'NBR_INS_data',
@@ -427,6 +487,7 @@ class InternationalDataProvider:
                 'rent_increase_rate': country_data['market_data']['rent_increase_rate'],
                 'property_tax_rate': country_data['market_data']['property_tax_rate'],
                 'inflation_rate': country_data['market_data']['inflation_rate'],
+                'corporate_tax_rate': country_data['tax_data']['corporate_tax_rate'],
             }
             
             metadata = {
@@ -436,7 +497,11 @@ class InternationalDataProvider:
                 'source': country_data['source'],
                 'data_date': country_data.get('data_date', '2024-08-14'),  # When rates were sourced
                 'api_available': country_data.get('api_available', False),  # Whether live API exists
-                'last_updated': datetime.now().isoformat()
+                'last_updated': datetime.now().isoformat(),
+                'tax_info': {
+                    'corporate_tax_source': country_data['tax_data']['source'],
+                    'corporate_tax_notes': country_data['tax_data']['notes']
+                }
             }
             
             return {'estimates': estimates, 'metadata': metadata}

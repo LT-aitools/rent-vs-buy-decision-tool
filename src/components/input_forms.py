@@ -689,6 +689,9 @@ def render_tax_accounting_section():
             help=get_field_description("corporate_tax_rate")
         )
         
+        # Show API update indicator for corporate tax rate
+        _show_api_indicator('corporate_tax_rate', st.session_state.get('corporate_tax_rate', DEFAULT_VALUES.get('corporate_tax_rate', 25.0)))
+        
         st.number_input(
             "Depreciation Period (years)",
             key="depreciation_period",
@@ -985,7 +988,8 @@ def _handle_country_change(country: str):
                     'market_appreciation_rate': 'market_appreciation_rate',
                     'rent_increase_rate': 'rent_increase_rate', 
                     'property_tax_rate': 'property_tax_rate',
-                    'inflation_rate': 'inflation_rate'
+                    'inflation_rate': 'inflation_rate',
+                    'corporate_tax_rate': 'corporate_tax_rate'
                 }
                 
                 for field_name, session_key in field_mapping.items():

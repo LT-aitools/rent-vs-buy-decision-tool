@@ -173,7 +173,7 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     "obsolescence_risk_factor": "Annual risk of property becoming less suitable (optional, set to 0% for basic analysis)",
     
     # Tax & Accounting
-    "corporate_tax_rate": "Applicable corporate tax rate for tax benefit calculations",
+    "corporate_tax_rate": "Corporate tax rate for tax benefit calculations. Auto-updated based on selected country data (2024 rates). You can override with your company's specific rate if different.",
     "depreciation_period": "Property depreciation schedule for tax purposes",
     "interest_deductible": "Whether mortgage interest is tax deductible",
     "property_tax_deductible": "Whether property taxes are tax deductible",

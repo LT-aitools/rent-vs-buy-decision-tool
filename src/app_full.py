@@ -865,7 +865,7 @@ def main():
                 color: white; text-align: center;">
         <h1 style="color: white; margin: 0;">🏢 Real Estate Decision Tool</h1>
         <p style="color: white; margin: 0; font-size: 1.1rem;">Professional Investment Strategy Analysis with Interactive Visualizations</p>
-        <p style="color: white; margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">Executive Dashboard • Interactive Charts • Enhanced Tooltips • v2.1.4</p>
+        <p style="color: white; margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">Executive Dashboard • Interactive Charts • Corporate Tax Rates • v2.1.5</p>
     </div>
     """, unsafe_allow_html=True)
     

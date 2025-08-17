@@ -117,6 +117,13 @@ ANNUAL_COST_TOOLTIPS = {
         "calculation": "For ownership: Mortgage + Property Taxes + Insurance + Maintenance + Management + CapEx + Obsolescence - Tax Benefits - Subletting Income. For rental: Rent Payments - Tax Benefits."
     },
     
+    "corporate_tax_rate": {
+        "title": "Corporate Tax Rate",
+        "formula": "Country-Specific Corporate Income Tax Rate",
+        "explanation": "The standard corporate income tax rate for the selected country. This rate is used to calculate tax benefits from business expense deductions.",
+        "calculation": "Based on current tax regulations for each country. Includes federal/national rates and may include average provincial/state rates where applicable. Used to calculate tax savings from rent deductions (rental scenario) and property-related business deductions (ownership scenario)."
+    },
+    
     "tax_benefits": {
         "title": "Tax Benefits",
         "formula": "(Mortgage Interest + Property Taxes + Depreciation + Other Deductions) × Tax Rate",
