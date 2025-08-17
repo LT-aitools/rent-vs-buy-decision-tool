@@ -157,7 +157,7 @@ FIELD_DESCRIPTIONS: Dict[str, str] = {
     
     # Rental Parameters
     "current_annual_rent": "Current total annual rental cost",
-    "rent_increase_rate": "Expected annual rent escalation percentage",
+    "rent_increase_rate": "Expected annual rent escalation percentage. When using international data, this is automatically adjusted to subtract inflation rate to prevent double-counting (real rate = nominal rate - inflation).",
     "moving_costs": "One-time cost to relocate operations",
     
     # Operational Parameters
