@@ -26,7 +26,7 @@ try:
     # Import the full app components
     exec(open(os.path.join(current_dir, 'app_full.py')).read())
     # If we get here, the full app loaded successfully
-    st.sidebar.success("✅ App Updated! (v2.1.3 - Parameter Fix Applied)")
+    st.sidebar.success("✅ App Updated! (v2.1.4 - Tooltip Enhancement)")
 except Exception as e:
     # Fallback to simple version if full app fails
     st.title("🏢 Real Estate Rent vs. Buy Decision Tool")

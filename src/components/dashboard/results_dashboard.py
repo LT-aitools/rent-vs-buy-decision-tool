@@ -261,13 +261,14 @@ def create_calculation_details_section(
     # Main NPV Analysis Details
     create_detailed_calculation_expander(
         "NPV Analysis Breakdown",
-        ["npv_difference", "ownership_npv", "rental_npv", "initial_investment", "terminal_value"],
+        ["npv_difference", "ownership_npv", "rental_npv", "initial_investment", "terminal_value", "net_cash_flow"],
         {
             "npv_difference": format_currency(analysis_results.get('npv_difference', 0)),
             "ownership_npv": format_currency(analysis_results.get('ownership_npv', 0)),
             "rental_npv": format_currency(analysis_results.get('rental_npv', 0)),
             "initial_investment": format_currency(analysis_results.get('ownership_initial_investment', 0)),
-            "terminal_value": format_currency(analysis_results.get('ownership_terminal_value', 0))
+            "terminal_value": format_currency(analysis_results.get('ownership_terminal_value', 0)),
+            "net_cash_flow": "Calculated annually for each scenario"
         }
     )
     
@@ -277,10 +278,18 @@ def create_calculation_details_section(
         first_year_rental = rental_flows[0]
         
         with st.expander("📊 Annual Costs Breakdown - Calculation Details", expanded=False):
+            st.markdown("**Understanding the Cost Breakdown:**")
+            st.markdown("• **Ownership costs** include all expenses of owning and maintaining the property")
+            st.markdown("• **Rental costs** include lease payments and expansion space as needed")
+            st.markdown("• **Tax benefits** are calculated based on allowable business deductions")
+            st.markdown("• **Subletting income** reduces ownership costs when unused space is available")
+            st.markdown("---")
+            
             col1, col2 = st.columns(2)
             
             with col1:
                 st.markdown("### 🏠 Ownership Costs (Year 1)")
+                st.markdown("*Net ownership costs after tax benefits and income*")
                 
                 mortgage_payment = first_year_ownership.get('mortgage_payment', 0)
                 st.markdown(f"**Mortgage Payment**: {format_currency(mortgage_payment)}")
@@ -298,16 +307,61 @@ def create_calculation_details_section(
                 st.markdown(f"**Maintenance**: {format_currency(maintenance)}")
                 st.markdown(display_calculation_tooltip("maintenance_cost"))
                 
+                # Show additional ownership costs if present
+                capex_reserve = first_year_ownership.get('capex_reserve', 0)
+                if capex_reserve > 0:
+                    st.markdown(f"**CapEx Reserve**: {format_currency(capex_reserve)}")
+                    st.markdown(display_calculation_tooltip("capex_reserve"))
+                
+                obsolescence_cost = first_year_ownership.get('obsolescence_cost', 0)
+                if obsolescence_cost > 0:
+                    st.markdown(f"**Obsolescence Cost**: {format_currency(obsolescence_cost)}")
+                    st.markdown(display_calculation_tooltip("obsolescence_cost"))
+                
+                # Subletting income (if applicable)
+                subletting_income = first_year_ownership.get('subletting_income', 0)
+                if subletting_income > 0:
+                    st.markdown(f"**Subletting Income**: {format_currency(subletting_income)}")
+                    st.markdown(display_calculation_tooltip("subletting_income"))
+                
+                # Property upgrade costs (if applicable)
+                property_upgrade_cost = first_year_ownership.get('property_upgrade_cost', 0)
+                if property_upgrade_cost > 0:
+                    st.markdown(f"**Property Upgrades**: {format_currency(property_upgrade_cost)}")
+                    st.markdown(display_calculation_tooltip("property_upgrade_cost"))
+                
                 tax_benefits = first_year_ownership.get('tax_benefits', 0)
                 st.markdown(f"**Tax Benefits**: {format_currency(tax_benefits)}")
                 st.markdown(display_calculation_tooltip("tax_benefits"))
+                
+                # Show net cash flow
+                ownership_net = first_year_ownership.get('net_cash_flow', 0)
+                st.markdown(f"**Net Cash Flow**: {format_currency(abs(ownership_net))}")
+                st.markdown(display_calculation_tooltip("net_cash_flow"))
             
             with col2:
                 st.markdown("### 🏢 Rental Costs (Year 1)")
+                st.markdown("*After-tax rental costs for fair comparison with ownership*")
                 
                 annual_rent = first_year_rental.get('annual_rent', abs(first_year_rental.get('net_cash_flow', 0)))
                 st.markdown(f"**Annual Rent**: {format_currency(annual_rent)}")
                 st.markdown(display_calculation_tooltip("annual_rent"))
+                
+                rental_tax_benefits = first_year_rental.get('tax_benefits', 0)
+                if rental_tax_benefits > 0:
+                    st.markdown(f"**Tax Benefits**: {format_currency(rental_tax_benefits)}")
+                    st.markdown("Rent is tax-deductible as a business expense.")
+                
+                # Check if expansion is triggered
+                expansion_triggered = first_year_rental.get('expansion_triggered', False)
+                if expansion_triggered:
+                    st.markdown("**Business Expansion**: Additional space costs included from expansion year.")
+                    st.markdown(display_calculation_tooltip("expansion_costs"))
+                
+                # Show net cash flow
+                rental_net = first_year_rental.get('net_cash_flow', 0)
+                st.markdown(f"**Net Cash Flow**: {format_currency(abs(rental_net))}")
+                st.markdown(display_calculation_tooltip("net_cash_flow"))
                 
                 st.markdown("**Additional Costs**: Security deposit, moving costs, and rental commission are included in initial investment calculations.")
 

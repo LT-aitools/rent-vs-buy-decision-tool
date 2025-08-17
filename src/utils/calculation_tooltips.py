@@ -19,36 +19,36 @@ NPV_TOOLTIPS = {
     "npv_difference": {
         "title": "NPV Difference",
         "formula": "Ownership NPV - Rental NPV",
-        "explanation": "The net present value difference shows which option provides better long-term financial value. A positive value means ownership is better; negative means rental is better.",
-        "calculation": "Calculated by comparing the present value of all future cash flows from both scenarios over the analysis period, including terminal values."
+        "explanation": "The net present value difference shows which option provides better long-term financial value. A positive value means ownership is better; negative means rental is better. This accounts for the time value of money using your cost of capital.",
+        "calculation": "Calculated by comparing the present value of all future cash flows from both scenarios over the analysis period, including terminal values. Includes subletting income, expansion costs, property upgrades, and tax benefits where applicable."
     },
     
     "ownership_npv": {
         "title": "Ownership NPV", 
         "formula": "Initial Investment + Present Value of Annual Costs + Present Value of Terminal Value",
-        "explanation": "Total net present value of the ownership scenario, including all costs and the final property value.",
-        "calculation": "Down payment + transaction costs + PV of (mortgage payments + property taxes + insurance + maintenance + management fees - tax benefits) + PV of terminal property value"
+        "explanation": "Total net present value of the ownership scenario, including all costs and the final property value. Accounts for business expansion, subletting income, and property upgrades over time.",
+        "calculation": "Down payment + transaction costs + space improvements + PV of (mortgage payments + property taxes + insurance + maintenance + management fees + expansion costs + property upgrades - tax benefits - subletting income) + PV of terminal property value"
     },
     
     "rental_npv": {
         "title": "Rental NPV",
         "formula": "Initial Rental Costs + Present Value of Annual Rent Payments + Present Value of Terminal Alternative Investment",
-        "explanation": "Total net present value of the rental scenario, including all rental costs and alternative investment returns.",
-        "calculation": "Security deposit + moving costs + rental commission + PV of annual rent payments + PV of alternative investment terminal value"
+        "explanation": "Total net present value of the rental scenario, including all rental costs and alternative investment returns. Accounts for business expansion requiring additional rental space over time.",
+        "calculation": "Security deposit + moving costs + rental commission + PV of (annual rent payments + expansion space rent - tax benefits) + PV of alternative investment terminal value"
     },
     
     "initial_investment": {
         "title": "Initial Investment",
         "formula": "Down Payment + Transaction Costs + Space Improvements",
-        "explanation": "Total upfront cash required to purchase and customize the property.",
-        "calculation": "Purchase Price × Down Payment % + Transaction Costs + Space Improvement Cost"
+        "explanation": "Total upfront cash required to purchase and customize the property. This is the immediate capital requirement that impacts your cash flow.",
+        "calculation": "Purchase Price × Down Payment % + Transaction Costs (legal, inspection, stamp duty) + Space Improvement Cost (tenant improvements, customizations)"
     },
     
     "terminal_value": {
         "title": "Terminal Value (Present Value)",
-        "formula": "Future Property Value ÷ (1 + Discount Rate)^Years",
-        "explanation": "Present value of the property's estimated worth at the end of the analysis period.",
-        "calculation": "Purchase Price × (1 + Market Appreciation Rate)^Analysis Period ÷ (1 + Cost of Capital)^Analysis Period"
+        "formula": "(Future Property Value - Remaining Loan Balance) ÷ (1 + Discount Rate)^Years",
+        "explanation": "Present value of your net equity in the property at the end of the analysis period. This represents the cash you would receive if you sold the property.",
+        "calculation": "[Purchase Price × (1 + Market Appreciation Rate)^Analysis Period - Outstanding Mortgage Balance] ÷ (1 + Cost of Capital)^Analysis Period"
     }
 }
 
@@ -98,9 +98,9 @@ ANNUAL_COST_TOOLTIPS = {
     
     "annual_rent": {
         "title": "Annual Rent",
-        "formula": "Current Annual Rent × Rent Escalation Factor",
-        "explanation": "Annual rental payments with year-over-year increases.",
-        "calculation": "Year 1: Current Annual Rent. Year N: Year 1 Amount × (1 + Rent Increase Rate)^(N-1)"
+        "formula": "(Base Rent + Expansion Rent) × Rent Escalation Factor",
+        "explanation": "Annual rental payments with year-over-year increases. Includes expansion space rent when business growth occurs.",
+        "calculation": "Year 1: Current Annual Rent for current space. Year N: Year 1 Amount × (1 + Rent Increase Rate)^(N-1). Additional rent added when expansion year is reached."
     },
     
     "rental_cost_comparison": {
@@ -110,25 +110,53 @@ ANNUAL_COST_TOOLTIPS = {
         "calculation": "Gross Annual Rent - (Gross Annual Rent × Corporate Tax Rate). This ensures fair comparison with ownership costs that also include tax benefits."
     },
     
+    "net_cash_flow": {
+        "title": "Net Cash Flow",
+        "formula": "Total Costs - Tax Benefits - Income",
+        "explanation": "Annual net cash outflow for each scenario. Negative values represent costs; positive values represent income.",
+        "calculation": "For ownership: Mortgage + Property Taxes + Insurance + Maintenance + Management + CapEx + Obsolescence - Tax Benefits - Subletting Income. For rental: Rent Payments - Tax Benefits."
+    },
+    
     "tax_benefits": {
         "title": "Tax Benefits",
-        "formula": "(Mortgage Interest + Property Taxes + Depreciation) × Tax Rate",
-        "explanation": "Annual tax savings from ownership deductions.",
-        "calculation": "Sum of deductible expenses (interest, taxes, depreciation) × Corporate Tax Rate"
+        "formula": "(Mortgage Interest + Property Taxes + Depreciation + Other Deductions) × Tax Rate",
+        "explanation": "Annual tax savings from ownership deductions. Includes all allowable business deductions for property-related expenses.",
+        "calculation": "Sum of deductible expenses (mortgage interest + property taxes + depreciation + maintenance + property management + insurance) × Corporate Tax Rate"
     },
     
     "subletting_income": {
         "title": "Subletting Income",
-        "formula": "Subletting Space × Subletting Rate",
-        "explanation": "Annual income from subletting specified space to other tenants.",
-        "calculation": "MIN(Space User Wants to Sublet, Available Space) × Annual Subletting Rate per m²"
+        "formula": "Available Subletting Space × Subletting Rate × (1 + Rent Escalation)^Year",
+        "explanation": "Annual income from subletting unused space to other tenants. Income grows with rent escalation and decreases as your business expands.",
+        "calculation": "Available Space = MIN(Total Property Size - Current Space Needed - Future Expansion, Desired Subletting Space). Income = Available Space × Subletting Rate × (1 + Rent Increase Rate)^(Year-1)"
     },
     
     "space_improvement_cost": {
         "title": "Space Improvement Cost",
         "formula": "One-time Improvement Investment",
-        "explanation": "Total cost for customizing and improving the space to meet specific business needs.",
-        "calculation": "Includes tenant improvements, customizations, equipment installations, and space modifications required before occupancy"
+        "explanation": "Total cost for customizing and improving the space to meet specific business needs. This is a capital investment that may qualify for depreciation benefits.",
+        "calculation": "Includes tenant improvements, customizations, equipment installations, and space modifications required before occupancy. May include IT infrastructure, specialized flooring, partition walls, and business-specific modifications."
+    },
+    
+    "property_upgrade_cost": {
+        "title": "Property Upgrade Cost",
+        "formula": "Periodic Major Renovations",
+        "explanation": "Costs for major property renovations and upgrades that occur on a cyclical basis (e.g., every 20-30 years).",
+        "calculation": "Calculated as a percentage of building value (excluding land) applied every property upgrade cycle. Includes major renovations, HVAC replacements, roof repairs, and structural upgrades."
+    },
+    
+    "expansion_costs": {
+        "title": "Business Expansion Costs",
+        "formula": "Additional Space Costs from Growth",
+        "explanation": "Additional costs incurred when your business grows and requires more space.",
+        "calculation": "For ownership: May trigger property upgrades or additional space purchase. For rental: Additional rent for expanded space calculated at market rates with rent escalation."
+    },
+    
+    "obsolescence_cost": {
+        "title": "Obsolescence Risk Cost",
+        "formula": "Purchase Price × Obsolescence Risk Rate × Inflation Factor",
+        "explanation": "Annual allowance for building obsolescence and depreciation beyond normal maintenance.",
+        "calculation": "Base Amount = Purchase Price × Obsolescence Risk Rate %. Year N: Base Amount × (1 + Inflation Rate)^(N-1). Accounts for technological and functional obsolescence."
     }
 }
 
@@ -161,8 +189,8 @@ TERMINAL_VALUE_TOOLTIPS = {
     "property_appreciation": {
         "title": "Property Appreciation",
         "formula": "Purchase Price × (1 + Market Appreciation Rate)^Years",
-        "explanation": "Estimated future property value based on market appreciation assumptions.",
-        "calculation": "Purchase Price × (1 + Market Appreciation Rate %)^Analysis Period"
+        "explanation": "Estimated future property value based on market appreciation assumptions. Considers both land and building appreciation.",
+        "calculation": "Purchase Price × (1 + Market Appreciation Rate %)^Analysis Period. Land typically appreciates faster than buildings, which depreciate over time."
     },
     
     "remaining_loan_balance": {
@@ -182,8 +210,8 @@ TERMINAL_VALUE_TOOLTIPS = {
     "alternative_investment": {
         "title": "Alternative Investment Value",
         "formula": "Initial Investment × (1 + Investment Return Rate)^Years",
-        "explanation": "Value of alternative investment for rental scenario using saved down payment.",
-        "calculation": "Down Payment Amount × (1 + Cost of Capital %)^Analysis Period"
+        "explanation": "Value of alternative investment for rental scenario using saved down payment. Represents opportunity cost of not investing the down payment elsewhere.",
+        "calculation": "Down Payment Amount × (1 + Cost of Capital %)^Analysis Period. Assumes the down payment could earn your cost of capital rate in alternative investments."
     }
 }
 
@@ -312,7 +340,10 @@ def create_detailed_calculation_expander(
                 st.markdown(f"**Calculation**: {tooltip['calculation']}")
                 
                 if values and key in values:
-                    st.markdown(f"**Current Value**: {values[key]}")
+                    if values[key] == "Calculated annually for each scenario":
+                        st.markdown(f"**Note**: {values[key]}")
+                    else:
+                        st.markdown(f"**Current Value**: {values[key]}")
                 
                 st.markdown("---")
 
