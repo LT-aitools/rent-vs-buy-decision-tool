@@ -964,11 +964,11 @@ def _handle_country_change(country: str):
                         updated_fields.append(f"Interest Rate: {rates['30_year_fixed']}%")
                 
                 # Add US market estimates (could be enhanced with real APIs later)
+                # These are now redundant since data_priority_manager handles US estimates with inflation adjustment
                 us_estimates = {
                     'market_appreciation_rate': 3.5,  # US national average
-                    'rent_increase_rate': 3.2,       # US national average  
                     'property_tax_rate': 1.1,        # US national average
-                    'inflation_rate': 3.0            # Current US inflation target
+                    # Note: rent_increase_rate and inflation_rate now handled by data_priority_manager with proper adjustment
                 }
                 
                 for field_name, value in us_estimates.items():
@@ -1124,18 +1124,45 @@ def _show_api_indicator(field_name: str, current_value: Any):
                 data_date = metadata.get('data_date', '')
                 live_rate_used = metadata.get('live_rate_used', False)
                 
-                # Create additional info for static vs live data
+                # Create detailed info for static vs live data by source and field
                 extra_info = ""
+                country = metadata.get('country', '')
+                
+                # Real-time API data indicators
                 if live_rate_used:
                     extra_info = f" • 🔴 LIVE API"
+                elif 'fred_api' in source.lower():
+                    extra_info = f" • 🔴 LIVE (Federal Reserve API)"
+                elif 'bcb' in source.lower() or (country == 'Brazil' and 'api' in source.lower()):
+                    if field_name == 'interest_rate':
+                        extra_info = f" • 🔴 LIVE (Brazil Central Bank API)"
+                    else:
+                        extra_info = f" • 📊 Static (rent/market data)"
+                elif 'boi' in source.lower() or (country == 'Israel' and 'api' in source.lower()):
+                    if field_name == 'interest_rate':
+                        extra_info = f" • 🔴 LIVE (Bank of Israel API)"
+                    else:
+                        extra_info = f" • 📊 Static (rent/market data)"
+                
+                # Static data indicators with specific sources
+                elif 'us_market_estimates' in source.lower() or 'location_estimate' in source.lower():
+                    if field_name == 'interest_rate':
+                        extra_info = f" • 📊 Fallback (FRED API unavailable)"
+                    else:
+                        extra_info = f" • 📊 Static estimates with inflation adjustment"
+                elif 'international_data' in source.lower():
+                    if country:
+                        if country in ['Brazil', 'Israel']:
+                            extra_info = f" • 📊 Static (rent/market), 🔴 LIVE (interest) available"
+                        else:
+                            extra_info = f" • 📊 Static market data ({country})"
+                    else:
+                        extra_info = f" • 📊 Static international data"
                 elif data_date:
                     extra_info = f" • 📅 Data from {data_date}"
-                elif 'international' in source.lower():
-                    # For international data, try to extract date from source or use default
-                    if '_data_' in source.lower():
-                        extra_info = f" • 📅 Data from 2024-08-14"
-                    else:
-                        extra_info = f" • 📊 Static data"
+                else:
+                    # Generic fallback
+                    extra_info = f" • 📊 Static data"
                 
                 st.markdown(
                     f'<div style="background-color: #E3F2FD; border-left: 4px solid #2196F3; padding: 8px; margin: 4px 0; border-radius: 4px;">'

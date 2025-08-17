@@ -386,13 +386,19 @@ class DataPriorityManager:
         else:
             estimates['market_appreciation_rate'] = 3.2  # Average
             
-        # Rent increase rate estimates
+        # Rent increase rate estimates (nominal rates)
+        us_inflation_rate = 3.0  # Current US inflation target
         if any(city in address_lower for city in ['san francisco', 'new york', 'boston']):
-            estimates['rent_increase_rate'] = 4.2
+            nominal_rent_rate = 4.2
         elif any(city in address_lower for city in ['los angeles', 'chicago', 'washington']):
-            estimates['rent_increase_rate'] = 3.5
+            nominal_rent_rate = 3.5
         else:
-            estimates['rent_increase_rate'] = 3.1
+            nominal_rent_rate = 3.1
+        
+        # Apply inflation adjustment to prevent double-counting
+        real_rent_rate = nominal_rent_rate - us_inflation_rate
+        estimates['rent_increase_rate'] = real_rent_rate
+        estimates['inflation_rate'] = us_inflation_rate
             
         # Property tax rate estimates by state
         state_tax_rates = {
