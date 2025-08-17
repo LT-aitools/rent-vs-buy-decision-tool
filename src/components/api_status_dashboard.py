@@ -58,8 +58,8 @@ def render_overall_status():
     """Render overall system status summary"""
     
     # Current comprehensive status as of August 2025
-    live_apis = 2  # Brazil BCB + USA FRED
-    static_countries = 12  # EU, UK, Canada, Australia, Japan, Singapore, etc.
+    live_apis = 1  # USA FRED (Brazil BCB pending investigation)
+    static_countries = 13  # EU, UK, Canada, Australia, Japan, Singapore, Brazil, Israel, etc.
     total_coverage = live_apis + static_countries
     
     col1, col2, col3 = st.columns(3)
@@ -68,8 +68,8 @@ def render_overall_status():
         st.metric(
             "🔴 Live APIs", 
             f"{live_apis}",
-            "Brazil & USA",
-            help="Countries with real-time central bank data"
+            "USA FRED only",
+            help="Countries with working real-time central bank data"
         )
     
     with col2:
@@ -139,7 +139,7 @@ def render_live_api_grid():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.success("**🇧🇷 Brazil BCB**\n\n✅ Live Selic rates\n📊 Series 11\n🔄 Real-time")
+        st.warning("**🇧🇷 Brazil BCB**\n\n⚠️ API unavailable\n📊 Static 12.5%\n🔍 Investigation needed")
         
     with col2:
         st.success("**🇺🇸 USA FRED**\n\n✅ Live mortgage rates\n📊 30Y, 15Y, FFR\n🔄 Real-time")
@@ -157,9 +157,8 @@ def render_international_coverage():
     st.markdown("### 🗺️ International Market Coverage")
     
     # Live Data Countries
-    with st.expander("🔴 **Live Data Countries (2)**", expanded=True):
+    with st.expander("🔴 **Live Data Countries (1)**", expanded=True):
         live_countries = [
-            {"country": "🇧🇷 Brazil", "source": "BCB Selic API", "rate": "~1.06%", "status": "Real-time"},
             {"country": "🇺🇸 USA", "source": "FRED API", "rate": "~6.8%", "status": "Real-time"}
         ]
         
@@ -174,8 +173,8 @@ def render_international_coverage():
             with col4:
                 st.success(country["status"])
     
-    # Static Data Countries
-    with st.expander("📅 **Static Data Countries (12)**"):
+    # Static Data Countries  
+    with st.expander("📅 **Static Data Countries (13)**"):
         static_countries = [
             # European Union Countries
             {"country": "🇩🇪 Germany", "source": "ECB + Destatis", "rate": "3.8%", "date": "2024-08-14"},
@@ -192,6 +191,8 @@ def render_international_coverage():
             {"country": "🇮🇱 Israel", "source": "BOI + CBS", "rate": "5.3%", "date": "2024-08-14"},
             {"country": "🇵🇱 Poland", "source": "NBP + GUS", "rate": "7.2%", "date": "2024-08-14"},
             {"country": "🇷🇴 Romania", "source": "NBR + INS", "rate": "8.2%", "date": "2024-08-14"},
+            # Americas
+            {"country": "🇧🇷 Brazil", "source": "BCB Static (API pending)", "rate": "12.5%", "date": "2024-08-14"},
             # Additional Coverage
             {"country": "🇪🇺 Other EU", "source": "ECB + National Stats", "rate": "3.5-4.5%", "date": "2024-08-14"},
         ]

@@ -12,8 +12,8 @@
 
 The Real Estate Decision Tool now features a comprehensive international data integration system with three-tier coverage:
 
-- **🔴 Live APIs (2)**: Real-time central bank data
-- **📅 Static Data (12)**: Dated central bank rates with transparency
+- **🔴 Live APIs (1)**: Real-time central bank data  
+- **📅 Static Data (13)**: Dated central bank rates with transparency
 - **🎯 Recognized (7+)**: Countries using system defaults with clean UI
 
 Total international coverage: **21+ countries** with transparent data source indicators.
@@ -22,16 +22,7 @@ Total international coverage: **21+ countries** with transparent data source ind
 
 ## 🔴 Live API Integration (Real-Time Data)
 
-### 1. 🇧🇷 Brazil Central Bank (BCB)
-- **Source**: BCB Selic API (api.bcb.gov.br)
-- **Data**: Selic Rate (Series 11)
-- **Status**: ✅ Production Ready
-- **Update Frequency**: Real-time
-- **Current Rate**: ~1.06% (automatically updated)
-- **Cache**: 1-hour refresh cycle
-- **Fallback**: Robust error handling with static backup
-
-### 2. 🇺🇸 USA Federal Reserve (FRED)
+### 1. 🇺🇸 USA Federal Reserve (FRED)
 - **Source**: FRED API (api.stlouisfed.org)
 - **Data**: 30Y Fixed, 15Y Fixed, Federal Funds Rate
 - **Status**: ✅ Production Ready
@@ -39,6 +30,23 @@ Total international coverage: **21+ countries** with transparent data source ind
 - **Current Rates**: 30Y ~6.8%, 15Y ~6.3%, FFR ~5.5%
 - **Cache**: 1-hour refresh cycle
 - **Features**: Multiple mortgage products
+
+---
+
+## ⚠️ Live APIs Under Investigation
+
+### 🇧🇷 Brazil Central Bank (BCB)
+- **Status**: ⚠️ API Integration Issue
+- **Current**: Using static fallback (12.5%)
+- **Planned**: BCB Selic API (api.bcb.gov.br)
+- **Investigation**: Endpoint connectivity issue
+- **Fallback**: Robust static data with transparency
+
+### 🇮🇱 Israel Bank of Israel (BOI)  
+- **Status**: 🔍 API Research Needed
+- **Current**: Using static data (5.3%)
+- **Planned**: BOI API (edge.boi.gov.il)
+- **Investigation**: API documentation and endpoint discovery
 
 ---
 
@@ -64,6 +72,9 @@ High-quality central bank data with full transparency about data freshness:
 
 ### North America
 - **🇨🇦 Canada**: BOC + StatsCan, 5.8% (2024-08-14)
+
+### South America  
+- **🇧🇷 Brazil**: BCB Static (API pending), 12.5% (2024-08-14)
 
 ### Notes:
 - All rates sourced from official central banks
