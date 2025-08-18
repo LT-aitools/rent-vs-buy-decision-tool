@@ -396,7 +396,7 @@ class DataPriorityManager:
             nominal_rent_rate = 3.1
         
         # Apply inflation adjustment to prevent double-counting
-        real_rent_rate = round(nominal_rent_rate - us_inflation_rate, 1)  # Round to 1 decimal place
+        real_rent_rate = max(0.0, round(nominal_rent_rate - us_inflation_rate, 1))  # Round to 1 decimal, minimum 0%
         estimates['rent_increase_rate'] = real_rent_rate
         estimates['inflation_rate'] = us_inflation_rate
         estimates['corporate_tax_rate'] = 25.0  # US federal corporate tax rate (21%) + average state (4%)
